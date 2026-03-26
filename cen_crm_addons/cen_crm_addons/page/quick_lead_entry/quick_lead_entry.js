@@ -1,4 +1,4 @@
-frappe.pages['quick-lead-entry'].on_page_load = function(wrapper) {
+frappe.pages['quick-lead-entry'].on_page_load = function (wrapper) {
 
     var page = frappe.ui.make_app_page({
         parent: wrapper,
@@ -6,78 +6,92 @@ frappe.pages['quick-lead-entry'].on_page_load = function(wrapper) {
         single_column: true
     });
 
+    // Add List Buttons at top right
+    page.add_inner_button(__('Lead List'), function () {
+        frappe.set_route('List', 'Lead');
+    });
+
+    page.add_inner_button(__('Opportunity List'), function () {
+        frappe.set_route('List', 'Opportunity');
+    });
+
     // India States
     const states = [
-        "Kerala","Tamil Nadu","Karnataka","Andhra Pradesh","Telangana",
-        "Maharashtra","Gujarat","Rajasthan","Madhya Pradesh","Uttar Pradesh",
-        "Bihar","West Bengal","Odisha","Punjab","Haryana","Delhi",
-        "Himachal Pradesh","Uttarakhand","Jharkhand","Chhattisgarh",
-        "Assam","Goa","Tripura","Meghalaya","Manipur","Nagaland",
-        "Arunachal Pradesh","Sikkim"
+        "Kerala", "Tamil Nadu", "Karnataka", "Andhra Pradesh", "Telangana",
+        "Maharashtra", "Gujarat", "Rajasthan", "Madhya Pradesh", "Uttar Pradesh",
+        "Bihar", "West Bengal", "Odisha", "Punjab", "Haryana", "Delhi",
+        "Himachal Pradesh", "Uttarakhand", "Jharkhand", "Chhattisgarh",
+        "Assam", "Goa", "Tripura", "Meghalaya", "Manipur", "Nagaland",
+        "Arunachal Pradesh", "Sikkim"
     ];
 
     let state_options = states.map(s => `<option value="${s}">${s}</option>`).join("");
 
     // UI Layout
-    $(wrapper).html(`
-        <div class="container" style="max-width: 500px; margin-top: 20px;">
-            
-            <h4>Basic Details</h4>
+    $(wrapper).find('.layout-main-section').html(`
+		<div class="container" style="max-width: 900px; margin-top: 20px;">
+			<div class="row">
+				<div class="col-md-6">
+					<div style="padding-right: 15px;">
+						<h5 class="text-muted">Mandatory Details</h5>
+						<div class="form-group">
+							<label class="control-label">Name <span class="text-danger">*</span></label>
+							<input type="text" id="first_name" class="form-control" tabindex="1">
+						</div>
 
-            <div class="form-group">
-                <label>First Name</label>
-                <input type="text" id="first_name" class="form-control">
-            </div>
+						<div class="form-group">
+							<label class="control-label">Mobile Number <span class="text-danger">*</span></label>
+							<input type="text" id="mobile_no" class="form-control" tabindex="2">
+						</div>
 
-            <div class="form-group">
-                <label>Mobile Number</label>
-                <input type="text" id="mobile_no" class="form-control">
-            </div>
+						<div class="form-group">
+							<div class="assign-field" tabindex="3"></div>
+						</div>
 
-            <hr>
+                        <div style="margin-top: 30px; text-align: center;">
+                            <button class="btn btn-primary" id="create_all" style="min-width: 300px; font-weight: bold; height: 40px;">
+                                Create
+                            </button>
+                            
+                            <div id="whatsapp_container" style="margin-top: 20px; display: none;">
+                                <a id="whatsapp_link" target="_blank" class="btn btn-outline-success">
+                                    <i class="fa fa-whatsapp"></i> Chat on WhatsApp
+                                </a>
+                            </div>
+                        </div>
+					</div>
+				</div>
 
-            <h5>Address Details</h5>
+				<div class="col-md-6">
+					<div style="padding-left: 15px;">
+						<h5 class="text-muted">Other Details</h5>
+						<div class="form-group">
+							<label class="control-label">Address</label>
+							<input type="text" id="address_line1" class="form-control" tabindex="4">
+						</div>
 
-            <div class="form-group">
-                <label>Address Line 1</label>
-                <textarea id="address_line1" class="form-control"></textarea>
-            </div>
+						<div class="form-group">
+							<label class="control-label">City</label>
+							<input type="text" id="city" class="form-control" tabindex="5">
+						</div>
 
-            <div class="form-group">
-                <label>City</label>
-                <input type="text" id="city" class="form-control">
-            </div>
+						<div class="form-group">
+							<label class="control-label">State</label>
+							<select id="state" class="form-control" tabindex="6">
+								<option value="">Select State</option>
+								${state_options}
+							</select>
+						</div>
 
-            <div class="form-group">
-                <label>State</label>
-                <select id="state" class="form-control">
-                    <option value="">Select State</option>
-                    ${state_options}
-                </select>
-            </div>
-
-            <div class="form-group">
-                <label>Pincode</label>
-                <input type="text" id="pincode" class="form-control">
-            </div>
-
-            <hr>
-
-            <h5>Assign</h5>
-            <div class="form-group assign-field"></div>
-
-            <button class="btn btn-primary" id="create_lead">
-                Create Lead
-            </button>
-
-            <hr>
-
-            <button class="btn btn-success" id="create_opportunity" style="display:none;">
-                Create Opportunity
-            </button>
-
-        </div>
-    `);
+						<div class="form-group">
+							<label class="control-label">Pincode</label>
+							<input type="text" id="pincode" class="form-control" tabindex="7">
+						</div>
+					</div>
+				</div>
+			</div>
+		</div>
+	`);
 
     // 🔹 Modern Assign Field (ERPNext style)
     let assign_field = frappe.ui.form.make_control({
@@ -86,27 +100,34 @@ frappe.pages['quick-lead-entry'].on_page_load = function(wrapper) {
             label: "Assign To",
             fieldname: "assign_to",
             fieldtype: "Link",
-            options: "User"
+            options: "User",
+            reqd: 0
         },
         render_input: true
     });
 
-    // Default to current user
-    assign_field.set_value(frappe.session.user);
-
-    let created_lead = null;
-
-    // Create Lead
-    $('#create_lead').click(function() {
-
-        let first_name = $('#first_name').val();
-        let mobile = $('#mobile_no').val();
-
-        if (!first_name || !mobile) {
-            frappe.msgprint("First Name and Mobile are required");
+    // Combined Creation Logic
+    $('#create_all').click(function () {
+        let btn = $(this);
+        
+        // Handle "Add New" redirect/reload
+        if (btn.text().trim() === __('Add New')) {
+            location.reload();
             return;
         }
 
+        let first_name = $('#first_name').val();
+        let mobile = $('#mobile_no').val();
+        let assign_to = assign_field.get_value();
+
+        if (!first_name || !mobile || !assign_to) {
+            frappe.msgprint(__("Name, Mobile Number, and Assigned To are mandatory."));
+            return;
+        }
+
+        btn.prop('disabled', true).text(__('Creating...'));
+
+        // 1. Create Lead
         frappe.call({
             method: "frappe.client.insert",
             args: {
@@ -114,71 +135,73 @@ frappe.pages['quick-lead-entry'].on_page_load = function(wrapper) {
                     doctype: "Lead",
                     first_name: first_name,
                     mobile_no: mobile,
-                    phone: mobile
+                    phone: mobile,
+                    status: "Open"
                 }
             },
-            callback: function(r) {
+            callback: function (r) {
                 if (r.message) {
+                    let lead_name = r.message.name;
+                    let address_line1 = $('#address_line1').val();
+                    let city = $('#city').val();
+                    let state = $('#state').val();
+                    let pincode = $('#pincode').val();
 
-                    created_lead = r.message.name;
-
-                    // Create Address (ERPNext standard way)
-                    frappe.call({
-                        method: "frappe.client.insert",
-                        args: {
-                            doc: {
-                                doctype: "Address",
-                                address_line1: $('#address_line1').val(),
-                                city: $('#city').val(),
-                                state: $('#state').val(),
-                                pincode: $('#pincode').val(),
-                                links: [{
-                                    link_doctype: "Lead",
-                                    link_name: created_lead
-                                }]
-                            }
-                        }
-                    });
-
-                    // Assign Lead
-                    let assign_to = assign_field.get_value();
-
-                    if (assign_to) {
+                    // 2. Create Address only if some info is provided
+                    if (address_line1 || city) {
                         frappe.call({
-                            method: "frappe.desk.form.assign_to.add",
+                            method: "frappe.client.insert",
                             args: {
-                                assign_to: [assign_to],
-                                doctype: "Lead",
-                                name: created_lead,
-                                description: "New Lead Assigned"
+                                doc: {
+                                    doctype: "Address",
+                                    address_line1: address_line1 || "Not Provided",
+                                    city: city || "Not Provided",
+                                    state: state,
+                                    pincode: pincode,
+                                    links: [{
+                                        link_doctype: "Lead",
+                                        link_name: lead_name
+                                    }]
+                                }
                             }
                         });
                     }
 
-                    frappe.msgprint("Lead Created: " + created_lead);
+                    // 3. Assign Lead
+                    frappe.call({
+                        method: "frappe.desk.form.assign_to.add",
+                        args: {
+                            assign_to: [assign_to],
+                            doctype: "Lead",
+                            name: lead_name,
+                            description: "Auto-Assigned from Quick Entry"
+                        }
+                    });
 
-                    $('#create_opportunity').show();
-                }
-            }
-        });
-    });
+                    // 4. Create Opportunity
+                    frappe.call({
+                        method: "erpnext.crm.doctype.lead.lead.make_opportunity",
+                        args: {
+                            source_name: lead_name
+                        },
+                        callback: function (res) {
+                            btn.prop('disabled', false).text(__('Add New'));
+                            if (res.message) {
+                                let opportunity_name = res.message.name;
 
-    // Create Opportunity
-    $('#create_opportunity').click(function() {
+                                // Show WhatsApp link
+                                let formatted_mobile = mobile.replace(/\D/g, '');
+                                if (formatted_mobile.length === 10) {
+                                    formatted_mobile = '91' + formatted_mobile;
+                                }
 
-        if (!created_lead) {
-            frappe.msgprint("Create Lead first");
-            return;
-        }
-
-        frappe.call({
-            method: "erpnext.crm.doctype.lead.lead.make_opportunity",
-            args: {
-                source_name: created_lead
-            },
-            callback: function(r) {
-                if (r.message) {
-                    frappe.set_route("Form", "Opportunity", r.message.name);
+                                $('#whatsapp_link').attr('href', `https://wa.me/${formatted_mobile}`);
+                                $('#whatsapp_container').show();
+                            }
+                        }
+                    });
+                } else {
+                    btn.prop('disabled', false).text(__('Create'));
                 }
             }
         });
