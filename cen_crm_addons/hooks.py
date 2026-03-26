@@ -10,6 +10,8 @@ app_license = "mit"
 
 # required_apps = []
 
+fixtures = ["Role Profile", "Role", "Custom DocPerm", {"dt": "Property Setter", "filters": [["doc_type", "in", ("Opportunity", "Lead")]]}]
+
 # Each item in the list will be shown as an app in the apps page
 # add_to_apps_screen = [
 # 	{
@@ -117,13 +119,17 @@ app_license = "mit"
 # -----------
 # Permissions evaluated in scripted ways
 
-# permission_query_conditions = {
-# 	"Event": "frappe.desk.doctype.event.event.get_permission_query_conditions",
-# }
-#
-# has_permission = {
-# 	"Event": "frappe.desk.doctype.event.event.has_permission",
-# }
+permission_query_conditions = {
+	"Lead": "cen_crm_addons.api.crm_permissions.lead_query",
+	"Opportunity": "cen_crm_addons.api.crm_permissions.opportunity_query",
+	"Prospect": "cen_crm_addons.api.crm_permissions.prospect_query"
+}
+
+has_permission = {
+	"Lead": "cen_crm_addons.api.crm_permissions.lead_has_permission",
+	"Opportunity": "cen_crm_addons.api.crm_permissions.opportunity_has_permission",
+	"Prospect": "cen_crm_addons.api.crm_permissions.prospect_has_permission"
+}
 
 # DocType Class
 # ---------------

@@ -1,0 +1,91 @@
+{
+ "charts": [],
+ "content": "[{\"id\": \"h_sales\", \"type\": \"header\", \"data\": {\"text\": \"<span class=\\\\\\\"h4\\\\\\\"><b>Your Pipeline</b></span>\", \"col\": 12}}, {\"type\": \"shortcut\", \"id\": \"s_lead\", \"data\": {\"shortcut_name\": \"Lead\", \"col\": 4}}, {\"type\": \"shortcut\", \"id\": \"s_prospect\", \"data\": {\"shortcut_name\": \"Prospect\", \"col\": 4}}, {\"type\": \"shortcut\", \"id\": \"s_opp\", \"data\": {\"shortcut_name\": \"Opportunity\", \"col\": 4}}, {\"id\": \"h_trans\", \"type\": \"header\", \"data\": {\"text\": \"<span class=\\\\\\\"h4\\\\\\\"><b>Transactions</b></span>\", \"col\": 12}}, {\"type\": \"shortcut\", \"id\": \"s_quote\", \"data\": {\"shortcut_name\": \"Quotation\", \"col\": 4}}, {\"type\": \"shortcut\", \"id\": \"s_so\", \"data\": {\"shortcut_name\": \"Sales Order\", \"col\": 4}}, {\"type\": \"shortcut\", \"id\": \"s_si\", \"data\": {\"shortcut_name\": \"Sales Invoice\", \"col\": 4}}, {\"id\": \"h_mast\", \"type\": \"header\", \"data\": {\"text\": \"<span class=\\\\\\\"h4\\\\\\\"><b>Masters</b></span>\", \"col\": 12}}, {\"type\": \"shortcut\", \"id\": \"s_cust\", \"data\": {\"shortcut_name\": \"Customer\", \"col\": 4}}, {\"type\": \"shortcut\", \"id\": \"s_item\", \"data\": {\"shortcut_name\": \"Item\", \"col\": 4}}, {\"type\": \"shortcut\", \"id\": \"s_dash\", \"data\": {\"shortcut_name\": \"Dashboard\", \"col\": 4}}]",
+ "creation": "2026-03-25 11:03:24.601198",
+ "custom_blocks": [],
+ "docstatus": 0,
+ "doctype": "Workspace",
+ "hide_custom": 0,
+ "icon": "crm",
+ "idx": 0,
+ "indicator_color": "green",
+ "is_hidden": 0,
+ "label": "Cen CRM Portal",
+ "links": [],
+ "modified": "2026-03-25 11:24:06.515064",
+ "modified_by": "Administrator",
+ "module": "Cen Crm Addons",
+ "name": "Cen CRM Portal",
+ "number_cards": [],
+ "owner": "Administrator",
+ "public": 1,
+ "quick_lists": [],
+ "roles": [],
+ "sequence_id": 0.0,
+ "shortcuts": [
+  {
+   "color": "Blue",
+   "doc_view": "",
+   "label": "Lead",
+   "link_to": "Lead",
+   "type": "DocType"
+  },
+  {
+   "color": "Blue",
+   "doc_view": "",
+   "label": "Prospect",
+   "link_to": "Prospect",
+   "type": "DocType"
+  },
+  {
+   "color": "Blue",
+   "doc_view": "",
+   "label": "Opportunity",
+   "link_to": "Opportunity",
+   "type": "DocType"
+  },
+  {
+   "color": "Green",
+   "doc_view": "",
+   "label": "Quotation",
+   "link_to": "Quotation",
+   "type": "DocType"
+  },
+  {
+   "color": "Green",
+   "doc_view": "",
+   "label": "Sales Order",
+   "link_to": "Sales Order",
+   "type": "DocType"
+  },
+  {
+   "color": "Green",
+   "doc_view": "",
+   "label": "Sales Invoice",
+   "link_to": "Sales Invoice",
+   "type": "DocType"
+  },
+  {
+   "color": "Blue",
+   "doc_view": "",
+   "label": "Customer",
+   "link_to": "Customer",
+   "type": "DocType"
+  },
+  {
+   "color": "Blue",
+   "doc_view": "",
+   "label": "Item",
+   "link_to": "Item",
+   "type": "DocType"
+  },
+  {
+   "color": "Blue",
+   "doc_view": "",
+   "label": "Dashboard",
+   "link_to": "CRM",
+   "type": "Dashboard"
+  }
+ ],
+ "title": "Cen CRM Portal"
+}
