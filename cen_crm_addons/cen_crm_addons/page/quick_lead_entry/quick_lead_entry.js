@@ -178,25 +178,38 @@ frappe.pages['quick-lead-entry'].on_page_load = function (wrapper) {
                         }
                     });
 
-                    // 4. Create Opportunity
+                    // 4. Create & Insert Opportunity
                     frappe.call({
                         method: "erpnext.crm.doctype.lead.lead.make_opportunity",
                         args: {
                             source_name: lead_name
                         },
                         callback: function (res) {
-                            btn.prop('disabled', false).text(__('Add New'));
                             if (res.message) {
-                                let opportunity_name = res.message.name;
+                                let opportunity_doc = res.message;
+                                opportunity_doc.doctype = "Opportunity"; // Ensure doctype is present
 
-                                // Show WhatsApp link
-                                let formatted_mobile = mobile.replace(/\D/g, '');
-                                if (formatted_mobile.length === 10) {
-                                    formatted_mobile = '91' + formatted_mobile;
-                                }
+                                frappe.call({
+                                    method: "frappe.client.insert",
+                                    args: {
+                                        doc: opportunity_doc
+                                    },
+                                    callback: function (final_res) {
+                                        btn.prop('disabled', false).text(__('Add New'));
+                                        if (final_res.message) {
+                                            // Show WhatsApp link
+                                            let formatted_mobile = mobile.replace(/\D/g, '');
+                                            if (formatted_mobile.length === 10) {
+                                                formatted_mobile = '91' + formatted_mobile;
+                                            }
 
-                                $('#whatsapp_link').attr('href', `https://wa.me/${formatted_mobile}`);
-                                $('#whatsapp_container').show();
+                                            $('#whatsapp_link').attr('href', `https://wa.me/${formatted_mobile}`);
+                                            $('#whatsapp_container').show();
+                                        }
+                                    }
+                                });
+                            } else {
+                                btn.prop('disabled', false).text(__('Add New'));
                             }
                         }
                     });
