@@ -1,0 +1,24 @@
+[
+ {
+  "docstatus": 0,
+  "doctype": "Client Script",
+  "dt": "Lead",
+  "enabled": 1,
+  "modified": "2026-03-26 16:43:53.330541",
+  "module": null,
+  "name": "Lead List UI Fix",
+  "script": "\nfrappe.listview_settings['Lead'] = {\n    hide_name_column: true,\n    hide_assign_col: true,\n    hide_sharing_col: true,\n    formatters: {\n        whatsapp_icon: function(val, df, doc) {\n            if (doc.phone) {\n                let phone = doc.phone.replace(/\\D/g,'');\n                return `<a href=\"https://wa.me/${phone}\" target=\"_blank\" onclick=\"event.stopPropagation();\">\n                    <i class=\"fa fa-whatsapp text-success\" style=\"font-size: 1.5em; cursor: pointer;\"></i>\n                </a>`;\n            }\n            return \"\";\n        },\n        owner: function(val) {\n            let user = frappe.user_info(val);\n            return user ? user.fullname : val;\n        }\n    }\n};\n\n// Force hide columns via DOM if needed on render\nfrappe.ui.form.on('Lead', {\n    refresh: function(frm) {\n        // Logic for form if needed\n    }\n});\n",
+  "view": "List"
+ },
+ {
+  "docstatus": 0,
+  "doctype": "Client Script",
+  "dt": "Opportunity",
+  "enabled": 1,
+  "modified": "2026-03-26 16:43:53.341026",
+  "module": null,
+  "name": "Opportunity List UI Fix",
+  "script": "\nfrappe.listview_settings['Opportunity'] = {\n    hide_name_column: true,\n    hide_assign_col: true,\n    hide_sharing_col: true,\n    formatters: {\n        whatsapp_icon: function(val, df, doc) {\n            if (doc.phone) {\n                let phone = doc.phone.replace(/\\D/g,'');\n                return `<a href=\"https://wa.me/${phone}\" target=\"_blank\" onclick=\"event.stopPropagation();\">\n                    <i class=\"fa fa-whatsapp text-success\" style=\"font-size: 1.5em; cursor: pointer;\"></i>\n                </a>`;\n            }\n            return \"\";\n        },\n        owner: function(val) {\n            let user = frappe.user_info(val);\n            return user ? user.fullname : val;\n        }\n    }\n};\n\n// Force hide columns via DOM if needed on render\nfrappe.ui.form.on('Opportunity', {\n    refresh: function(frm) {\n        // Logic for form if needed\n    }\n});\n",
+  "view": "List"
+ }
+]

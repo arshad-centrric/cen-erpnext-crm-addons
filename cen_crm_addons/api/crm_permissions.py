@@ -184,3 +184,65 @@ def prospect_has_permission(doc, ptype="read", user=None):
         return False
         
     return True
+
+def update_whatsapp_link(doc, method=None):
+    if doc.mobile_no:
+        phone = "".join(filter(str.isdigit, doc.mobile_no))
+        if phone:
+            doc.whatsapp_link = f"https://wa.me/{phone}"
+    
+    # Also sync for the new list view logic
+    sync_lead_list_fields(doc)
+
+def sync_lead_list_fields(doc, method=None):
+    # 1. Update Assigned To Name (Fetch from ToDo)
+    todo = frappe.db.get_value("ToDo", 
+        {"reference_type": "Lead", "reference_name": doc.name, "status": "Open"}, 
+        "allocated_to"
+    )
+    if todo:
+        doc.assigned_to_name = frappe.db.get_value("User", todo, "full_name") or todo
+            
+    # 2. Sync WhatsApp Link for the new list view field
+    if doc.mobile_no:
+        phone = "".join(filter(str.isdigit, doc.mobile_no))
+        if phone:
+            doc.wa_chat_link = f"https://wa.me/{phone}"
+
+
+def sync_opportunity_list_fields(doc, method=None):
+    # 0. Update ID for the first column
+    doc.id_display = doc.name
+    
+    # 1. Update Assigned To Name (Fetch from ToDo)
+    todo = frappe.db.get_value("ToDo", 
+        {"reference_type": "Opportunity", "reference_name": doc.name, "status": "Open"}, 
+        "allocated_to"
+    )
+    if todo:
+        doc.assigned_to_name = frappe.db.get_value("User", todo, "full_name") or todo
+            
+    # 2. Update Contact Mobile
+    # For Leads
+    if doc.opportunity_from == "Lead" and doc.party_name:
+        doc.contact_mobile = frappe.db.get_value("Lead", doc.party_name, "mobile_no")
+    # For Customers
+    elif doc.opportunity_from == "Customer" and doc.party_name:
+        contact_mobile = frappe.db.sql("""
+            SELECT c.mobile_no 
+            FROM `tabContact` c
+            JOIN `tabDynamic Link` l ON l.parent = c.name
+            WHERE l.link_doctype = 'Customer' AND l.link_name = %s
+            LIMIT 1
+        """, doc.party_name)
+        if contact_mobile:
+            doc.contact_mobile = contact_mobile[0][0]
+    
+    # 3. Sync WhatsApp Link also for the new list view field
+    if doc.contact_mobile:
+        phone = "".join(filter(str.isdigit, doc.contact_mobile))
+        if phone:
+            doc.wa_chat_link = f"https://wa.me/{phone}"
+
+
+
