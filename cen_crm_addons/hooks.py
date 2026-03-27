@@ -13,8 +13,22 @@ app_license = "mit"
 fixtures = [
     "Role Profile", 
     "Role", 
-    "Custom DocPerm"
+    "Custom DocPerm",
+    {"dt": "Property Setter", "filters": [["doc_type", "in", ("Opportunity", "Lead")]]},
+    {"dt": "Custom Field", "filters": [["fieldname", "in", (
+        "custom_assigned_to", 
+        "custom_wa_chat_link", 
+        "custom_delivery_detail", 
+        "custom_mode_of_delivery", 
+        "custom_delivery_store", 
+        "custom_delivery_date", 
+        "custom_delivery_time"
+    )]]}
 ]
+
+
+
+
 
 
 # Each item in the list will be shown as an app in the apps page
@@ -150,7 +164,14 @@ has_permission = {
 # Hook on document methods and events
 
 doc_events = {
+    "Lead": {
+        "on_update": "cen_crm_addons.api.crm_permissions.sync_lead_list_fields"
+    },
+    "Opportunity": {
+        "on_update": "cen_crm_addons.api.crm_permissions.sync_opportunity_list_fields"
+    }
 }
+
 
 # Scheduled Tasks
 # ---------------

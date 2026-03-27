@@ -185,6 +185,52 @@ def prospect_has_permission(doc, ptype="read", user=None):
         
     return True
 
+def sync_lead_list_fields(doc, method=None):
+    # 1. Update Assigned To Name (Fetch from ToDo)
+    todo = frappe.get_all("ToDo", 
+        filters={"reference_type": "Lead", "reference_name": doc.name, "status": "Open"},
+        fields=["allocated_to"],
+        order_by="creation desc",
+        limit=1
+    )
+    if todo:
+        doc.custom_assigned_to = todo[0].allocated_to
+    else:
+        doc.custom_assigned_to = ""
+            
+    # 2. Sync WhatsApp Link (Ground truth mobile_no)
+    if doc.mobile_no:
+        phone = "".join(filter(str.isdigit, doc.mobile_no))
+        if phone:
+            doc.custom_wa_chat_link = f"https://wa.me/{phone}"
+    else:
+        doc.custom_wa_chat_link = ""
+
+def sync_opportunity_list_fields(doc, method=None):
+    # 0. Sync mobile_no from lead if blank
+    if not getattr(doc, 'contact_mobile', None) and doc.opportunity_from == "Lead" and doc.party_name:
+        doc.contact_mobile = frappe.get_cached_value("Lead", doc.party_name, "mobile_no")
+
+    # 1. Update Assigned To (Fetch from ToDo)
+    todo = frappe.get_all("ToDo", 
+        filters={"reference_type": "Opportunity", "reference_name": doc.name, "status": "Open"},
+        fields=["allocated_to"],
+        order_by="creation desc",
+        limit=1
+    )
+    if todo:
+        doc.custom_assigned_to = todo[0].allocated_to
+    else:
+        doc.custom_assigned_to = ""
+            
+    # 2. Sync WhatsApp Link (Ground truth contact_mobile)
+    mobile = getattr(doc, 'contact_mobile', None)
+    if mobile:
+        phone = "".join(filter(str.isdigit, mobile))
+        if phone:
+            doc.custom_wa_chat_link = f"https://wa.me/{phone}"
+    else:
+        doc.custom_wa_chat_link = ""
 
 
 
