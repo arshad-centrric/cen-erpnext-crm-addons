@@ -10,7 +10,12 @@ app_license = "mit"
 
 # required_apps = []
 
-fixtures = ["Role Profile", "Role", "Custom DocPerm", {"dt": "Property Setter", "filters": [["doc_type", "in", ("Opportunity", "Lead")]]}]
+fixtures = [
+    "Role Profile", 
+    "Role", 
+    "Custom DocPerm"
+]
+
 
 # Each item in the list will be shown as an app in the apps page
 # add_to_apps_screen = [
@@ -46,10 +51,7 @@ fixtures = ["Role Profile", "Role", "Custom DocPerm", {"dt": "Property Setter", 
 
 # include js in doctype views
 # doctype_js = {"doctype" : "public/js/doctype.js"}
-doctype_list_js = {
-    "Opportunity" : "public/js/opportunity_list.js",
-    "Lead": "public/js/lead_list.js"
-}
+# doctype_list_js = {"doctype" : "public/js/doctype.js"}
 
 # doctype_tree_js = {"doctype" : "public/js/doctype_tree.js"}
 # doctype_calendar_js = {"doctype" : "public/js/doctype_calendar.js"}
@@ -148,13 +150,6 @@ has_permission = {
 # Hook on document methods and events
 
 doc_events = {
-    "Lead": {
-        "on_update": "cen_crm_addons.api.crm_permissions.sync_lead_list_fields"
-    },
-    "Opportunity": {
-        "on_update": "cen_crm_addons.api.crm_permissions.sync_opportunity_list_fields"
-    }
-
 }
 
 # Scheduled Tasks
