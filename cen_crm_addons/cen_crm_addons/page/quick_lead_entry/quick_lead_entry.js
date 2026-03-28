@@ -125,9 +125,16 @@ frappe.pages['quick-lead-entry'].on_page_load = function (wrapper) {
             return;
         }
 
+        // 🔹 Generate WhatsApp Link upfront
+        let formatted_mobile = mobile.replace(/\D/g, '');
+        if (formatted_mobile.length === 10) {
+            formatted_mobile = '91' + formatted_mobile;
+        }
+        let wa_link = `https://wa.me/${formatted_mobile}`;
+
         btn.prop('disabled', true).text(__('Creating...'));
 
-        // 1. Create Lead (Modified: Only mobile_no used here)
+        // 1. Create Lead with Custom Fields
         frappe.call({
             method: "frappe.client.insert",
             args: {
@@ -135,7 +142,9 @@ frappe.pages['quick-lead-entry'].on_page_load = function (wrapper) {
                     doctype: "Lead",
                     first_name: first_name,
                     mobile_no: mobile,
-                    status: "Open"
+                    status: "Open",
+                    custom_assigned_to: assign_to,
+                    custom_wa_chat_link: wa_link
                 }
             },
             callback: function (r) {
@@ -166,7 +175,7 @@ frappe.pages['quick-lead-entry'].on_page_load = function (wrapper) {
                         });
                     }
 
-                    // 3. Assign Lead
+                    // 3. Assign Lead via ToDo (Required for system notifications/sidebar)
                     frappe.call({
                         method: "frappe.desk.form.assign_to.add",
                         args: {
@@ -188,8 +197,10 @@ frappe.pages['quick-lead-entry'].on_page_load = function (wrapper) {
                                 let opportunity_doc = res.message;
                                 opportunity_doc.doctype = "Opportunity"; 
                                 
-                                // Modified: Mapping mobile to contact_mobile explicitly
+                                // Mapping fields explicitly
                                 opportunity_doc.contact_mobile = mobile;
+                                opportunity_doc.custom_assigned_to = assign_to;
+                                opportunity_doc.custom_wa_chat_link = wa_link;
 
                                 frappe.call({
                                     method: "frappe.client.insert",
@@ -200,12 +211,7 @@ frappe.pages['quick-lead-entry'].on_page_load = function (wrapper) {
                                         btn.prop('disabled', false).text(__('Add New'));
                                         if (final_res.message) {
                                             // Show WhatsApp link
-                                            let formatted_mobile = mobile.replace(/\D/g, '');
-                                            if (formatted_mobile.length === 10) {
-                                                formatted_mobile = '91' + formatted_mobile;
-                                            }
-
-                                            $('#whatsapp_link').attr('href', `https://wa.me/${formatted_mobile}`);
+                                            $('#whatsapp_link').attr('href', wa_link);
                                             $('#whatsapp_container').show();
                                         }
                                     }
