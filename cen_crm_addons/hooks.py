@@ -18,11 +18,19 @@ fixtures = [
     {"dt": "Custom Field", "filters": [["fieldname", "in", (
         "custom_assigned_to", 
         "custom_wa_chat_link", 
-        "custom_delivery_detail", 
+        "custom_delivery_detail", # Section Break
+        "custom_delivery_info", # Column Break 1
+        "custom_customer_address", # Column Break 2
         "custom_mode_of_delivery", 
         "custom_delivery_store", 
         "custom_delivery_date", 
-        "custom_delivery_time"
+        "custom_delivery_time",
+        "custom_address_line_1",
+        "custom_address_line_2",
+        "custom_delivery_city",
+        "custom_delivery_state",
+        "custom_pincode",
+        "custom_delivery_country"
     )]]}
 ]
 
@@ -205,9 +213,10 @@ doc_events = {
 # Overriding Methods
 # ------------------------------
 #
-# override_whitelisted_methods = {
-# 	"frappe.desk.doctype.event.event.get_events": "cen_crm_addons.event.get_events"
-# }
+override_whitelisted_methods = {
+    "erpnext.crm.doctype.opportunity.opportunity.make_quotation": "cen_crm_addons.api.quotation_overrides.make_quotation_wrapper"
+}
+
 #
 # each overriding function accepts a `data` argument;
 # generated from the base implementation of the doctype dashboard,

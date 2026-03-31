@@ -207,9 +207,21 @@ def sync_lead_list_fields(doc, method=None):
         doc.custom_wa_chat_link = ""
 
 def sync_opportunity_list_fields(doc, method=None):
-    # 0. Sync mobile_no from lead if blank
-    if not getattr(doc, 'contact_mobile', None) and doc.opportunity_from == "Lead" and doc.party_name:
-        doc.contact_mobile = frappe.get_cached_value("Lead", doc.party_name, "mobile_no")
+    # 0. Sync basic fields from lead if blank
+    if doc.opportunity_from == "Lead" and doc.party_name:
+        lead_data = frappe.get_cached_value("Lead", doc.party_name, ["mobile_no", "city", "state", "country"], as_dict=True)
+        if lead_data:
+            # Sync mobile
+            if not getattr(doc, 'contact_mobile', None):
+                doc.contact_mobile = lead_data.mobile_no
+            
+            # Sync Address fields if blank
+            if not doc.custom_delivery_city:
+                doc.custom_delivery_city = lead_data.city
+            if not doc.custom_delivery_state:
+                doc.custom_delivery_state = lead_data.state
+            if not doc.custom_delivery_country:
+                doc.custom_delivery_country = lead_data.country
 
     # 1. Update Assigned To (Fetch from ToDo)
     todo = frappe.get_all("ToDo", 
@@ -231,6 +243,85 @@ def sync_opportunity_list_fields(doc, method=None):
             doc.custom_wa_chat_link = f"https://wa.me/{phone}"
     else:
         doc.custom_wa_chat_link = ""
+
+    # 3. Create/Update Standard Address (Cross-Doc Sync)
+    if doc.custom_address_line_1 and doc.custom_delivery_city:
+        sync_opportunity_to_address(doc)
+
+def sync_opportunity_to_address(doc):
+    """Creates or updates a standard Address record from Opportunity custom fields."""
+    if not doc.party_name:
+        return
+
+    party_type = doc.opportunity_from
+    party_name = doc.party_name
+
+    # 1. Search for an address already officially linked to this specific Opportunity
+    existing_address = frappe.db.get_value("Dynamic Link", {
+        "link_doctype": "Opportunity",
+        "link_name": doc.name,
+        "parenttype": "Address"
+    }, "parent")
+
+    # 2. If it exists, update it
+    if existing_address:
+        address_doc = frappe.get_doc("Address", existing_address)
+        address_doc.update({
+            "address_line1": doc.custom_address_line_1,
+            "address_line2": doc.custom_address_line_2,
+            "city": doc.custom_delivery_city,
+            "state": doc.custom_delivery_state,
+            "pincode": doc.custom_pincode,
+            "country": doc.custom_delivery_country
+        })
+        address_doc.save(ignore_permissions=True)
+        return
+
+    # 3. If no link exists, check if any Address with this content exists for this Lead/Customer
+    # (Optional: this prevents duplicate addresses if multiple people have the same address)
+    match_by_content = frappe.db.get_value("Address", {
+        "address_line1": doc.custom_address_line_1,
+        "city": doc.custom_delivery_city,
+        "address_type": "Billing"
+    }, "name")
+
+    if match_by_content:
+        address_doc = frappe.get_doc("Address", match_by_content)
+        # Link this new Opportunity to the matched address
+        address_doc.append("links", {
+            "link_doctype": "Opportunity",
+            "link_name": doc.name
+        })
+        address_doc.save(ignore_permissions=True)
+        return
+
+    # 4. If nothing else fits, create a new Address record
+    address_title = frappe.db.get_value(party_type, party_name, "customer_name" if party_type=="Customer" else "lead_name") or party_name
+    
+    new_address = frappe.get_doc({
+        "doctype": "Address",
+        "address_title": address_title,
+        "address_type": "Billing",
+        "address_line1": doc.custom_address_line_1,
+        "address_line2": doc.custom_address_line_2,
+        "city": doc.custom_delivery_city,
+        "state": doc.custom_delivery_state,
+        "pincode": doc.custom_pincode,
+        "country": doc.custom_delivery_country,
+        "links": [
+            {
+                "link_doctype": party_type,
+                "link_name": party_name
+            },
+            {
+                "link_doctype": "Opportunity",
+                "link_name": doc.name
+            }
+        ]
+    })
+    new_address.insert(ignore_permissions=True)
+
+
 
 
 
