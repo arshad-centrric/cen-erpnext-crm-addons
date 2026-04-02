@@ -14,7 +14,7 @@ fixtures = [
     "Role Profile", 
     "Role", 
     "Custom DocPerm",
-    {"dt": "Property Setter", "filters": [["doc_type", "in", ("Opportunity", "Lead", "Opportunity Item")]]},
+    {"dt": "Property Setter", "filters": [["doc_type", "in", ("Opportunity", "Lead", "Opportunity Item", "Item")]]},
     {"dt": "Custom Field", "filters": [["fieldname", "in", (
         "custom_assigned_to", 
         "custom_wa_chat_link", 
@@ -79,7 +79,8 @@ fixtures = [
 # page_js = {"page" : "public/js/file.js"}
 
 doctype_js = {
-    "Opportunity": "public/js/opportunity.js"
+    "Opportunity": "public/js/opportunity.js",
+    "Item": "public/js/item.js"
 }
 doctype_list_js = {
 	"Lead": "public/js/crm_list_formatters.js",
@@ -188,6 +189,9 @@ doc_events = {
     },
     "Opportunity": {
         "on_update": "cen_crm_addons.api.crm_permissions.sync_opportunity_list_fields"
+    },
+    "Product Bundle": {
+        "on_update": "cen_crm_addons.api.crm_bundle.sync_parent_is_bundle"
     }
 }
 

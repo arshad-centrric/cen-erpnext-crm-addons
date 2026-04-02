@@ -1,4 +1,18 @@
 frappe.ui.form.on('Opportunity Item', {
+    item_code: function(frm, cdt, cdn) {
+        let row = frappe.get_doc(cdt, cdn);
+        if (row.item_code) {
+            // Fetch rate from Item Price automatically based on Standard Selling
+            frappe.db.get_value("Item Price", {
+                item_code: row.item_code,
+                price_list: "Standard Selling"
+            }, "price_list_rate").then(r => {
+                if (r && r.message && r.message.price_list_rate !== undefined) {
+                    frappe.model.set_value(cdt, cdn, "rate", r.message.price_list_rate);
+                }
+            });
+        }
+    },
     custom_view_bundle: function(frm, cdt, cdn) {
         let row = frappe.get_doc(cdt, cdn);
         // Ensure it's marked as a bundle either by Checkbox int (1) or string ("1")
