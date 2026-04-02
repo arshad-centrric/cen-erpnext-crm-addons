@@ -14,7 +14,7 @@ fixtures = [
     "Role Profile", 
     "Role", 
     "Custom DocPerm",
-    {"dt": "Property Setter", "filters": [["doc_type", "in", ("Opportunity", "Lead")]]},
+    {"dt": "Property Setter", "filters": [["doc_type", "in", ("Opportunity", "Lead", "Opportunity Item")]]},
     {"dt": "Custom Field", "filters": [["fieldname", "in", (
         "custom_assigned_to", 
         "custom_wa_chat_link", 
@@ -30,7 +30,14 @@ fixtures = [
         "custom_delivery_city",
         "custom_delivery_state",
         "custom_pincode",
-        "custom_delivery_country"
+        "custom_delivery_country",
+
+        #Opportunity Item
+        "custom_view_bundle",
+        "custom_is_bundle",
+
+        #Item 
+        "custom_is_product_bundle"
     )]]}
 ]
 
@@ -71,8 +78,9 @@ fixtures = [
 # include js in page
 # page_js = {"page" : "public/js/file.js"}
 
-# include js in doctype views
-# doctype_js = {"doctype" : "public/js/doctype.js"}
+doctype_js = {
+    "Opportunity": "public/js/opportunity.js"
+}
 doctype_list_js = {
 	"Lead": "public/js/crm_list_formatters.js",
 	"Opportunity": "public/js/crm_list_formatters.js"
