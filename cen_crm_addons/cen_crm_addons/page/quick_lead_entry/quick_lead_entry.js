@@ -29,11 +29,11 @@ frappe.pages['quick-lead-entry'].on_page_load = function (wrapper) {
 
     // UI Layout
     $(wrapper).find('.layout-main-section').html(`
-        <div class="container" style="max-width: 900px; margin-top: 20px;">
-            <div class="row">
-                <div class="col-md-6">
-                    <div style="padding-right: 15px;">
-                        <h5 class="text-muted">Mandatory Details</h5>
+        <div class="container" style="max-width: 600px; margin-top: 20px;">
+            <div class="row justify-content-center">
+                <div class="col-md-12">
+                    <div style="padding: 15px; background-color: var(--bg-color); border-radius: 8px; border: 1px solid var(--border-color);">
+                        <h5 class="text-muted" style="margin-bottom: 20px;">Main Details</h5>
                         <div class="form-group">
                             <label class="control-label">Name <span class="text-danger">*</span></label>
                             <input type="text" id="first_name" class="form-control" tabindex="1">
@@ -49,43 +49,15 @@ frappe.pages['quick-lead-entry'].on_page_load = function (wrapper) {
                         </div>
 
                         <div style="margin-top: 30px; text-align: center;">
-                            <button class="btn btn-primary" id="create_all" style="min-width: 300px; font-weight: bold; height: 40px;">
+                            <button class="btn btn-primary" id="create_all" style="width: 100%; font-weight: bold; height: 40px;">
                                 Create
                             </button>
                             
                             <div id="whatsapp_container" style="margin-top: 20px; display: none;">
-                                <a id="whatsapp_link" target="_blank" class="btn btn-outline-success">
+                                <a id="whatsapp_link" target="_blank" class="btn btn-outline-success" style="width: 100%;">
                                     <i class="fa fa-whatsapp"></i> Chat on WhatsApp
                                 </a>
                             </div>
-                        </div>
-                    </div>
-                </div>
-
-                <div class="col-md-6">
-                    <div style="padding-left: 15px;">
-                        <h5 class="text-muted">Other Details</h5>
-                        <div class="form-group">
-                            <label class="control-label">Address</label>
-                            <input type="text" id="address_line1" class="form-control" tabindex="4">
-                        </div>
-
-                        <div class="form-group">
-                            <label class="control-label">City</label>
-                            <input type="text" id="city" class="form-control" tabindex="5">
-                        </div>
-
-                        <div class="form-group">
-                            <label class="control-label">State</label>
-                            <select id="state" class="form-control" tabindex="6">
-                                <option value="">Select State</option>
-                                ${state_options}
-                            </select>
-                        </div>
-
-                        <div class="form-group">
-                            <label class="control-label">Pincode</label>
-                            <input type="text" id="pincode" class="form-control" tabindex="7">
                         </div>
                     </div>
                 </div>
@@ -150,32 +122,8 @@ frappe.pages['quick-lead-entry'].on_page_load = function (wrapper) {
             callback: function (r) {
                 if (r.message) {
                     let lead_name = r.message.name;
-                    let address_line1 = $('#address_line1').val();
-                    let city = $('#city').val();
-                    let state = $('#state').val();
-                    let pincode = $('#pincode').val();
 
-                    // 2. Create Address only if some info is provided
-                    if (address_line1 || city) {
-                        frappe.call({
-                            method: "frappe.client.insert",
-                            args: {
-                                doc: {
-                                    doctype: "Address",
-                                    address_line1: address_line1 || "Not Provided",
-                                    city: city || "Not Provided",
-                                    state: state,
-                                    pincode: pincode,
-                                    links: [{
-                                        link_doctype: "Lead",
-                                        link_name: lead_name
-                                    }]
-                                }
-                            }
-                        });
-                    }
-
-                    // 3. Assign Lead via ToDo (Required for system notifications/sidebar)
+                    // 2. Assign Lead via ToDo (Required for system notifications/sidebar)
                     frappe.call({
                         method: "frappe.desk.form.assign_to.add",
                         args: {
