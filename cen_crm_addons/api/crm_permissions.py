@@ -196,7 +196,10 @@ def sync_lead_list_fields(doc, method=None):
     if todo:
         doc.custom_assigned_to = todo[0].allocated_to
     else:
-        doc.custom_assigned_to = ""
+        # Only clear if it was previously set in the database (prevents clearing during first insert)
+        if doc.get_db_value("custom_assigned_to"):
+            doc.custom_assigned_to = ""
+
             
     # 2. Sync WhatsApp Link (Ground truth mobile_no)
     if doc.mobile_no:
@@ -233,7 +236,9 @@ def sync_opportunity_list_fields(doc, method=None):
     if todo:
         doc.custom_assigned_to = todo[0].allocated_to
     else:
-        doc.custom_assigned_to = ""
+        # Only clear if it was previously set in the database (prevents clearing during first insert)
+        if doc.get_db_value("custom_assigned_to"):
+            doc.custom_assigned_to = ""
             
     # 2. Sync WhatsApp Link (Ground truth contact_mobile)
     mobile = getattr(doc, 'contact_mobile', None)
