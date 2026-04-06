@@ -14,7 +14,7 @@ fixtures = [
     "Role Profile", 
     "Role", 
     "Custom DocPerm",
-    {"dt": "Property Setter", "filters": [["doc_type", "in", ("Opportunity", "Lead", "Opportunity Item", "Item")]]},
+    {"dt": "Property Setter", "filters": [["doc_type", "in", ("Opportunity", "Lead", "Opportunity Item", "Item", "Payment Entry")]]},
     {"dt": "Custom Field", "filters": [["fieldname", "in", (
         "custom_assigned_to", 
         "custom_wa_chat_link", 
