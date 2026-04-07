@@ -1,0 +1,66 @@
+<div class="delivery-dashboard-wrapper" style="padding: 15px; background-color: #f8f9fa; min-height: 100vh;">
+    <!-- Search Header -->
+    <div class="search-container" style="margin-bottom: 25px; text-align: center;">
+        <div class="input-group" style="max-width: 500px; margin: 0 auto;">
+            <input type="text" id="order_search" class="form-control" placeholder="Scan or Type Sales Order ID..." 
+                   style="height: 50px; font-size: 18px; border-radius: 25px 0 0 25px; padding-left: 20px; border: 2px solid #ddd;">
+            <div class="input-group-append">
+                <button class="btn btn-primary" id="btn_search" style="border-radius: 0 25px 25px 0; width: 80px;">
+                    <i class="fa fa-search"></i>
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Details Card (Hidden by default) -->
+    <div id="order_details_card" class="card" style="display: none; max-width: 600px; margin: 0 auto; border-radius: 12px; box-shadow: 0 4px 15px rgba(0,0,0,0.1); border: none;">
+        <div class="card-body" style="padding: 25px;">
+            <div class="d-flex justify-content-between align-items-center mb-4">
+                <h4 id="display_order_id" style="margin: 0; font-weight: bold; color: #333;"></h4>
+                <div id="payment_badge" class="badge" style="padding: 8px 15px; font-size: 14px; border-radius: 20px;"></div>
+            </div>
+
+            <div class="info-section" style="margin-bottom: 30px;">
+                <div class="row mb-2">
+                    <div class="col-5 text-muted">Customer:</div>
+                    <div class="col-7 font-weight-bold" id="display_customer"></div>
+                </div>
+                <div class="row mb-2">
+                    <div class="col-5 text-muted">Phone:</div>
+                    <div class="col-7" id="display_phone"></div>
+                </div>
+                <hr>
+                <div class="row mb-2">
+                    <div class="col-5 text-muted">Total Amount:</div>
+                    <div class="col-7" id="display_total" style="font-size: 18px;"></div>
+                </div>
+                <div class="row mb-2">
+                    <div class="col-5 text-muted">Paid Amount:</div>
+                    <div class="col-7 text-success" id="display_paid"></div>
+                </div>
+                <div class="row" style="margin-top: 15px; font-size: 20px; font-weight: bold;">
+                    <div class="col-5">Outstanding:</div>
+                    <div class="col-7 text-danger" id="display_outstanding"></div>
+                </div>
+            </div>
+
+            <!-- Action Buttons -->
+            <div class="action-buttons">
+                <button class="btn btn-primary btn-lg btn-block mb-3" id="btn_collect_payment" style="border-radius: 8px; font-weight: bold; padding: 12px;">
+                    <i class="fa fa-money mr-2"></i> Collect Payment
+                </button>
+                <button class="btn btn-success btn-lg btn-block" id="btn_complete_delivery" disabled style="border-radius: 8px; font-weight: bold; padding: 12px;">
+                    <i class="fa fa-truck mr-2"></i> Complete Delivery
+                </button>
+            </div>
+            
+            <div id="delivery_status_msg" class="text-center mt-3 text-muted" style="font-style: italic;"></div>
+        </div>
+    </div>
+    
+    <!-- Empty State -->
+    <div id="empty_state" class="text-center" style="margin-top: 50px; color: #999;">
+        <i class="fa fa-barcode" style="font-size: 80px; display: block; margin-bottom: 20px; opacity: 0.3;"></i>
+        <p style="font-size: 18px;">Please scan the Pick List to begin.</p>
+    </div>
+</div>

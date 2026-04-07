@@ -37,7 +37,10 @@ fixtures = [
         "custom_is_bundle",
 
         #Item 
-        "custom_is_product_bundle"
+        "custom_is_product_bundle",
+
+        # Delivery & Payment
+        "custom_payment_status"
     )]]}
 ]
 
@@ -192,6 +195,13 @@ doc_events = {
     },
     "Product Bundle": {
         "on_update": "cen_crm_addons.api.crm_bundle.sync_parent_is_bundle"
+    },
+    "Sales Order": {
+        "on_update": "cen_crm_addons.api.payment_logic.on_sales_order_update"
+    },
+    "Payment Entry": {
+        "on_submit": "cen_crm_addons.api.payment_logic.on_payment_entry_update",
+        "on_cancel": "cen_crm_addons.api.payment_logic.on_payment_entry_update"
     }
 }
 
