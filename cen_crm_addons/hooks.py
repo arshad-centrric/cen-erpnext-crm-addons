@@ -37,7 +37,10 @@ fixtures = [
         "custom_is_bundle",
 
         #Item 
+        "custom_crm_details_tab",
         "custom_is_product_bundle",
+        "custom_is_customized_bundle",
+        "custom_original_bundle_item",
 
         # Delivery & Payment
         "custom_payment_status",
@@ -167,7 +170,8 @@ doctype_list_js = {
 permission_query_conditions = {
 	"Lead": "cen_crm_addons.api.crm_permissions.lead_query",
 	"Opportunity": "cen_crm_addons.api.crm_permissions.opportunity_query",
-	"Prospect": "cen_crm_addons.api.crm_permissions.prospect_query"
+	"Prospect": "cen_crm_addons.api.crm_permissions.prospect_query",
+	"Item": "cen_crm_addons.api.crm_permissions.item_query"
 }
 
 has_permission = {
