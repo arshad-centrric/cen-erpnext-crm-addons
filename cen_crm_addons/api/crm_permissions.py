@@ -326,7 +326,8 @@ def sync_opportunity_to_address(doc):
     })
     new_address.insert(ignore_permissions=True)
 
-
-
-
-
+def item_query(user):
+    # Filter out customized/one-off items from standard searches
+    if frappe.db.has_column("Item", "custom_is_customized_bundle"):
+        return "`tabItem`.custom_is_customized_bundle = 0 OR `tabItem`.custom_is_customized_bundle IS NULL"
+    return ""
