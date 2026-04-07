@@ -113,21 +113,22 @@ frappe.pages['delivery_dashboard'].on_page_load = function(wrapper) {
         }
     }
 
-    // 6. Action: Collect Payment (Redirect to PE)
+    // 6. Action: Collect Payment (Deep Server-Side Mapping)
     $wrapper.find('#btn_collect_payment').click(function() {
         if (!current_order) return;
         
-        let outstanding = current_order.grand_total - current_order.advance_paid;
-        
-        frappe.set_route('Form', 'Payment Entry', 'new-payment-entry-1', {
-            payment_type: 'Receive',
-            party_type: 'Customer',
-            party: current_order.customer,
-            received_amount: outstanding,
-            target_paid_amount: outstanding,
-            dt: 'Sales Order',
-            dn: current_order.name,
-            mode_of_payment: 'UPI'
+        frappe.call({
+            method: "erpnext.accounts.doctype.payment_entry.payment_entry.get_payment_entry",
+            args: {
+                dt: "Sales Order",
+                dn: current_order.name
+            },
+            callback: function(r) {
+                if (r.message) {
+                    var doc = frappe.model.sync(r.message);
+                    frappe.set_route("Form", doc[0].doctype, doc[0].name);
+                }
+            }
         });
     });
 

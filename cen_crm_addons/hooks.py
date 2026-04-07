@@ -40,7 +40,8 @@ fixtures = [
         "custom_is_product_bundle",
 
         # Delivery & Payment
-        "custom_payment_status"
+        "custom_payment_status",
+        "custom_payment_screenshot"
     )]]}
 ]
 
@@ -83,7 +84,8 @@ fixtures = [
 
 doctype_js = {
     "Opportunity": "public/js/opportunity.js",
-    "Item": "public/js/item.js"
+    "Item": "public/js/item.js",
+    "Payment Entry": "public/js/payment_entry.js"
 }
 doctype_list_js = {
 	"Lead": "public/js/crm_list_formatters.js",
@@ -200,6 +202,7 @@ doc_events = {
         "on_update": "cen_crm_addons.api.payment_logic.on_sales_order_update"
     },
     "Payment Entry": {
+        "validate": "cen_crm_addons.api.payment_logic.validate_payment_screenshot",
         "on_submit": "cen_crm_addons.api.payment_logic.on_payment_entry_update",
         "on_cancel": "cen_crm_addons.api.payment_logic.on_payment_entry_update"
     }
