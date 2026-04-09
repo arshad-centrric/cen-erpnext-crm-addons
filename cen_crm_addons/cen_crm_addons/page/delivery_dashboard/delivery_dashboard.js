@@ -23,6 +23,7 @@ frappe.pages['delivery_dashboard'].on_page_load = function(wrapper) {
     let $wrapper = $(wrapper);
     let search_input = $wrapper.find('#order_search');
     let search_btn = $wrapper.find('#btn_search');
+    let btn_scan = $wrapper.find('#btn_scan');
     let details_card = $wrapper.find('#order_details_card');
     let empty_state = $wrapper.find('#empty_state');
     
@@ -45,6 +46,55 @@ frappe.pages['delivery_dashboard'].on_page_load = function(wrapper) {
         let order_id = search_input.val().trim();
         if (order_id) {
             fetch_order_details(order_id);
+        }
+    });
+
+    // QR Scan Logic (Enhanced Diagnostics)
+    $wrapper.on('click', '#btn_scan', function() {
+        console.log("Scanner button debug: Attempting to open...");
+        
+        // 1. Check for HTTPS (Required for Camera)
+        if (!window.isSecureContext) {
+            frappe.msgprint({
+                title: __('Security Restriction'),
+                message: __('Camera access is only allowed on <b>HTTPS</b> connections. Please use a secure URL.'),
+                indicator: 'red'
+            });
+            return;
+        }
+
+        frappe.show_alert({message: __('Initializing Scanner...'), indicator: 'blue'});
+
+        // 2. Load Scanner Utility if not present
+        if (!frappe.ui.Scanner) {
+            console.warn("frappe.ui.Scanner not found. Attempting to load...");
+            // Manual check for some known library names
+            if (typeof Html5Qrcode === "undefined") {
+                frappe.msgprint(__('Scanner library (Html5Qrcode) is not loaded on this page.'));
+                return;
+            }
+        }
+        
+        try {
+            const scanner = new frappe.ui.Scanner({
+                dialog: true,
+                multiple: false,
+                on_scan: (data) => {
+                    if (data && data.result) {
+                        let sc_value = data.result;
+                        search_input.val(sc_value);
+                        fetch_order_details(sc_value);
+                    }
+                }
+            });
+            console.log("Scanner instance created successfully");
+        } catch (err) {
+            console.error("Scanner Error:", err);
+            frappe.msgprint({
+                title: __('Camera Error'),
+                message: __('Could not initialize camera: ') + err.message,
+                indicator: 'red'
+            });
         }
     });
 
@@ -126,6 +176,7 @@ frappe.pages['delivery_dashboard'].on_page_load = function(wrapper) {
             callback: function(r) {
                 if (r.message) {
                     var doc = frappe.model.sync(r.message);
+                    frappe.route_options = {"from_delivery_dashboard": 1};
                     frappe.set_route("Form", doc[0].doctype, doc[0].name);
                 }
             }

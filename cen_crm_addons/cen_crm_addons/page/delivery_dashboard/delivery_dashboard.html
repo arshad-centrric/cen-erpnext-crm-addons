@@ -1,14 +1,20 @@
 <div class="delivery-dashboard-wrapper" style="padding: 15px; background-color: #f8f9fa; min-height: 100vh;">
     <!-- Search Header -->
     <div class="search-container" style="margin-bottom: 25px; text-align: center;">
-        <div class="input-group" style="max-width: 500px; margin: 0 auto;">
-            <input type="text" id="order_search" class="form-control" placeholder="Scan or Type Sales Order ID..." 
-                   style="height: 50px; font-size: 18px; border-radius: 25px 0 0 25px; padding-left: 20px; border: 2px solid #ddd;">
-            <div class="input-group-append">
-                <button class="btn btn-primary" id="btn_search" style="border-radius: 0 25px 25px 0; width: 80px;">
-                    <i class="fa fa-search"></i>
-                </button>
+        <div class="d-flex align-items-center justify-content-center" style="max-width: 600px; margin: 0 auto;">
+            <div class="input-group" style="flex: 1;">
+                <input type="text" id="order_search" class="form-control" placeholder="Scan or Type Sales Order ID..." 
+                       style="height: 50px; font-size: 18px; border-radius: 25px 0 0 25px; padding-left: 20px; border: 2px solid #ddd; border-right: none;">
+                <div class="input-group-append">
+                    <button class="btn btn-primary" id="btn_search" style="border-radius: 0 25px 25px 0; width: 80px; height: 50px;">
+                        <i class="fa fa-search"></i>
+                    </button>
+                </div>
             </div>
+            
+            <button class="btn btn-secondary ml-3" id="btn_scan" style="height: 50px; width: 50px; border-radius: 50%; background: #fff; color: #666; border: 2px solid #ddd; display: flex; align-items: center; justify-content: center; box-shadow: 0 2px 5px rgba(0,0,0,0.1); transition: all 0.2s; cursor: pointer; position: relative; z-index: 100;">
+                <i class="fa fa-qrcode" style="font-size: 24px;"></i>
+            </button>
         </div>
     </div>
 
