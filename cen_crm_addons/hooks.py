@@ -14,7 +14,7 @@ fixtures = [
     "Role Profile", 
     "Role", 
     "Custom DocPerm",
-    {"dt": "Property Setter", "filters": [["doc_type", "in", ("Opportunity", "Lead", "Opportunity Item", "Item", "Payment Entry")]]},
+    {"dt": "Property Setter", "filters": [["doc_type", "in", ("Opportunity", "Lead", "Opportunity Item", "Item", "Payment Entry", "Sales Order")]]},
     {"dt": "Custom Field", "filters": [["fieldname", "in", (
         "custom_assigned_to", 
         "custom_wa_chat_link", 
@@ -44,6 +44,7 @@ fixtures = [
 
         # Delivery & Payment
         "custom_payment_status",
+        "custom_picking_status",
         "custom_payment_screenshot"
     )]]}
 ]
@@ -157,6 +158,11 @@ doctype_list_js = {
 # before_app_uninstall = "cen_crm_addons.utils.before_app_uninstall"
 # after_app_uninstall = "cen_crm_addons.utils.after_app_uninstall"
 
+after_migrate = [
+    "cen_crm_addons.api.naming_series_setup.setup_customer_naming",
+    "cen_crm_addons.api.picking_slip_setup.execute"
+]
+
 # Desk Notifications
 # ------------------
 # See frappe.core.notifications.get_notification_config
@@ -209,6 +215,10 @@ doc_events = {
         "validate": "cen_crm_addons.api.payment_logic.validate_payment_screenshot",
         "on_submit": "cen_crm_addons.api.payment_logic.on_payment_entry_update",
         "on_cancel": "cen_crm_addons.api.payment_logic.on_payment_entry_update"
+    },
+    "Delivery Note": {
+        "on_submit": "cen_crm_addons.api.payment_logic.on_delivery_note_update",
+        "on_cancel": "cen_crm_addons.api.payment_logic.on_delivery_note_update"
     }
 }
 
@@ -243,7 +253,8 @@ doc_events = {
 # ------------------------------
 #
 override_whitelisted_methods = {
-    "erpnext.crm.doctype.opportunity.opportunity.make_quotation": "cen_crm_addons.api.quotation_overrides.make_quotation_wrapper"
+    "erpnext.crm.doctype.opportunity.opportunity.make_quotation": "cen_crm_addons.api.quotation_overrides.make_quotation_wrapper",
+    "erpnext.selling.doctype.quotation.quotation.make_sales_order": "cen_crm_addons.api.sales_order_hooks.make_sales_order_wrapper"
 }
 
 #

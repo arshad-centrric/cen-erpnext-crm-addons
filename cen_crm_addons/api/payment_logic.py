@@ -15,6 +15,12 @@ def sync_payment_status(so_name):
     # Update only the specific field to avoid triggering unnecessary hooks
     so.db_set("custom_payment_status", status, update_modified=False)
 
+    # Auto-Close Logic (Bypassing "To Bill" trap)
+    if so.grand_total > 0 and so.advance_paid >= so.grand_total and so.per_delivered >= 100:
+        if so.status not in ("Closed", "Cancelled"):
+            so.db_set("status", "Closed", update_modified=True)
+            so.add_comment("Info", "Automatically closed: Fully paid and delivered.")
+
 def on_payment_entry_update(doc, method):
     """Hook for Payment Entry to update linked Sales Orders."""
     for ref in getattr(doc, "references", []):
@@ -73,3 +79,9 @@ def sync_screenshot_to_sales_order(doc):
 def on_sales_order_update(doc, method):
     """Ensure status is correct whenever SO is saved."""
     sync_payment_status(doc.name)
+
+def on_delivery_note_update(doc, method):
+    """Hook for Delivery Note to trigger status check on linked Sales Orders."""
+    for item in doc.items:
+        if getattr(item, "against_sales_order", None):
+            sync_payment_status(item.against_sales_order)
