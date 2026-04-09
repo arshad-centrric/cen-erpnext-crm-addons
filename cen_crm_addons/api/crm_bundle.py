@@ -64,6 +64,8 @@ def create_customized_bundle(parent_item_code, new_items_json):
     # Create new Item
     new_item = frappe.new_doc("Item")
     new_item.item_code = new_item_code
+    new_item.naming_series = "" # Ignore naming series
+    new_item.name = new_item_code # Force ID
     new_item.item_name = f"{parent_item.item_name} (Customized-{seq:02d})"
     new_item.description = f"Customized from Original Bundle: {parent_item_code}"
     new_item.item_group = group_name

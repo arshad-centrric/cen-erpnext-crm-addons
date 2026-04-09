@@ -5,7 +5,7 @@
    "label": "CRM Sales Performance"
   }
  ],
- "content": "[{\"id\":\"chart_perf\",\"type\":\"chart\",\"data\":{\"chart_name\":\"CRM Sales Performance\",\"col\":12}},{\"id\":\"h_sales\",\"type\":\"header\",\"data\":{\"text\":\"<span class=\\\"\\\\&quot;h4\\\\&quot;\\\"><b>Your Pipeline</b></span>\",\"col\":12}},{\"id\":\"8b8AbwBbEx\",\"type\":\"shortcut\",\"data\":{\"shortcut_name\":\"Create Lead\",\"col\":3}},{\"id\":\"s_lead\",\"type\":\"shortcut\",\"data\":{\"shortcut_name\":\"Lead\",\"col\":3}},{\"id\":\"s_opp\",\"type\":\"shortcut\",\"data\":{\"shortcut_name\":\"Opportunity\",\"col\":3}},{\"id\":\"s_perf\",\"type\":\"shortcut\",\"data\":{\"shortcut_name\":\"Sales Performance\",\"col\":3}},{\"id\":\"h_trans\",\"type\":\"header\",\"data\":{\"text\":\"<span class=\\\"\\\\&quot;h4\\\\&quot;\\\"><b>Transactions</b></span>\",\"col\":12}},{\"id\":\"s_quote\",\"type\":\"shortcut\",\"data\":{\"shortcut_name\":\"Quotation\",\"col\":4}},{\"id\":\"s_so\",\"type\":\"shortcut\",\"data\":{\"shortcut_name\":\"Sales Order\",\"col\":4}},{\"id\":\"s_si\",\"type\":\"shortcut\",\"data\":{\"shortcut_name\":\"Sales Invoice\",\"col\":4}},{\"id\":\"h_mast\",\"type\":\"header\",\"data\":{\"text\":\"<span class=\\\"\\\\&quot;h4\\\\&quot;\\\"><b>Masters</b></span>\",\"col\":12}},{\"id\":\"s_cust\",\"type\":\"shortcut\",\"data\":{\"shortcut_name\":\"Customer\",\"col\":4}},{\"id\":\"s_item\",\"type\":\"shortcut\",\"data\":{\"shortcut_name\":\"Item\",\"col\":4}},{\"id\":\"s_dash\",\"type\":\"shortcut\",\"data\":{\"shortcut_name\":\"Dashboard\",\"col\":4}}]",
+ "content": "[{\"id\":\"chart_perf\",\"type\":\"chart\",\"data\":{\"chart_name\":\"CRM Sales Performance\",\"col\":12}},{\"id\":\"h_sales\",\"type\":\"header\",\"data\":{\"text\":\"<span class=\\\"\\\\&quot;h4\\\\&quot;\\\"><b>Your Pipeline</b></span>\",\"col\":12}},{\"id\":\"8b8AbwBbEx\",\"type\":\"shortcut\",\"data\":{\"shortcut_name\":\"Create Lead\",\"col\":3}},{\"id\":\"0ENkPCOyo-\",\"type\":\"shortcut\",\"data\":{\"shortcut_name\":\"Submit Delivery \",\"col\":3}},{\"id\":\"s_lead\",\"type\":\"shortcut\",\"data\":{\"shortcut_name\":\"Lead\",\"col\":3}},{\"id\":\"s_opp\",\"type\":\"shortcut\",\"data\":{\"shortcut_name\":\"Opportunity\",\"col\":3}},{\"id\":\"s_perf\",\"type\":\"shortcut\",\"data\":{\"shortcut_name\":\"Sales Performance\",\"col\":3}},{\"id\":\"h_trans\",\"type\":\"header\",\"data\":{\"text\":\"<span class=\\\"\\\\&quot;h4\\\\&quot;\\\"><b>Transactions</b></span>\",\"col\":12}},{\"id\":\"s_quote\",\"type\":\"shortcut\",\"data\":{\"shortcut_name\":\"Quotation\",\"col\":4}},{\"id\":\"s_so\",\"type\":\"shortcut\",\"data\":{\"shortcut_name\":\"Sales Order\",\"col\":4}},{\"id\":\"s_si\",\"type\":\"shortcut\",\"data\":{\"shortcut_name\":\"Sales Invoice\",\"col\":4}},{\"id\":\"h_mast\",\"type\":\"header\",\"data\":{\"text\":\"<span class=\\\"\\\\&quot;h4\\\\&quot;\\\"><b>Masters</b></span>\",\"col\":12}},{\"id\":\"s_cust\",\"type\":\"shortcut\",\"data\":{\"shortcut_name\":\"Customer\",\"col\":4}},{\"id\":\"s_item\",\"type\":\"shortcut\",\"data\":{\"shortcut_name\":\"Item\",\"col\":4}},{\"id\":\"s_dash\",\"type\":\"shortcut\",\"data\":{\"shortcut_name\":\"Dashboard\",\"col\":4}}]",
  "creation": "2026-03-25 11:03:24.601198",
  "custom_blocks": [],
  "docstatus": 0,
@@ -17,7 +17,7 @@
  "is_hidden": 0,
  "label": "Cen CRM Portal",
  "links": [],
- "modified": "2026-04-04 11:37:34.000000",
+ "modified": "2026-04-08 11:44:10.827132",
  "modified_by": "Administrator",
  "module": "Cen Crm Addons",
  "name": "Cen CRM Portal",
@@ -33,6 +33,13 @@
    "doc_view": "List",
    "label": "Create Lead",
    "link_to": "quick-lead-entry",
+   "type": "Page"
+  },
+  {
+   "color": "Grey",
+   "doc_view": "List",
+   "label": "Submit Delivery ",
+   "link_to": "delivery_dashboard",
    "type": "Page"
   },
   {
@@ -54,6 +61,7 @@
    "doc_view": "",
    "label": "Sales Performance",
    "link_to": "CRM Performance",
+   "report_ref_doctype": "Lead",
    "type": "Report"
   },
   {
