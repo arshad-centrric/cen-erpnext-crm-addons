@@ -28,6 +28,7 @@ fixtures = [
     {"dt": "Property Setter", "filters": [["doc_type", "in", ("Opportunity", "Lead", "Opportunity Item", "Item", "Payment Entry", "Sales Order", "Quotation")]]},
     {"dt": "Custom Field", "filters": [["fieldname", "in", (
         "custom_assigned_to", 
+        "custom_assigned_full_name",
         "custom_wa_chat_link", 
         "custom_delivery_detail", # Section Break
         "custom_delivery_info", # Column Break 1
