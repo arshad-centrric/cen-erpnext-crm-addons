@@ -25,7 +25,12 @@ frappe.query_reports["CRM Performance"] = {
 			"fieldname": "sales_person",
 			"label": __("Sales Person"),
 			"fieldtype": "Link",
-			"options": "User"
+			"options": "User",
+			"get_query": function() {
+				return {
+					query: "cen_crm_addons.cen_crm_addons.report.crm_performance.crm_performance.get_sales_users"
+				};
+			}
 		}
 	]
 };
