@@ -94,9 +94,50 @@ def setup_item_naming():
     frappe.db.commit()
     frappe.clear_cache(doctype="Item")
 
+def setup_sales_order_naming():
+    """
+    Sets Sales Order naming series to SO-.YY.-
+    """
+    new_option = "SO-.YY.-"
+    
+    frappe.clear_cache(doctype="Sales Order")
+    ns_field = frappe.get_meta("Sales Order").get_field("naming_series")
+    
+    if ns_field:
+        current_options = ns_field.options or ""
+        options_list = [opt.strip() for opt in current_options.split("\n") if opt.strip()]
+        
+        if new_option not in options_list:
+            # Put SO-.YY.- at the top as first option
+            options_list.insert(0, new_option)
+            updated_options = "\n".join(options_list)
+            
+            make_property_setter(
+                doctype="Sales Order", 
+                fieldname="naming_series", 
+                property="options", 
+                value=updated_options, 
+                property_type="Text"
+            )
+            frappe.db.commit()
+            frappe.clear_cache(doctype="Sales Order")
+            
+    # Set Default Naming Series
+    make_property_setter(
+        doctype="Sales Order", 
+        fieldname="naming_series", 
+        property="default", 
+        value=new_option, 
+        property_type="Text"
+    )
+    
+    frappe.db.commit()
+    frappe.clear_cache(doctype="Sales Order")
+
 def setup_customer_naming():
     """
     Enforces Customer & Item naming by Naming Series and sets defaults.
     """
     setup_customer()
     setup_item_naming()
+    setup_sales_order_naming()
