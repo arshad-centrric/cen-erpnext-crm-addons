@@ -13,32 +13,6 @@ def sync_parent_is_bundle(doc, method=None):
 def create_customized_bundle(parent_item_code, new_items_json):
     items_list = json.loads(new_items_json)
     
-    # Ensure Custom Field exists to prevent OperationalError
-    if not frappe.db.exists("Custom Field", "Item-custom_is_customized_bundle"):
-        frappe.get_doc({
-            "doctype": "Custom Field",
-            "dt": "Item",
-            "fieldname": "custom_is_customized_bundle",
-            "label": "Is Customized Bundle",
-            "fieldtype": "Check",
-            "default": "0",
-            "hidden": 1
-        }).insert(ignore_permissions=True)
-        
-    if not frappe.db.exists("Custom Field", "Item-custom_original_bundle_item"):
-        frappe.get_doc({
-            "doctype": "Custom Field",
-            "dt": "Item",
-            "fieldname": "custom_original_bundle_item",
-            "label": "Original Bundle Item",
-            "fieldtype": "Link",
-            "options": "Item",
-            "depends_on": "eval:doc.custom_is_customized_bundle==1",
-            "read_only": 1
-        }).insert(ignore_permissions=True)
-        
-        frappe.db.commit()
-        
     # Ensure Item Group exists
     group_name = "Modified Bundles"
     if not frappe.db.exists("Item Group", group_name):
@@ -83,6 +57,8 @@ def create_customized_bundle(parent_item_code, new_items_json):
     # Create Product Bundle
     bundle = frappe.new_doc("Product Bundle")
     bundle.new_item_code = generated_id
+    bundle.custom_is_customized_bundle = 1
+    bundle.custom_original_bundle_item = parent_item_code
     bundle.description = f"Customized bundle derived from {parent_item_code}"
     
     for item in items_list:

@@ -10,11 +10,22 @@ app_license = "mit"
 
 # required_apps = []
 
+# Each item in the list will be shown as an app in the apps page
+# add_to_apps_screen = [
+# 	{
+# 		"name": "cen_crm_addons",
+# 		"logo": "/assets/cen_crm_addons/logo.png",
+# 		"title": "Cen Crm Addons",
+# 		"route": "/cen_crm_addons",
+# 		"has_permission": "cen_crm_addons.api.permission.has_app_permission"
+# 	}
+# ]
+
 fixtures = [
     "Role Profile", 
     "Role", 
     "Custom DocPerm",
-    {"dt": "Property Setter", "filters": [["doc_type", "in", ("Opportunity", "Lead", "Opportunity Item", "Item", "Payment Entry", "Sales Order")]]},
+    {"dt": "Property Setter", "filters": [["doc_type", "in", ("Opportunity", "Lead", "Opportunity Item", "Item", "Payment Entry", "Sales Order", "Quotation")]]},
     {"dt": "Custom Field", "filters": [["fieldname", "in", (
         "custom_assigned_to", 
         "custom_wa_chat_link", 
@@ -39,6 +50,8 @@ fixtures = [
         #Item 
         "custom_crm_details_tab",
         "custom_is_product_bundle",
+        # Product Bundle Custom Fields
+        "custom_customization_details", # Section Break
         "custom_is_customized_bundle",
         "custom_original_bundle_item",
 
