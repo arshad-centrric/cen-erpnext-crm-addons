@@ -137,7 +137,28 @@
  {
   "docstatus": 0,
   "doctype": "Role Profile",
-  "modified": "2026-03-24 11:08:38.423280",
+  "modified": "2026-03-24 12:32:43.033333",
+  "name": "CRM Sales Person",
+  "role_profile": "CRM Sales Person",
+  "roles": [
+   {
+    "parent": "CRM Sales Person",
+    "parentfield": "roles",
+    "parenttype": "Role Profile",
+    "role": "Sales Person"
+   },
+   {
+    "parent": "CRM Sales Person",
+    "parentfield": "roles",
+    "parenttype": "Role Profile",
+    "role": "Sales User"
+   }
+  ]
+ },
+ {
+  "docstatus": 0,
+  "doctype": "Role Profile",
+  "modified": "2026-04-10 16:01:07.419317",
   "name": "CRM Supervisor",
   "role_profile": "CRM Supervisor",
   "roles": [
@@ -164,27 +185,12 @@
     "parentfield": "roles",
     "parenttype": "Role Profile",
     "role": "Sales Master Manager"
-   }
-  ]
- },
- {
-  "docstatus": 0,
-  "doctype": "Role Profile",
-  "modified": "2026-03-24 12:32:43.033333",
-  "name": "CRM Sales Person",
-  "role_profile": "CRM Sales Person",
-  "roles": [
-   {
-    "parent": "CRM Sales Person",
-    "parentfield": "roles",
-    "parenttype": "Role Profile",
-    "role": "Sales Person"
    },
    {
-    "parent": "CRM Sales Person",
+    "parent": "CRM Supervisor",
     "parentfield": "roles",
     "parenttype": "Role Profile",
-    "role": "Sales User"
+    "role": "Supervisor"
    }
   ]
  }

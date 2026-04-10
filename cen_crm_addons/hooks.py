@@ -173,7 +173,8 @@ doctype_list_js = {
 
 after_migrate = [
     "cen_crm_addons.api.naming_series_setup.setup_customer_naming",
-    "cen_crm_addons.api.picking_slip_setup.execute"
+    "cen_crm_addons.api.picking_slip_setup.execute",
+    "cen_crm_addons.api.docperm_setup.setup_custom_permissions"
 ]
 
 # Desk Notifications

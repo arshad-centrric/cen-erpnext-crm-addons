@@ -1,7 +1,7 @@
 import frappe
 
 def get_manager_roles():
-    return ["System Manager", "Administrator", "Sales Manager"]
+    return ["System Manager", "Administrator", "Sales Manager", "Supervisor"]
 
 def get_sales_person_role():
     return "Sales Person"
