@@ -96,11 +96,15 @@ def setup_custom_permissions():
     set_permission("Page", "Sales Person", {"read": 1})
     set_permission("Page", "Supervisor", {"read": 1})
     
-    # 8. Mode of Payment (Required for Payment Entry defaults)
+    # 8. Workspace (Required for Sidebar visibility in V15)
+    set_permission("Workspace", "Sales Person", {"read": 1})
+    set_permission("Workspace", "Supervisor", {"read": 1})
+    
+    # 9. Mode of Payment (Required for Payment Entry defaults)
     set_permission("Mode of Payment", "Sales Person", {"read": 1})
     set_permission("Mode of Payment", "Supervisor", {"read": 1})
     
-    # 9. Account & Company (Required for Payment Entry fields)
+    # 10. Account & Company (Required for Payment Entry fields)
     set_permission("Account", "Sales Person", {"read": 1})
     set_permission("Account", "Supervisor", {"read": 1})
     set_permission("Company", "Sales Person", {"read": 1})

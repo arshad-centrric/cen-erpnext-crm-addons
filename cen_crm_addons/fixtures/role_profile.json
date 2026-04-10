@@ -145,6 +145,12 @@
     "parent": "CRM Sales Person",
     "parentfield": "roles",
     "parenttype": "Role Profile",
+    "role": "Workspace Manager"
+   },
+   {
+    "parent": "CRM Sales Person",
+    "parentfield": "roles",
+    "parenttype": "Role Profile",
     "role": "Sales Person"
    },
    {
@@ -162,6 +168,12 @@
   "name": "CRM Supervisor",
   "role_profile": "CRM Supervisor",
   "roles": [
+   {
+    "parent": "CRM Supervisor",
+    "parentfield": "roles",
+    "parenttype": "Role Profile",
+    "role": "Workspace Manager"
+   },
    {
     "parent": "CRM Supervisor",
     "parentfield": "roles",
