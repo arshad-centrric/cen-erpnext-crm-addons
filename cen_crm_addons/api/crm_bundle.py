@@ -52,20 +52,12 @@ def create_customized_bundle(parent_item_code, new_items_json):
         
     parent_item = frappe.get_doc("Item", parent_item_code)
     
-    # Generate sequential unique name like BOXA-MOD-2026/04-01
-    now_date = frappe.utils.nowdate()
-    ym = f"{now_date.split('-')[0]}/{now_date.split('-')[1]}"
-    prefix = f"{parent_item_code}-MOD-{ym}-"
-    
-    existing_items = frappe.db.count("Item", filters={"item_code": ("like", f"{prefix}%")})
+    # Calculate sequence based on the original parent item count
+    existing_items = frappe.db.count("Item", filters={"custom_original_bundle_item": parent_item_code})
     seq = existing_items + 1
-    new_item_code = f"{prefix}{seq:02d}"
     
-    # Create new Item
+    # Create new Item - Standard naming will be handled by ERPNext series
     new_item = frappe.new_doc("Item")
-    new_item.item_code = new_item_code
-    new_item.naming_series = "" # Ignore naming series
-    new_item.name = new_item_code # Force ID
     new_item.item_name = f"{parent_item.item_name} (Customized-{seq:02d})"
     new_item.description = f"Customized from Original Bundle: {parent_item_code}"
     new_item.item_group = group_name
@@ -76,18 +68,21 @@ def create_customized_bundle(parent_item_code, new_items_json):
     new_item.custom_original_bundle_item = parent_item_code
     new_item.insert(ignore_permissions=True)
     
+    # Use the system-generated ID (e.g. ITEM-0004) for subsequent links
+    generated_id = new_item.name
+    
     # Inherit standard price via Item Price natively
     parent_price = frappe.db.get_value("Item Price", {"item_code": parent_item_code, "price_list": "Standard Selling"}, "price_list_rate")
     if parent_price:
         price_doc = frappe.new_doc("Item Price")
-        price_doc.item_code = new_item_code
+        price_doc.item_code = generated_id
         price_doc.price_list = "Standard Selling"
         price_doc.price_list_rate = parent_price
         price_doc.insert(ignore_permissions=True)
         
     # Create Product Bundle
     bundle = frappe.new_doc("Product Bundle")
-    bundle.new_item_code = new_item_code
+    bundle.new_item_code = generated_id
     bundle.description = f"Customized bundle derived from {parent_item_code}"
     
     for item in items_list:
@@ -101,4 +96,4 @@ def create_customized_bundle(parent_item_code, new_items_json):
     # Add activity log to the Item
     new_item.add_comment("Comment", f"Customized bundle generated from **{parent_item_code}** by {frappe.session.user}")
     
-    return new_item_code
+    return generated_id
