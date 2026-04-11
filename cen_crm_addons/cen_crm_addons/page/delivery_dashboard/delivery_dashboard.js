@@ -49,6 +49,28 @@ frappe.pages['delivery_dashboard'].on_page_load = function(wrapper) {
         }
     });
 
+    // Refresh Button Logic
+    $wrapper.on('click', '#btn_refresh_order', function() {
+        if (current_order && current_order.name) {
+            let $icon = $(this).find('i');
+            $icon.addClass('fa-spin'); // Start spinning animation
+            
+            frappe.call({
+                method: "cen_crm_addons.api.delivery_api.get_order_info",
+                args: { order_id: current_order.name },
+                callback: function(r) {
+                    $icon.removeClass('fa-spin'); // Stop spinning
+                    if (r.message && !r.message.error) {
+                        render_order_details(r.message);
+                        frappe.show_alert({message: __('Order details refreshed'), indicator: 'green'}, 3);
+                    } else {
+                        frappe.msgprint(__("Error refreshing order data."));
+                    }
+                }
+            });
+        }
+    });
+
     // QR Scan Logic (Enhanced Diagnostics)
     $wrapper.on('click', '#btn_scan', function() {
         console.log("Scanner button debug: Attempting to open...");
@@ -81,9 +103,21 @@ frappe.pages['delivery_dashboard'].on_page_load = function(wrapper) {
                 multiple: false,
                 on_scan: (data) => {
                     if (data && data.result) {
-                        let sc_value = data.result;
-                        search_input.val(sc_value);
-                        fetch_order_details(sc_value);
+                        let raw_scan = data.result.trim();
+                        let order_id = raw_scan;
+                        
+                        // NEW LOGIC: Check if the scanned result is a URL
+                        if (raw_scan.includes('/')) {
+                            // Split the URL by '/' and grab the very last segment
+                            order_id = raw_scan.split('/').pop();
+                            
+                            // If the ID has spaces, URLs encode them as %20. This cleans it up.
+                            order_id = decodeURIComponent(order_id);
+                        }
+
+                        // Put the clean ID into the search bar and fetch!
+                        search_input.val(order_id);
+                        fetch_order_details(order_id);
                     }
                 }
             });
