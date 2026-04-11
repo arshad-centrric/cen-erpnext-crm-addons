@@ -65,7 +65,7 @@ frappe.pages['quick-lead-entry'].on_page_load = function (wrapper) {
         </div>
     `);
 
-    // 🔹 Modern Assign Field (ERPNext style) - UPDATED WITH ROLE FILTER
+    // 🔹 Modern Assign Field (ERPNext style)
     let assign_field = frappe.ui.form.make_control({
         parent: $(wrapper).find('.assign-field'),
         df: {
@@ -73,13 +73,7 @@ frappe.pages['quick-lead-entry'].on_page_load = function (wrapper) {
             fieldname: "assign_to",
             fieldtype: "Link",
             options: "User",
-            reqd: 0,
-            // This queries the custom Python method to show only Sales Persons
-            get_query: function () {
-                return {
-                    query: "cen_crm_addons.api.queries.get_sales_persons"
-                };
-            }
+            reqd: 0
         },
         render_input: true
     });
@@ -87,7 +81,7 @@ frappe.pages['quick-lead-entry'].on_page_load = function (wrapper) {
     // Combined Creation Logic
     $('#create_all').click(function () {
         let btn = $(this);
-
+        
         // Handle "Add New" redirect/reload
         if (btn.text().trim() === __('Add New')) {
             location.reload();
@@ -149,8 +143,8 @@ frappe.pages['quick-lead-entry'].on_page_load = function (wrapper) {
                         callback: function (res) {
                             if (res.message) {
                                 let opportunity_doc = res.message;
-                                opportunity_doc.doctype = "Opportunity";
-
+                                opportunity_doc.doctype = "Opportunity"; 
+                                
                                 // Mapping fields explicitly
                                 opportunity_doc.contact_mobile = mobile;
                                 opportunity_doc.custom_assigned_to = assign_to;
@@ -165,7 +159,7 @@ frappe.pages['quick-lead-entry'].on_page_load = function (wrapper) {
                                         btn.prop('disabled', false).text(__('Add New'));
                                         if (final_res.message) {
                                             let opp_name = final_res.message.name;
-
+                                            
                                             // 5. Assign Opportunity via ToDo
                                             frappe.call({
                                                 method: "frappe.desk.form.assign_to.add",
@@ -176,7 +170,6 @@ frappe.pages['quick-lead-entry'].on_page_load = function (wrapper) {
                                                     description: "Auto-Assigned from Quick Entry"
                                                 }
                                             });
-
 
                                             // Show WhatsApp link
                                             $('#whatsapp_link').attr('href', wa_link);

@@ -137,43 +137,10 @@
  {
   "docstatus": 0,
   "doctype": "Role Profile",
-  "modified": "2026-03-24 12:32:43.033333",
-  "name": "CRM Sales Person",
-  "role_profile": "CRM Sales Person",
-  "roles": [
-   {
-    "parent": "CRM Sales Person",
-    "parentfield": "roles",
-    "parenttype": "Role Profile",
-    "role": "Workspace Manager"
-   },
-   {
-    "parent": "CRM Sales Person",
-    "parentfield": "roles",
-    "parenttype": "Role Profile",
-    "role": "Sales Person"
-   },
-   {
-    "parent": "CRM Sales Person",
-    "parentfield": "roles",
-    "parenttype": "Role Profile",
-    "role": "Sales User"
-   }
-  ]
- },
- {
-  "docstatus": 0,
-  "doctype": "Role Profile",
-  "modified": "2026-04-10 16:01:07.419317",
+  "modified": "2026-04-12 01:10:13.918865",
   "name": "CRM Supervisor",
   "role_profile": "CRM Supervisor",
   "roles": [
-   {
-    "parent": "CRM Supervisor",
-    "parentfield": "roles",
-    "parenttype": "Role Profile",
-    "role": "Workspace Manager"
-   },
    {
     "parent": "CRM Supervisor",
     "parentfield": "roles",
@@ -203,6 +170,27 @@
     "parentfield": "roles",
     "parenttype": "Role Profile",
     "role": "Supervisor"
+   }
+  ]
+ },
+ {
+  "docstatus": 0,
+  "doctype": "Role Profile",
+  "modified": "2026-04-12 01:05:43.327989",
+  "name": "CRM Sales Person",
+  "role_profile": "CRM Sales Person",
+  "roles": [
+   {
+    "parent": "CRM Sales Person",
+    "parentfield": "roles",
+    "parenttype": "Role Profile",
+    "role": "Sales Person"
+   },
+   {
+    "parent": "CRM Sales Person",
+    "parentfield": "roles",
+    "parenttype": "Role Profile",
+    "role": "Sales User"
    }
   ]
  }
