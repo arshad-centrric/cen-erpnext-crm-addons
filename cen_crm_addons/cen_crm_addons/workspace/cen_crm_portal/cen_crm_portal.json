@@ -12,7 +12,7 @@
  "is_hidden": 0,
  "label": "Cen CRM Portal",
  "links": [],
- "modified": "2026-04-10 20:17:02.123513",
+ "modified": "2026-04-12 01:07:17.312765",
  "modified_by": "Administrator",
  "module": "Cen Crm Addons",
  "name": "Cen CRM Portal",
@@ -23,19 +23,7 @@
  "quick_lists": [],
  "roles": [
   {
-   "role": "Sales Manager"
-  },
-  {
-   "role": "Sales Master Manager"
-  },
-  {
-   "role": "Sales Person"
-  },
-  {
-   "role": "Sales User"
-  },
-  {
-   "role": "System Manager"
+   "role": "Supervisor"
   }
  ],
  "sequence_id": 2.0,

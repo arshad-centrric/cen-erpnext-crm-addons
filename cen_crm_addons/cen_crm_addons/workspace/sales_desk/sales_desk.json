@@ -13,7 +13,7 @@
  "is_hidden": 0,
  "label": "Sales Desk",
  "links": [],
- "modified": "2026-04-10 20:10:30.877703",
+ "modified": "2026-04-12 01:06:51.894782",
  "modified_by": "Administrator",
  "module": "Cen Crm Addons",
  "name": "Sales Desk",
@@ -22,7 +22,11 @@
  "parent_page": "",
  "public": 1,
  "quick_lists": [],
- "roles": [],
+ "roles": [
+  {
+   "role": "Sales Person"
+  }
+ ],
  "sequence_id": 1.0,
  "shortcuts": [
   {

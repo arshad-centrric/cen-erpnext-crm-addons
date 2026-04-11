@@ -109,5 +109,29 @@ def setup_custom_permissions():
     set_permission("Account", "Supervisor", {"read": 1})
     set_permission("Company", "Sales Person", {"read": 1})
     set_permission("Company", "Supervisor", {"read": 1})
+
+    # --- Native DocType Permissions (Resolves Ghost Module Issue) ---
+    
+    # Permission for Cen CRM Settings (Single DocType)
+    # Sales Person needs Read to allow Workspace rendering
+    set_permission("Cen CRM Settings", "Sales Person", {
+        "read": 1
+    })
+    
+    # Sales Manager / Supervisor needs full control
+    # Note: If your role is named "Supervisor", ensure you match the Role name below
+    set_permission("Cen CRM Settings", "Sales Manager", {
+        "read": 1,
+        "write": 1,
+        "create": 1
+    })
+    
+    # Also granting Supervisor read/write to be safe if that is your primary role
+    if frappe.db.exists("Role", "Supervisor"):
+        set_permission("Cen CRM Settings", "Supervisor", {
+            "read": 1,
+            "write": 1,
+            "create": 1
+        })
     
     frappe.db.commit()
