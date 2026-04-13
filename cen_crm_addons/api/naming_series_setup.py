@@ -13,7 +13,7 @@ def setup_customer():
         frappe.db.commit()
 
     # 2. Update Customer Naming Series Options
-    new_option = "CUS-.##"
+    new_option = "C-.#####"
     
     # Force a fresh meta load to get current state
     frappe.clear_cache(doctype="Customer")
@@ -24,7 +24,8 @@ def setup_customer():
         options_list = [opt.strip() for opt in current_options.split("\n") if opt.strip()]
         
         if new_option not in options_list:
-            options_list.append(new_option)
+            # Add C-.##### as the first option
+            options_list.insert(0, new_option)
             updated_options = "\n".join(options_list)
             
             make_property_setter(
@@ -38,7 +39,7 @@ def setup_customer():
             frappe.db.commit()
             frappe.clear_cache(doctype="Customer")
     
-    # 3. Set Default Naming Series to CUS-.##
+    # 3. Set Default Naming Series to C-.#####
     make_property_setter(
         doctype="Customer", 
         fieldname="naming_series", 

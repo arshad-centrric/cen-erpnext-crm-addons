@@ -102,22 +102,36 @@ frappe.pages['delivery_dashboard'].on_page_load = function(wrapper) {
                 dialog: true,
                 multiple: false,
                 on_scan: (data) => {
-                    if (data && data.result) {
-                        let raw_scan = data.result.trim();
+                    console.log("QR Data Scanned:", data);
+                    
+                    let raw_scan = "";
+                    
+                    // Frappe's scanner sometimes returns a direct string, or an object containing the result.
+                    if (typeof data === 'string') {
+                        raw_scan = data;
+                    } else if (data && data.result && data.result.text) {
+                        raw_scan = data.result.text;
+                    } else if (data && data.result) {
+                        raw_scan = data.result;
+                    } else if (data && data.text) {
+                        raw_scan = data.text;
+                    }
+
+                    if (raw_scan) {
+                        raw_scan = raw_scan.trim();
                         let order_id = raw_scan;
                         
-                        // NEW LOGIC: Check if the scanned result is a URL
+                        // Check if the scanned result is a URL
                         if (raw_scan.includes('/')) {
-                            // Split the URL by '/' and grab the very last segment
                             order_id = raw_scan.split('/').pop();
-                            
-                            // If the ID has spaces, URLs encode them as %20. This cleans it up.
                             order_id = decodeURIComponent(order_id);
                         }
 
                         // Put the clean ID into the search bar and fetch!
                         search_input.val(order_id);
                         fetch_order_details(order_id);
+                    } else {
+                        frappe.msgprint(__("Could not extract data from the QR Code."));
                     }
                 }
             });
