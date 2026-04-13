@@ -2,6 +2,27 @@
  {
   "docstatus": 0,
   "doctype": "Role Profile",
+  "modified": "2026-04-13 14:22:47.026354",
+  "name": "CRM Picking User",
+  "role_profile": "CRM Picking User",
+  "roles": [
+   {
+    "parent": "CRM Picking User",
+    "parentfield": "roles",
+    "parenttype": "Role Profile",
+    "role": "Picking User"
+   },
+   {
+    "parent": "CRM Picking User",
+    "parentfield": "roles",
+    "parenttype": "Role Profile",
+    "role": "Desk User"
+   }
+  ]
+ },
+ {
+  "docstatus": 0,
+  "doctype": "Role Profile",
   "modified": "2026-03-23 17:53:57.187710",
   "name": "Inventory",
   "role_profile": "Inventory",

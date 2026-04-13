@@ -6,7 +6,8 @@
  "engine": "InnoDB",
  "field_order": [
   "enable_strict_lead_isolation",
-  "default_sales_target"
+  "default_sales_target",
+  "delivery_charge_item"
  ],
  "fields": [
   {
@@ -19,6 +20,12 @@
    "fieldname": "default_sales_target",
    "fieldtype": "Currency",
    "label": "Default Sales Target Amount"
+  },
+  {
+   "fieldname": "delivery_charge_item",
+   "fieldtype": "Link",
+   "label": "Courier Delivery Charge Item",
+   "options": "Item"
   }
  ],
  "grid_page_length": 50,
