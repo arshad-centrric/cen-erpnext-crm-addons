@@ -1,6 +1,6 @@
 {
  "charts": [],
- "content": "[{\"id\":\"h_sales\",\"type\":\"header\",\"data\":{\"text\":\"<span class=\\\"h4\\\">Operations</span>\",\"col\":12}},{\"id\":\"8b8AbwBbEx\",\"type\":\"shortcut\",\"data\":{\"shortcut_name\":\"Create Lead\",\"col\":3}},{\"id\":\"0ENkPCOyo-\",\"type\":\"shortcut\",\"data\":{\"shortcut_name\":\"Submit Delivery \",\"col\":3}},{\"id\":\"s_opp\",\"type\":\"shortcut\",\"data\":{\"shortcut_name\":\"Opportunity\",\"col\":3}},{\"id\":\"s_lead\",\"type\":\"shortcut\",\"data\":{\"shortcut_name\":\"Lead\",\"col\":3}},{\"id\":\"9OHIY40jWP\",\"type\":\"spacer\",\"data\":{\"col\":12}},{\"id\":\"LY3i8OXK3O\",\"type\":\"paragraph\",\"data\":{\"text\":\"<span class=\\\"h4\\\">Reports</span>\",\"col\":12}},{\"id\":\"s_perf\",\"type\":\"shortcut\",\"data\":{\"shortcut_name\":\"Sales Performance\",\"col\":3}},{\"id\":\"s_dash\",\"type\":\"shortcut\",\"data\":{\"shortcut_name\":\"CRM Dashboard\",\"col\":4}},{\"id\":\"0oQcRVxmTq\",\"type\":\"spacer\",\"data\":{\"col\":12}},{\"id\":\"h_trans\",\"type\":\"header\",\"data\":{\"text\":\"<span class=\\\"h4\\\">Transactions</span>\",\"col\":12}},{\"id\":\"s_quote\",\"type\":\"shortcut\",\"data\":{\"shortcut_name\":\"Quotation\",\"col\":3}},{\"id\":\"s_so\",\"type\":\"shortcut\",\"data\":{\"shortcut_name\":\"Sales Order\",\"col\":3}},{\"id\":\"s9m59H2cdP\",\"type\":\"shortcut\",\"data\":{\"shortcut_name\":\"Payment Entry\",\"col\":3}},{\"id\":\"zLpXDPz--O\",\"type\":\"shortcut\",\"data\":{\"shortcut_name\":\"Delivery Note\",\"col\":3}},{\"id\":\"1djEK13CyC\",\"type\":\"spacer\",\"data\":{\"col\":12}},{\"id\":\"h_mast\",\"type\":\"header\",\"data\":{\"text\":\"<span class=\\\"h4\\\">Masters</span>\",\"col\":12}},{\"id\":\"s_cust\",\"type\":\"shortcut\",\"data\":{\"shortcut_name\":\"Customer\",\"col\":3}},{\"id\":\"s_item\",\"type\":\"shortcut\",\"data\":{\"shortcut_name\":\"Item\",\"col\":3}},{\"id\":\"-gmzxlqzD8\",\"type\":\"shortcut\",\"data\":{\"shortcut_name\":\"Product Bundle\",\"col\":3}},{\"id\":\"DTfSrIUz_w\",\"type\":\"shortcut\",\"data\":{\"shortcut_name\":\"Item Price\",\"col\":3}}]",
+ "content": "[{\"id\":\"h_sales\",\"type\":\"header\",\"data\":{\"text\":\"<span class=\\\"h4\\\">Operations</span>\",\"col\":12}},{\"id\":\"8b8AbwBbEx\",\"type\":\"shortcut\",\"data\":{\"shortcut_name\":\"Create Lead\",\"col\":3}},{\"id\":\"0ENkPCOyo-\",\"type\":\"shortcut\",\"data\":{\"shortcut_name\":\"Submit Delivery \",\"col\":3}},{\"id\":\"s_opp\",\"type\":\"shortcut\",\"data\":{\"shortcut_name\":\"Opportunity\",\"col\":3}},{\"id\":\"s_lead\",\"type\":\"shortcut\",\"data\":{\"shortcut_name\":\"Lead\",\"col\":3}},{\"id\":\"9OHIY40jWP\",\"type\":\"spacer\",\"data\":{\"col\":12}},{\"id\":\"LY3i8OXK3O\",\"type\":\"paragraph\",\"data\":{\"text\":\"<span class=\\\"h4\\\">Reports</span>\",\"col\":12}},{\"id\":\"s_perf\",\"type\":\"shortcut\",\"data\":{\"shortcut_name\":\"Sales Performance\",\"col\":3}},{\"id\":\"s_dash\",\"type\":\"shortcut\",\"data\":{\"shortcut_name\":\"CRM Dashboard\",\"col\":4}},{\"id\":\"0oQcRVxmTq\",\"type\":\"spacer\",\"data\":{\"col\":12}},{\"id\":\"h_trans\",\"type\":\"header\",\"data\":{\"text\":\"<span class=\\\"h4\\\">Transactions</span>\",\"col\":12}},{\"id\":\"s_quote\",\"type\":\"shortcut\",\"data\":{\"shortcut_name\":\"Quotation\",\"col\":3}},{\"id\":\"s_so\",\"type\":\"shortcut\",\"data\":{\"shortcut_name\":\"Sales Order\",\"col\":3}},{\"id\":\"s9m59H2cdP\",\"type\":\"shortcut\",\"data\":{\"shortcut_name\":\"Payment Entry\",\"col\":3}},{\"id\":\"zLpXDPz--O\",\"type\":\"shortcut\",\"data\":{\"shortcut_name\":\"Delivery Note\",\"col\":3}},{\"id\":\"1djEK13CyC\",\"type\":\"spacer\",\"data\":{\"col\":12}},{\"id\":\"h_mast\",\"type\":\"header\",\"data\":{\"text\":\"<span class=\\\"h4\\\">Masters</span>\",\"col\":12}},{\"id\":\"s_cust\",\"type\":\"shortcut\",\"data\":{\"shortcut_name\":\"Customer\",\"col\":3}},{\"id\":\"s_item\",\"type\":\"shortcut\",\"data\":{\"shortcut_name\":\"Item\",\"col\":3}},{\"id\":\"-gmzxlqzD8\",\"type\":\"shortcut\",\"data\":{\"shortcut_name\":\"Product Bundle\",\"col\":3}},{\"id\":\"DTfSrIUz_w\",\"type\":\"shortcut\",\"data\":{\"shortcut_name\":\"Item Price\",\"col\":3}},{\"id\":\"83obDHNW5i\",\"type\":\"shortcut\",\"data\":{\"shortcut_name\":\"User Payment Mode Settings\",\"col\":3}}]",
  "creation": "2026-03-25 11:03:24.601198",
  "custom_blocks": [],
  "docstatus": 0,
@@ -12,7 +12,7 @@
  "is_hidden": 0,
  "label": "Cen CRM Portal",
  "links": [],
- "modified": "2026-04-12 01:07:17.312765",
+ "modified": "2026-04-13 17:12:56.016053",
  "modified_by": "Administrator",
  "module": "Cen Crm Addons",
  "name": "Cen CRM Portal",
@@ -41,6 +41,14 @@
    "label": "Create Lead",
    "link_to": "quick-lead-entry",
    "type": "Page"
+  },
+  {
+   "color": "Grey",
+   "doc_view": "List",
+   "label": "User Payment Mode Settings",
+   "link_to": "User Payment Mapping",
+   "stats_filter": "[]",
+   "type": "DocType"
   },
   {
    "color": "Grey",

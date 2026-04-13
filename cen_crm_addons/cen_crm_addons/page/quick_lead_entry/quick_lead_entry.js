@@ -248,7 +248,8 @@ frappe.pages['quick-lead-entry'].on_page_load = function (wrapper) {
                         contact_mobile: mobile,
                         custom_assigned_to: assign_to,
                         custom_wa_chat_link: wa_link,
-                        notes: notes
+                        custom_remarks: notes,
+                        notes: [{ note: notes }]
                     }
                 },
                 callback: function (res) {
@@ -285,7 +286,7 @@ frappe.pages['quick-lead-entry'].on_page_load = function (wrapper) {
                         status: "Open",
                         custom_assigned_to: assign_to,
                         custom_wa_chat_link: wa_link,
-                        notes: notes
+                        notes: [{ note: notes }]
                     }
                 },
                 callback: function (r) {
@@ -315,7 +316,8 @@ frappe.pages['quick-lead-entry'].on_page_load = function (wrapper) {
                                     opportunity_doc.contact_mobile = mobile;
                                     opportunity_doc.custom_assigned_to = assign_to;
                                     opportunity_doc.custom_wa_chat_link = wa_link;
-                                    opportunity_doc.notes = notes;
+                                    opportunity_doc.custom_remarks = notes;
+                                    opportunity_doc.notes = [{ note: notes }];
 
                                     frappe.call({
                                         method: "frappe.client.insert",

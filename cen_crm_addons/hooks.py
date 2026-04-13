@@ -33,8 +33,9 @@ fixtures = [
         "custom_delivery_detail", # Section Break
         "custom_delivery_info", # Column Break 1
         "custom_customer_address", # Column Break 2
+        "custom_delivery_store",
         "custom_mode_of_delivery", 
-        "custom_delivery_store", 
+        "custom_delivery_partner" 
         "custom_delivery_date", 
         "custom_delivery_time",
         "custom_address_line_1",
@@ -43,6 +44,7 @@ fixtures = [
         "custom_delivery_state",
         "custom_pincode",
         "custom_delivery_country",
+        "custom_remarks",
 
         #Opportunity Item
         "custom_view_bundle",
@@ -176,7 +178,9 @@ after_migrate = [
     "cen_crm_addons.api.naming_series_setup.setup_customer_naming",
     "cen_crm_addons.api.picking_slip_setup.execute",
     "cen_crm_addons.api.docperm_setup.setup_custom_permissions",
-    "cen_crm_addons.api.module_profile_setup.setup_module_profiles"
+    "cen_crm_addons.api.module_profile_setup.setup_module_profiles",
+    "cen_crm_addons.api.picking_setup_utils.setup_picking_profile",
+    "cen_crm_addons.api.opportunity_setup.setup_opportunity_statuses"
 ]
 
 # Desk Notifications
@@ -215,6 +219,10 @@ has_permission = {
 # Hook on document methods and events
 
 doc_events = {
+    "User Payment Mapping": {
+        "on_update": "cen_crm_addons.api.payment_restriction_setup.sync_user_permissions",
+        "on_trash": "cen_crm_addons.api.payment_restriction_setup.remove_user_permissions"
+    },
     "Lead": {
         "on_update": "cen_crm_addons.api.crm_permissions.sync_lead_list_fields"
     },
@@ -269,7 +277,7 @@ doc_events = {
 # ------------------------------
 #
 override_whitelisted_methods = {
-    "erpnext.crm.doctype.opportunity.opportunity.make_quotation": "cen_crm_addons.api.quotation_overrides.make_quotation_wrapper",
+    "erpnext.crm.doctype.opportunity.opportunity.make_quotation": "cen_crm_addons.api.sales_order_hooks.make_quotation_wrapper",
     "erpnext.selling.doctype.quotation.quotation.make_sales_order": "cen_crm_addons.api.sales_order_hooks.make_sales_order_wrapper"
 }
 

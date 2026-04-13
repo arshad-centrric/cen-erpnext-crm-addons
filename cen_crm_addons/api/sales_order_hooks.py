@@ -1,34 +1,89 @@
 import frappe
 
-def _apply_opportunity_mapping(doc, source_name=None):
-    """
-    Internal helper to perform the actual cross-doc data mapping.
-    """
-    quotation_id = source_name
-
-    # Fallback to items if source_name wasn't explicitly passed (e.g., from before_validate)
-    if not quotation_id:
-        if not doc.items:
-            return
-
-        for item in doc.items:
-            # Frappe mapper doesn't always explicitly set prevdoc_doctype until save.
-            has_qtn_link = item.get("prevdoc_docname") or item.get("quotation_item")
-            if has_qtn_link:
-                # We can trace it via prevdoc_docname which holds the quotation ID
-                if item.get("prevdoc_docname"):
-                    quotation_id = item.get("prevdoc_docname")
-                    break
-    
-    if not quotation_id:
-        return
-
-    # 2. Find the Opportunity linked to that Quotation
-    opportunity_id = frappe.db.get_value("Quotation", quotation_id, "opportunity")
+def _apply_opportunity_mapping_to_quotation(doc, source_name=None):
+    """Maps custom delivery fields from Opportunity to Quotation."""
+    opportunity_id = source_name or doc.opportunity
     if not opportunity_id:
         return
 
-    # 3. Fetch custom fields from the Opportunity
+    # Fetch all 5 fields
+    opp_data = frappe.db.get_value(
+        "Opportunity", 
+        opportunity_id, 
+        ["custom_delivery_partner", "custom_mode_of_delivery", "custom_delivery_time", "custom_delivery_store", "custom_delivery_date"], 
+        as_dict=1
+    )
+
+    if not opp_data:
+        return
+
+    # Map only if target fields are blank
+    if opp_data.custom_delivery_partner and not doc.custom_delivery_partner:
+        doc.custom_delivery_partner = opp_data.custom_delivery_partner
+
+    if opp_data.custom_mode_of_delivery and not doc.custom_mode_of_delivery:
+        doc.custom_mode_of_delivery = opp_data.custom_mode_of_delivery
+
+    if opp_data.custom_delivery_time and not doc.custom_delivery_time:
+        doc.custom_delivery_time = opp_data.custom_delivery_time
+        
+    if opp_data.custom_delivery_store and not doc.custom_delivery_store:
+        doc.custom_delivery_store = opp_data.custom_delivery_store
+        
+    if opp_data.custom_delivery_date and not doc.custom_delivery_date:
+        doc.custom_delivery_date = opp_data.custom_delivery_date
+
+@frappe.whitelist()
+def make_quotation_wrapper(source_name, target_doc=None, args=None):
+    """Wraps doc mapping to ensure fields are populated BEFORE saving in the UI."""
+    from erpnext.crm.doctype.opportunity.opportunity import make_quotation
+    doc = make_quotation(source_name, target_doc)
+    _apply_opportunity_mapping_to_quotation(doc, source_name)
+    return doc
+
+def _apply_quotation_mapping_to_sales_order(doc, source_name=None):
+    """Maps custom delivery fields from Quotation to Sales Order."""
+    quotation_id = source_name
+    
+    # Fallback to items if source_name wasn't explicitly passed
+    if not quotation_id:
+        if not doc.items:
+            return
+        for item in doc.items:
+            has_qtn_link = item.get("prevdoc_docname") or item.get("quotation_item")
+            if has_qtn_link:
+                if item.get("prevdoc_docname"):
+                    quotation_id = item.get("prevdoc_docname")
+                    break
+
+    if not quotation_id:
+        return
+        
+    qtn_data = frappe.db.get_value(
+        "Quotation", 
+        quotation_id, 
+        ["custom_delivery_partner", "custom_mode_of_delivery", "custom_delivery_time", "opportunity"], 
+        as_dict=1
+    )
+    
+    if not qtn_data:
+        return
+        
+    # Map Quotation fields to Sales Order
+    if qtn_data.get("custom_delivery_partner") and not doc.custom_delivery_partner:
+        doc.custom_delivery_partner = qtn_data.custom_delivery_partner
+        
+    if qtn_data.get("custom_mode_of_delivery") and not doc.custom_mode_of_delivery:
+        doc.custom_mode_of_delivery = qtn_data.custom_mode_of_delivery
+        
+    if qtn_data.get("custom_delivery_time") and not doc.custom_delivery_time:
+        doc.custom_delivery_time = qtn_data.custom_delivery_time
+
+    # Map Store and Date directly via the linked Opportunity logic
+    opportunity_id = qtn_data.opportunity
+    if not opportunity_id:
+        return
+
     opp_data = frappe.db.get_value(
         "Opportunity", 
         opportunity_id, 
@@ -39,31 +94,20 @@ def _apply_opportunity_mapping(doc, source_name=None):
     if not opp_data:
         return
 
-    # 4. Map data if target fields are blank
     if opp_data.custom_delivery_date and not doc.delivery_date:
         doc.delivery_date = opp_data.custom_delivery_date
     
     if opp_data.custom_delivery_store and not doc.set_warehouse:
         doc.set_warehouse = opp_data.custom_delivery_store
         
-    # 5. Push delivery_date to child items
+    # Push delivery_date to child items
     if doc.delivery_date:
         for item in doc.items:
             item.delivery_date = doc.delivery_date
 
 @frappe.whitelist()
 def make_sales_order_wrapper(source_name, target_doc=None, args=None):
-    """
-    Wraps the standard ERPNext mapper to ensure Opportunity data is 
-    included in the document object BEFORE it is sent to the UI.
-    """
     from erpnext.selling.doctype.quotation.quotation import make_sales_order
-    
-    # Call standard mapper
     doc = make_sales_order(source_name, target_doc, args=args)
-    
-    # Manually apply our additional mappings
-    _apply_opportunity_mapping(doc, source_name=source_name)
-    
+    _apply_quotation_mapping_to_sales_order(doc, source_name=source_name)
     return doc
-

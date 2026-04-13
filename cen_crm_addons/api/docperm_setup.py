@@ -48,7 +48,7 @@ def setup_custom_permissions():
     Enforces the CRM permission matrix for custom roles programmatically.
     """
     # Ensure custom roles exist to prevent LinkValidationError during migration
-    for role in ["Sales Person", "Sales Manager", "Supervisor"]:
+    for role in ["Sales Person", "Sales Manager", "Supervisor", "Picking User"]:
         ensure_role(role)
     
     # 1. Item Price (Fix for auto-fetch bug)
@@ -78,6 +78,9 @@ def setup_custom_permissions():
     set_permission("Sales Order", "Sales Manager", {
         "read": 1, "write": 1, "create": 1, "submit": 1, "cancel": 1, "amend": 1, "print": 1, "email": 1, "report": 1, "delete": 1
     })
+    set_permission("Sales Order", "Picking User", {
+        "read": 1, "write": 1, "create": 1, "submit": 1, "print": 1
+    })
     
     # 5. Payment Entry
     set_permission("Payment Entry", "Sales Person", {
@@ -86,37 +89,54 @@ def setup_custom_permissions():
     set_permission("Payment Entry", "Supervisor", {
         "read": 1, "write": 1, "create": 1, "submit": 1, "print": 1
     })
+    set_permission("Payment Entry", "Picking User", {
+        "read": 1, "write": 1, "create": 1, "submit": 1, "print": 1
+    })
     
     # 6. Delivery Note
     set_permission("Delivery Note", "Supervisor", {
+        "read": 1, "write": 1, "create": 1, "submit": 1, "print": 1
+    })
+    set_permission("Delivery Note", "Picking User", {
         "read": 1, "write": 1, "create": 1, "submit": 1, "print": 1
     })
     
     # 7. Page (Required for Workspaces/UI navigation)
     set_permission("Page", "Sales Person", {"read": 1})
     set_permission("Page", "Supervisor", {"read": 1})
+    set_permission("Page", "Picking User", {"read": 1})
     
     # 8. Workspace (Required for Sidebar visibility in V15)
     set_permission("Workspace", "Sales Person", {"read": 1})
     set_permission("Workspace", "Supervisor", {"read": 1})
+    set_permission("Workspace", "Picking User", {"read": 1})
     
     # 9. Mode of Payment (Required for Payment Entry defaults)
     set_permission("Mode of Payment", "Sales Person", {"read": 1})
     set_permission("Mode of Payment", "Supervisor", {"read": 1})
+    set_permission("Mode of Payment", "Picking User", {"read": 1})
     
     # 10. Account & Company (Required for Payment Entry fields)
     set_permission("Account", "Sales Person", {"read": 1})
     set_permission("Account", "Supervisor", {"read": 1})
+    set_permission("Account", "Picking User", {"read": 1})
     set_permission("Company", "Sales Person", {"read": 1})
     set_permission("Company", "Supervisor", {"read": 1})
+    set_permission("Company", "Picking User", {"read": 1})
+    
+    # 11. Extra Read-Only Dependencies for Picking User
+    set_permission("Item", "Picking User", {"read": 1})
+    set_permission("Customer", "Picking User", {"read": 1})
+    set_permission("Opportunity", "Picking User", {"read": 1})
+    set_permission("Quotation", "Picking User", {"read": 1})
+    set_permission("Currency", "Picking User", {"read": 1})
 
     # --- Native DocType Permissions (Resolves Ghost Module Issue) ---
     
     # Permission for Cen CRM Settings (Single DocType)
-    # Sales Person needs Read to allow Workspace rendering
-    set_permission("Cen CRM Settings", "Sales Person", {
-        "read": 1
-    })
+    # Essential for enabling Workspace rendering logic
+    set_permission("Cen CRM Settings", "Sales Person", {"read": 1})
+    set_permission("Cen CRM Settings", "Picking User", {"read": 1})
     
     # Sales Manager / Supervisor needs full control
     # Note: If your role is named "Supervisor", ensure you match the Role name below
