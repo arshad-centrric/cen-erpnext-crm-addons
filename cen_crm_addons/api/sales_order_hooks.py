@@ -33,6 +33,23 @@ def _apply_opportunity_mapping_to_quotation(doc, source_name=None):
     if opp_data.custom_delivery_date and not doc.custom_delivery_date:
         doc.custom_delivery_date = opp_data.custom_delivery_date
 
+    # Auto-append delivery charge item if mapped to Courier
+    if getattr(doc, "custom_mode_of_delivery", None) == "Courier":
+        delivery_item = frappe.db.get_single_value("Cen CRM Settings", "delivery_charge_item")
+        if delivery_item:
+            # Prevent appending identical delivery line if someone refreshes somehow
+            existing_items = [d.item_code for d in doc.items] if hasattr(doc, "items") and doc.items else []
+            if delivery_item not in existing_items:
+                item_details = frappe.db.get_value("Item", delivery_item, ["item_name", "description", "stock_uom"], as_dict=1)
+                if item_details:
+                    doc.append("items", {
+                        "item_code": delivery_item,
+                        "item_name": item_details.item_name,
+                        "description": item_details.description,
+                        "qty": 1,
+                        "uom": item_details.stock_uom
+                    })
+
 @frappe.whitelist()
 def make_quotation_wrapper(source_name, target_doc=None, args=None):
     """Wraps doc mapping to ensure fields are populated BEFORE saving in the UI."""

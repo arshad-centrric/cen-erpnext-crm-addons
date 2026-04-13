@@ -233,15 +233,24 @@ doc_events = {
         "on_update": "cen_crm_addons.api.crm_bundle.sync_parent_is_bundle"
     },
     "Sales Order": {
-        "on_update": "cen_crm_addons.api.payment_logic.on_sales_order_update"
+        "on_update": [
+            "cen_crm_addons.api.payment_logic.on_sales_order_update",
+            "cen_crm_addons.api.opportunity_automation.on_sales_order_update"
+        ]
     },
     "Payment Entry": {
         "validate": "cen_crm_addons.api.payment_logic.validate_payment_screenshot",
-        "on_submit": "cen_crm_addons.api.payment_logic.on_payment_entry_update",
+        "on_submit": [
+            "cen_crm_addons.api.payment_logic.on_payment_entry_update",
+            "cen_crm_addons.api.opportunity_automation.on_payment_entry_submit"
+        ],
         "on_cancel": "cen_crm_addons.api.payment_logic.on_payment_entry_update"
     },
     "Delivery Note": {
-        "on_submit": "cen_crm_addons.api.payment_logic.on_delivery_note_update",
+        "on_submit": [
+            "cen_crm_addons.api.payment_logic.on_delivery_note_update",
+            "cen_crm_addons.api.opportunity_automation.on_delivery_note_submit"
+        ],
         "on_cancel": "cen_crm_addons.api.payment_logic.on_delivery_note_update"
     }
 }
