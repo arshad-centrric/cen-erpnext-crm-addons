@@ -87,3 +87,21 @@ def on_payment_entry_submit(doc, method):
             so_doc = frappe.get_doc("Sales Order", ref.reference_name)
             # Re-evaluate the logic by triggering the SO hook directly
             on_sales_order_update(so_doc, None)
+
+def ensure_opportunity_assignment(doc, method):
+    """Hook 4: Auto-assigns the document owner if an Opportunity is created directly without an assignee."""
+    from frappe.desk.form.assign_to import add as add_assignment
+    
+    if not doc.custom_assigned_to:
+        owner = doc.owner or frappe.session.user
+        
+        try:
+            add_assignment({
+                "assign_to": [owner],
+                "doctype": "Opportunity",
+                "name": doc.name,
+                "description": "Auto-Assigned to Creator"
+            })
+            # crm_permissions.sync_opportunity_list_fields handles populating the UI field from here
+        except Exception as e:
+            frappe.log_error(frappe.get_traceback(), "Opportunity Auto-Assignment Failed")

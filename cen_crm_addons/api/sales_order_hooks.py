@@ -1,5 +1,60 @@
 import frappe
 
+def _apply_customer_auto_creation(quotation, source_name):
+    """Finds or auto-creates a Customer by mobile when Quoting from a Lead."""
+    opp = frappe.get_doc("Opportunity", source_name)
+    
+    # Only process if this Opportunity originated directly from a Lead
+    if opp.opportunity_from == "Lead" and opp.party_name:
+        mobile_no = opp.contact_mobile or frappe.db.get_value("Lead", opp.party_name, "mobile_no")
+        customer_name = None
+        
+        if mobile_no:
+            customer_name = frappe.db.get_value("Customer", {"mobile_no": mobile_no}, "name")
+            
+        if not customer_name:
+            lead = frappe.get_doc("Lead", opp.party_name)
+            customer = frappe.new_doc("Customer")
+            customer.customer_name = lead.lead_name or lead.company_name or opp.party_name
+            customer.customer_group = frappe.db.get_single_value("Selling Settings", "customer_group") or "Commercial"
+            customer.territory = lead.territory or frappe.db.get_single_value("Selling Settings", "territory") or "All Territories"
+            customer.lead_name = lead.name
+            customer.opportunity_name = opp.name
+            if mobile_no:
+                customer.mobile_no = mobile_no
+            try:
+                customer.insert(ignore_permissions=True)
+                customer_name = customer.name
+            except Exception as e:
+                frappe.log_error(message=frappe.get_traceback(), title="Customer Auto-Creation Failed")
+                return # Fail gracefully and fallback to standard
+                
+        # Link mapped quotation to the true customer
+        quotation.quotation_to = "Customer"
+        quotation.party_name = customer_name
+        quotation.customer_name = frappe.db.get_value("Customer", customer_name, "customer_name")
+        quotation.contact_person = None 
+        quotation.contact_mobile = mobile_no
+        quotation.contact_email = frappe.db.get_value("Lead", opp.party_name, "email_id")
+        
+        # Link Custom Address from Opportunity to the selected/new Customer
+        address_name = frappe.db.get_value("Dynamic Link", {
+            "link_doctype": "Opportunity",
+            "link_name": opp.name,
+            "parenttype": "Address"
+        }, "parent")
+        
+        if address_name:
+            address = frappe.get_doc("Address", address_name)
+            is_linked = any(link.link_doctype == "Customer" and link.link_name == customer_name for link in address.links)
+            
+            if not is_linked:
+                address.append("links", {
+                    "link_doctype": "Customer",
+                    "link_name": customer_name
+                })
+                address.save(ignore_permissions=True)
+
 def _apply_opportunity_mapping_to_quotation(doc, source_name=None):
     """Maps custom delivery fields from Opportunity to Quotation."""
     opportunity_id = source_name or doc.opportunity
@@ -55,7 +110,13 @@ def make_quotation_wrapper(source_name, target_doc=None, args=None):
     """Wraps doc mapping to ensure fields are populated BEFORE saving in the UI."""
     from erpnext.crm.doctype.opportunity.opportunity import make_quotation
     doc = make_quotation(source_name, target_doc)
+    
+    # 1. Customer Auto-Creation (if originated from Lead)
+    _apply_customer_auto_creation(doc, source_name)
+    
+    # 2. Logistics & Delivery Automation
     _apply_opportunity_mapping_to_quotation(doc, source_name)
+    
     return doc
 
 def _apply_quotation_mapping_to_sales_order(doc, source_name=None):
