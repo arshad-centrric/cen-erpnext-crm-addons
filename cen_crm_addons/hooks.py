@@ -227,7 +227,8 @@ doc_events = {
         "on_update": "cen_crm_addons.api.crm_permissions.sync_lead_list_fields"
     },
     "Opportunity": {
-        "on_update": "cen_crm_addons.api.crm_permissions.sync_opportunity_list_fields"
+        "on_update": "cen_crm_addons.api.crm_permissions.sync_opportunity_list_fields",
+        "after_insert": "cen_crm_addons.api.opportunity_automation.ensure_opportunity_assignment"
     },
     "Product Bundle": {
         "on_update": "cen_crm_addons.api.crm_bundle.sync_parent_is_bundle"
