@@ -191,14 +191,21 @@ def sync_lead_list_fields(doc, method=None):
         filters={"reference_type": "Lead", "reference_name": doc.name, "status": "Open"},
         fields=["allocated_to"],
         order_by="creation desc",
-        limit=1
+        limit=1,
+        ignore_permissions=True
     )
     if todo:
-        doc.custom_assigned_to = todo[0].allocated_to
+        assigned_user = todo[0].allocated_to
+        doc.custom_assigned_to = assigned_user
+        
+        # Also sync full name for UI readability
+        full_name = frappe.db.get_value("User", assigned_user, "full_name")
+        doc.custom_assigned_full_name = full_name if full_name else assigned_user
     else:
         # Only clear if it was previously set in the database (prevents clearing during first insert)
         if doc.get_db_value("custom_assigned_to"):
             doc.custom_assigned_to = ""
+            doc.custom_assigned_full_name = ""
 
             
     # 2. Sync WhatsApp Link (Ground truth mobile_no)
@@ -231,14 +238,21 @@ def sync_opportunity_list_fields(doc, method=None):
         filters={"reference_type": "Opportunity", "reference_name": doc.name, "status": "Open"},
         fields=["allocated_to"],
         order_by="creation desc",
-        limit=1
+        limit=1,
+        ignore_permissions=True
     )
     if todo:
-        doc.custom_assigned_to = todo[0].allocated_to
+        assigned_user = todo[0].allocated_to
+        doc.custom_assigned_to = assigned_user
+        
+        # Also sync full name for UI readability
+        full_name = frappe.db.get_value("User", assigned_user, "full_name")
+        doc.custom_assigned_full_name = full_name if full_name else assigned_user
     else:
         # Only clear if it was previously set in the database (prevents clearing during first insert)
         if doc.get_db_value("custom_assigned_to"):
             doc.custom_assigned_to = ""
+            doc.custom_assigned_full_name = ""
             
     # 2. Sync WhatsApp Link (Ground truth contact_mobile)
     mobile = getattr(doc, 'contact_mobile', None)

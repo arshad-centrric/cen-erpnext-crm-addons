@@ -102,6 +102,12 @@ def ensure_opportunity_assignment(doc, method):
                 "name": doc.name,
                 "description": "Auto-Assigned to Creator"
             })
-            # crm_permissions.sync_opportunity_list_fields handles populating the UI field from here
+            
+            # Since this is an after_insert hook, the main save has already concluded.
+            # We must explicitly save these fields to the Database so they don't disappear on refresh.
+            full_name = frappe.db.get_value("User", owner, "full_name") or owner
+            doc.db_set("custom_assigned_to", owner, update_modified=False)
+            doc.db_set("custom_assigned_full_name", full_name, update_modified=False)
+            
         except Exception as e:
             frappe.log_error(frappe.get_traceback(), "Opportunity Auto-Assignment Failed")
