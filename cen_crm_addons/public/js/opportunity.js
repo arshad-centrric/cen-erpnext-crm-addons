@@ -273,3 +273,185 @@ function cen_crm_render_popup(parent_item_code, bundle_doc, frm, cdt, cdn) {
     render_table(d.fields_dict.bundle_table_html.wrapper);
     d.show();
 }
+
+frappe.ui.form.on('Opportunity', {
+    refresh: function(frm) {
+        // Start by hiding the tabs. They will be revealed if data exists.
+        frm.set_df_property('custom_quotation_tab', 'hidden', 1);
+        frm.set_df_property('custom_sales_order_tab', 'hidden', 1);
+
+        if (!frm.is_new()) {
+            frappe.call({
+                method: "cen_crm_addons.api.opportunity_details.get_linked_documents",
+                args: { opportunity_name: frm.doc.name },
+                callback: function(r) {
+                    if (r.message) {
+                        let data = r.message;
+                        
+                        // Handle Quotations
+                        if (data.quotations && data.quotations.length > 0) {
+                            frm.set_df_property('custom_quotation_tab', 'hidden', 0);
+                            let q_html = cen_crm_generate_docs_html(data.quotations, 'quotation');
+                            frm.set_df_property('custom_quotation_html', 'options', q_html);
+                        }
+                        
+                        // Handle Sales Orders
+                        if (data.sales_orders && data.sales_orders.length > 0) {
+                            frm.set_df_property('custom_sales_order_tab', 'hidden', 0);
+                            let so_html = cen_crm_generate_docs_html(data.sales_orders, 'sales order');
+                            frm.set_df_property('custom_sales_order_html', 'options', so_html);
+                        }
+                    }
+                }
+            });
+        }
+    }
+});
+
+function cen_crm_generate_docs_html(docs, doctype_label) {
+    let ht = `<div class="row" style="margin-top: 10px; padding: 10px;">`;
+    docs.forEach(doc => {
+        let status_class = "secondary";
+        let s = (doc.status || "").toLowerCase();
+        
+        if (s.includes('open') || s.includes('draft')) status_class = "orange";
+        else if (s.includes('submit') || s.includes('paid')) status_class = "green";
+        else if (s.includes('cancel')) status_class = "red";
+        else status_class = "blue";
+        
+        let link_doctype_url_part = doctype_label === 'quotation' ? 'quotation' : 'sales-order';
+        let display_date = doc.transaction_date ? frappe.datetime.str_to_user(doc.transaction_date).split(' ')[0] : 'No Date';
+
+        let badges_html = '';
+        if (doctype_label === 'quotation') {
+            badges_html = `<span class="badge" style="background-color: var(--${status_class}-100); color: var(--${status_class}-600);">${doc.status || 'Unknown'}</span>`;
+        } else {
+            // Sales Order Specific Statuses
+            let picking = doc.custom_picking_status || "Pending";
+            let payment = doc.custom_payment_status || "Unpaid";
+            let delivery = doc.delivery_status || "Not Delivered";
+            
+            let pick_color = "gray";
+            let p_lower = picking.toLowerCase();
+            if (p_lower.includes("completed") || p_lower.includes("packed")) pick_color = "green";
+            else if (p_lower.includes("pending")) pick_color = "orange";
+            else if (p_lower.includes("progress")) pick_color = "blue";
+            
+            let pay_color = "gray";
+            let pay_lower = payment.toLowerCase();
+            if (pay_lower === "paid") pay_color = "green";
+            else if (pay_lower.includes("unpaid") || pay_lower.includes("pending")) pay_color = "orange";
+            else if (pay_lower.includes("partially")) pay_color = "yellow";
+            
+            let del_color = "gray";
+            let d_lower = delivery.toLowerCase();
+            if (d_lower === "delivered") del_color = "green";
+            else if (d_lower.includes("not delivered") || d_lower.includes("pending")) del_color = "orange";
+            else if (d_lower.includes("partially")) del_color = "yellow";
+            
+            badges_html = `
+                <div style="display: flex; flex-direction: column; gap: 6px; align-items: flex-end;">
+                    <span class="badge" style="background-color: var(--${pick_color}-100); color: var(--${pick_color}-600); width: max-content;">
+                        <i class="fa fa-cube text-muted" style="margin-right: 4px;"></i> Picking: ${picking}
+                    </span>
+                    <span class="badge" style="background-color: var(--${pay_color}-100); color: var(--${pay_color}-600); width: max-content;">
+                        <i class="fa fa-credit-card text-muted" style="margin-right: 4px;"></i> Payment: ${payment}
+                    </span>
+                    <span class="badge" style="background-color: var(--${del_color}-100); color: var(--${del_color}-600); width: max-content;">
+                        <i class="fa fa-truck text-muted" style="margin-right: 4px;"></i> Delivery: ${delivery}
+                    </span>
+                </div>
+            `;
+        }
+
+        ht += `
+        <div class="col-md-6 mb-3">
+            <a href="/app/${link_doctype_url_part}/${doc.name}" class="card border" target="_blank" style="text-decoration: none; color: inherit; padding: 15px; border-radius: 8px; display: block; box-shadow: 0 1px 3px rgba(0,0,0,0.05); transition: 0.2s;">
+                <div class="d-flex justify-content-between align-items-start">
+                    <div style="display: flex; flex-direction: column; gap: 4px;">
+                        <h5 style="margin: 0; font-weight: bold; color: var(--primary); font-size: 15px; display: flex; align-items: center; gap: 8px;">
+                            ${doc.name}
+                            <button class="btn btn-xs btn-default" style="padding: 2px 6px;" onclick="event.stopPropagation(); event.preventDefault(); window.open('/app/print/${doctype_label === 'quotation' ? 'Quotation' : 'Sales Order'}/${doc.name}', '_blank');" title="Print">
+                                <i class="fa fa-print text-muted"></i>
+                            </button>
+                        </h5>
+                        <div class="text-muted" style="font-size: 12px;">
+                            <i class="fa fa-calendar" style="width: 14px; text-align: center;"></i> ${display_date}
+                        </div>
+                    </div>
+                    <div style="display: flex; flex-direction: column; align-items: flex-end; gap: 8px;">
+                        ${badges_html}
+                        <div style="font-weight: 600; font-size: 15px; color: var(--text-color);">
+                            ${format_currency(doc.grand_total, doc.currency)}
+                        </div>
+                    </div>
+                </div>
+            </a>
+        </div>`;
+    });
+    ht += `</div>`;
+    
+    // Bottom Section: Payment Details (Only for Sales Orders)
+    if (doctype_label === 'sales order') {
+        let all_payments = [];
+        docs.forEach(doc => {
+            if (doc.payment_entries && doc.payment_entries.length > 0) {
+                doc.payment_entries.forEach(pe => {
+                    pe.so_name = doc.name;
+                    pe.so_currency = doc.currency;
+                    all_payments.push(pe);
+                });
+            }
+        });
+        
+        if (all_payments.length > 0) {
+            ht += `<div style="margin-top: 15px; padding: 10px;">
+                    <h6 style="color: var(--text-muted); font-weight: bold; margin-bottom: 15px; text-transform: uppercase; letter-spacing: 0.5px; border-bottom: 2px solid var(--gray-200); padding-bottom: 8px;">
+                        <i class="fa fa-credit-card"></i> Payment Details
+                    </h6>
+                    <div class="row">`;
+                    
+            all_payments.forEach(pe => {
+                let amount_formatted = format_currency(pe.paid_amount, pe.so_currency);
+                let mode = pe.mode_of_payment || 'Unknown Mode';
+                
+                let pe_attachments = '';
+                if (pe.files && pe.files.length > 0) {
+                    pe_attachments += `<div style="margin-top: 12px; padding-top: 8px;">
+                        <strong style="font-size: 12px; color: var(--text-muted); display: block; margin-bottom: 8px;">Payment Attachments:</strong>
+                        <div style="display: flex; flex-direction: column; gap: 6px;">`;
+                    pe.files.forEach(f => {
+                         pe_attachments += `<a href="${f.file_url}" target="_blank" style="display: inline-flex; align-items: center; gap: 6px; font-size: 12px; background: var(--gray-100); padding: 6px 10px; border-radius: 4px; border: 1px solid var(--gray-200); color: var(--text-color); text-decoration: none; width: max-content;" onclick="event.stopPropagation();">
+                            <i class="fa fa-paperclip text-muted" style="font-size: 13px;"></i> <span style="text-overflow: ellipsis; overflow: hidden; white-space: nowrap;">${f.file_name}</span>
+                        </a>`;
+                    });
+                    pe_attachments += `</div></div>`;
+                } else {
+                     pe_attachments = `<div style="margin-top: 12px; padding: 10px; background: var(--bg-light); border-radius: 6px; border: 1px dashed var(--gray-300); text-align: center; font-size: 12px; color: var(--text-muted);">
+                         <i class="fa fa-image text-extra-muted" style="font-size: 18px; margin-bottom: 4px; display: block;"></i> No receipt attached
+                     </div>`;
+                }
+
+                ht += `<div class="col-md-4 mb-3">
+                    <div class="card border" style="padding: 15px; border-radius: 8px; box-shadow: 0 2px 4px rgba(0,0,0,0.03); background: #ffffff;">
+                        <div class="d-flex justify-content-between align-items-start mb-2">
+                            <div style="display: flex; flex-direction: column; gap: 6px;">
+                                <a href="/app/payment-entry/${pe.name}" target="_blank" style="font-size: 14px; font-weight: bold; color: var(--primary); text-decoration: none;">${pe.name}</a>
+                                <span class="badge" style="background-color: var(--blue-100); color: var(--blue-600); font-size: 11px; width: max-content;">${mode}</span>
+                            </div>
+                            <div style="display: flex; flex-direction: column; align-items: flex-end; gap: 6px;">
+                                <a href="/app/sales-order/${pe.so_name}" target="_blank" style="font-size: 13px; font-weight: 600; color: var(--text-muted); text-decoration: none;">${pe.so_name}</a>
+                                <strong style="color: var(--green-600); font-size: 15px;">${amount_formatted}</strong>
+                            </div>
+                        </div>
+                        ${pe_attachments}
+                    </div>
+                </div>`;
+            });
+            
+            ht += `</div></div>`;
+        }
+    }
+    
+    return ht;
+}
