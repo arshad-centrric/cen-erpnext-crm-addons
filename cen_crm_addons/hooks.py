@@ -35,7 +35,7 @@ fixtures = [
         "custom_customer_address", # Column Break 2
         "custom_delivery_store",
         "custom_mode_of_delivery", 
-        "custom_delivery_partner" 
+        "custom_delivery_partner", 
         "custom_delivery_date", 
         "custom_delivery_time",
         "custom_address_line_1",
