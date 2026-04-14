@@ -273,3 +273,72 @@ function cen_crm_render_popup(parent_item_code, bundle_doc, frm, cdt, cdn) {
     render_table(d.fields_dict.bundle_table_html.wrapper);
     d.show();
 }
+
+frappe.ui.form.on('Opportunity', {
+    refresh: function(frm) {
+        // Start by hiding the tabs. They will be revealed if data exists.
+        frm.set_df_property('custom_quotation_tab', 'hidden', 1);
+        frm.set_df_property('custom_sales_order_tab', 'hidden', 1);
+
+        if (!frm.is_new()) {
+            frappe.call({
+                method: "cen_crm_addons.api.opportunity_details.get_linked_documents",
+                args: { opportunity_name: frm.doc.name },
+                callback: function(r) {
+                    if (r.message) {
+                        let data = r.message;
+                        
+                        // Handle Quotations
+                        if (data.quotations && data.quotations.length > 0) {
+                            frm.set_df_property('custom_quotation_tab', 'hidden', 0);
+                            let q_html = cen_crm_generate_docs_html(data.quotations, 'quotation');
+                            frm.set_df_property('custom_quotation_html', 'options', q_html);
+                        }
+                        
+                        // Handle Sales Orders
+                        if (data.sales_orders && data.sales_orders.length > 0) {
+                            frm.set_df_property('custom_sales_order_tab', 'hidden', 0);
+                            let so_html = cen_crm_generate_docs_html(data.sales_orders, 'sales order');
+                            frm.set_df_property('custom_sales_order_html', 'options', so_html);
+                        }
+                    }
+                }
+            });
+        }
+    }
+});
+
+function cen_crm_generate_docs_html(docs, doctype_label) {
+    let ht = `<div class="row" style="margin-top: 10px; padding: 10px;">`;
+    docs.forEach(doc => {
+        let status_class = "secondary";
+        let s = (doc.status || "").toLowerCase();
+        
+        if (s.includes('open') || s.includes('draft')) status_class = "orange";
+        else if (s.includes('submit') || s.includes('paid')) status_class = "green";
+        else if (s.includes('cancel')) status_class = "red";
+        else status_class = "blue";
+        
+        let link_doctype_url_part = doctype_label === 'quotation' ? 'quotation' : 'sales-order';
+        
+        let assigned = doc.custom_assigned_full_name ? `<br><small class="text-muted"><i class="fa fa-user-circle-o"></i> ${doc.custom_assigned_full_name}</small>` : '';
+        let display_date = doc.transaction_date ? frappe.datetime.str_to_user(doc.transaction_date).split(' ')[0] : 'No Date';
+
+        ht += `
+        <div class="col-md-6 mb-3">
+            <a href="/app/${link_doctype_url_part}/${doc.name}" class="card border" target="_blank" style="text-decoration: none; color: inherit; padding: 15px; border-radius: 8px; display: block; box-shadow: 0 1px 3px rgba(0,0,0,0.05); transition: 0.2s;">
+                <div class="d-flex justify-content-between align-items-center">
+                    <h5 style="margin: 0; font-weight: bold; color: var(--primary); font-size: 15px;">${doc.name}</h5>
+                    <span class="badge" style="background-color: var(--${status_class}-100); color: var(--${status_class}-600);">${doc.status || 'Unknown'}</span>
+                </div>
+                <div class="mt-2 text-muted" style="font-size: 13px;">
+                    <i class="fa fa-calendar"></i> ${display_date} 
+                    <span class="pull-right" style="font-weight: 600; font-size: 14px; color: var(--text-color);">${format_currency(doc.grand_total, doc.currency)}</span>
+                    ${assigned}
+                </div>
+            </a>
+        </div>`;
+    });
+    ht += `</div>`;
+    return ht;
+}
