@@ -61,7 +61,13 @@ fixtures = [
         # Delivery & Payment
         "custom_payment_status",
         "custom_picking_status",
-        "custom_payment_screenshot"
+        "custom_payment_screenshot",
+
+        # Opportunity Tabs
+        "custom_quotation_tab",
+        "custom_quotation_html",
+        "custom_sales_order_tab",
+        "custom_sales_order_html"
     )]]}
 ]
 
