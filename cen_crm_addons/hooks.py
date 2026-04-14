@@ -236,6 +236,9 @@ doc_events = {
         "on_update": [
             "cen_crm_addons.api.payment_logic.on_sales_order_update",
             "cen_crm_addons.api.opportunity_automation.on_sales_order_update"
+        ],
+        "on_update_after_submit": [
+            "cen_crm_addons.api.opportunity_automation.on_sales_order_update"
         ]
     },
     "Payment Entry": {

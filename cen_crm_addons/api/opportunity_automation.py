@@ -38,7 +38,7 @@ def on_sales_order_update(doc, method):
             needs_save = True
 
     # 2. Sync Picking Status -> Packed
-    if doc.get("custom_picking_status") == "Picked" and opp.status not in ("Delivered", "To be paid", "Closed"):
+    if doc.get("custom_picking_status") == "Packed" and opp.status not in ("Delivered", "To be paid", "Closed"):
         opp.status = "Packed"
         needs_save = True
         
