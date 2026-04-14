@@ -2513,7 +2513,7 @@
   "fieldname": "custom_quotation_tab",
   "fieldtype": "Tab Break",
   "label": "Quotations",
-  "insert_after": "connections_tab",
+  "insert_after": "total",
   "module": "cen_crm_addons",
   "in_list_view": 0,
   "in_standard_filter": 0,
