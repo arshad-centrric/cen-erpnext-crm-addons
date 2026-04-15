@@ -31,7 +31,7 @@ def get_linked_documents(opportunity_name):
                 "Sales Order",
                 filters={"name": ("in", so_names)},
                 fields=["name", "status", "transaction_date", "grand_total", "currency", 
-                        "custom_picking_status", "custom_payment_status", "delivery_status"]
+                        "custom_picking_status", "custom_payment_status", "delivery_status", "custom_packing_image"]
             )
             
             # For each Sales Order, check for attached files in their Payment Entries

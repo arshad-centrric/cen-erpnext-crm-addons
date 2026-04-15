@@ -1,8 +1,10 @@
 {
- "allow_guest": 0,
- "creation": "2026-04-07 10:00:00.000000",
+ "content": null,
+ "creation": "2026-04-07 10:00:00",
+ "docstatus": 0,
  "doctype": "Page",
- "modified": "2026-04-07 10:00:00.000000",
+ "idx": 3,
+ "modified": "2026-04-15 20:49:07.728255",
  "modified_by": "Administrator",
  "module": "Cen Crm Addons",
  "name": "delivery_dashboard",
@@ -17,8 +19,14 @@
   },
   {
    "role": "Stock User"
+  },
+  {
+   "role": "Picking User"
   }
  ],
+ "script": null,
  "standard": "Yes",
+ "style": null,
+ "system_page": 0,
  "title": "Delivery Dashboard"
 }

@@ -1,0 +1,57 @@
+{
+ "charts": [],
+ "content": "[{\"id\":\"t1pYi5T2uB\",\"type\":\"header\",\"data\":{\"text\":\"<span class=\\\"h4\\\">Packing Desk</span>\",\"col\":12}},{\"id\":\"rh0l7XWDqG\",\"type\":\"shortcut\",\"data\":{\"shortcut_name\":\"Submit Delivery\",\"col\":3}},{\"id\":\"56fI118UL7\",\"type\":\"shortcut\",\"data\":{\"shortcut_name\":\"Sales Order\",\"col\":3}},{\"id\":\"rR5gFhejrq\",\"type\":\"shortcut\",\"data\":{\"shortcut_name\":\"Opportunity\",\"col\":3}}]",
+ "creation": "2026-04-15 20:29:05.047702",
+ "custom_blocks": [],
+ "docstatus": 0,
+ "doctype": "Workspace",
+ "for_user": "",
+ "hide_custom": 0,
+ "icon": "retail",
+ "idx": 0,
+ "indicator_color": "",
+ "is_hidden": 0,
+ "label": "Packing Desk",
+ "links": [],
+ "modified": "2026-04-15 20:31:19.634453",
+ "modified_by": "Administrator",
+ "module": "Cen Crm Addons",
+ "name": "Packing Desk",
+ "number_cards": [],
+ "owner": "Administrator",
+ "parent_page": "",
+ "public": 1,
+ "quick_lists": [],
+ "roles": [
+  {
+   "role": "Picking User"
+  }
+ ],
+ "sequence_id": 3.0,
+ "shortcuts": [
+  {
+   "color": "Grey",
+   "doc_view": "List",
+   "label": "Submit Delivery",
+   "link_to": "delivery_dashboard",
+   "type": "Page"
+  },
+  {
+   "color": "Grey",
+   "doc_view": "List",
+   "label": "Sales Order",
+   "link_to": "Sales Order",
+   "stats_filter": "[]",
+   "type": "DocType"
+  },
+  {
+   "color": "Grey",
+   "doc_view": "List",
+   "label": "Opportunity",
+   "link_to": "Opportunity",
+   "stats_filter": "[]",
+   "type": "DocType"
+  }
+ ],
+ "title": "Packing Desk"
+}

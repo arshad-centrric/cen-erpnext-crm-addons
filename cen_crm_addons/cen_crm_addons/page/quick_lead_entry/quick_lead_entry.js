@@ -259,16 +259,6 @@ frappe.pages['quick-lead-entry'].on_page_load = function (wrapper) {
                         
                         frappe.show_alert({message: __('Opportunity created for existing Customer!'), indicator: 'green'});
 
-                        frappe.call({
-                            method: "frappe.desk.form.assign_to.add",
-                            args: {
-                                assign_to: [assign_to],
-                                doctype: "Opportunity",
-                                name: opp_name,
-                                description: "Auto-Assigned from Quick Entry"
-                            }
-                        });
-
                         $('#whatsapp_link').attr('href', wa_link);
                         $('#whatsapp_container').show();
                     }
@@ -328,16 +318,6 @@ frappe.pages['quick-lead-entry'].on_page_load = function (wrapper) {
                                                 let opp_name = final_res.message.name;
                                                 
                                                 frappe.show_alert({message: __('Lead and Opportunity created successfully!'), indicator: 'green'});
-
-                                                frappe.call({
-                                                    method: "frappe.desk.form.assign_to.add",
-                                                    args: {
-                                                        assign_to: [assign_to],
-                                                        doctype: "Opportunity",
-                                                        name: opp_name,
-                                                        description: "Auto-Assigned from Quick Entry"
-                                                    }
-                                                });
 
                                                 $('#whatsapp_link').attr('href', wa_link);
                                                 $('#whatsapp_container').show();

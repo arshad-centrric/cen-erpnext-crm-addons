@@ -61,32 +61,23 @@ def _apply_opportunity_mapping_to_quotation(doc, source_name=None):
     if not opportunity_id:
         return
 
-    # Fetch all 5 fields
-    opp_data = frappe.db.get_value(
-        "Opportunity", 
-        opportunity_id, 
-        ["custom_delivery_partner", "custom_mode_of_delivery", "custom_delivery_time", "custom_delivery_store", "custom_delivery_date"], 
-        as_dict=1
-    )
+    # Fetch all custom logistics and address fields
+    fields_to_fetch = [
+        "custom_delivery_partner", "custom_mode_of_delivery", "custom_delivery_time", 
+        "custom_delivery_store", "custom_delivery_date", "custom_address_line_1", 
+        "custom_address_line_2", "custom_delivery_city", "custom_delivery_state", 
+        "custom_pincode", "custom_delivery_country"
+    ]
+    
+    opp_data = frappe.db.get_value("Opportunity", opportunity_id, fields_to_fetch, as_dict=1)
 
     if not opp_data:
         return
 
     # Map only if target fields are blank
-    if opp_data.custom_delivery_partner and not doc.custom_delivery_partner:
-        doc.custom_delivery_partner = opp_data.custom_delivery_partner
-
-    if opp_data.custom_mode_of_delivery and not doc.custom_mode_of_delivery:
-        doc.custom_mode_of_delivery = opp_data.custom_mode_of_delivery
-
-    if opp_data.custom_delivery_time and not doc.custom_delivery_time:
-        doc.custom_delivery_time = opp_data.custom_delivery_time
-        
-    if opp_data.custom_delivery_store and not doc.custom_delivery_store:
-        doc.custom_delivery_store = opp_data.custom_delivery_store
-        
-    if opp_data.custom_delivery_date and not doc.custom_delivery_date:
-        doc.custom_delivery_date = opp_data.custom_delivery_date
+    for field in fields_to_fetch:
+        if opp_data.get(field) and not doc.get(field):
+            doc.set(field, opp_data.get(field))
 
     # Auto-append delivery charge item if mapped to Courier
     if getattr(doc, "custom_mode_of_delivery", None) == "Courier":
@@ -137,46 +128,30 @@ def _apply_quotation_mapping_to_sales_order(doc, source_name=None):
     if not quotation_id:
         return
         
-    qtn_data = frappe.db.get_value(
-        "Quotation", 
-        quotation_id, 
-        ["custom_delivery_partner", "custom_mode_of_delivery", "custom_delivery_time", "opportunity"], 
-        as_dict=1
-    )
+    # Fetch custom logistics and address fields from Quotation
+    fields_to_fetch = [
+        "custom_delivery_partner", "custom_mode_of_delivery", "custom_delivery_time", 
+        "custom_delivery_store", "custom_delivery_date", "custom_address_line_1", 
+        "custom_address_line_2", "custom_delivery_city", "custom_delivery_state", 
+        "custom_pincode", "custom_delivery_country"
+    ]
+    
+    qtn_data = frappe.db.get_value("Quotation", quotation_id, fields_to_fetch, as_dict=1)
     
     if not qtn_data:
         return
         
     # Map Quotation fields to Sales Order
-    if qtn_data.get("custom_delivery_partner") and not doc.custom_delivery_partner:
-        doc.custom_delivery_partner = qtn_data.custom_delivery_partner
-        
-    if qtn_data.get("custom_mode_of_delivery") and not doc.custom_mode_of_delivery:
-        doc.custom_mode_of_delivery = qtn_data.custom_mode_of_delivery
-        
-    if qtn_data.get("custom_delivery_time") and not doc.custom_delivery_time:
-        doc.custom_delivery_time = qtn_data.custom_delivery_time
+    for field in fields_to_fetch:
+        if qtn_data.get(field) and not doc.get(field):
+            doc.set(field, qtn_data.get(field))
 
-    # Map Store and Date directly via the linked Opportunity logic
-    opportunity_id = qtn_data.opportunity
-    if not opportunity_id:
-        return
-
-    opp_data = frappe.db.get_value(
-        "Opportunity", 
-        opportunity_id, 
-        ["custom_delivery_date", "custom_delivery_store"], 
-        as_dict=1
-    )
-
-    if not opp_data:
-        return
-
-    if opp_data.custom_delivery_date and not doc.delivery_date:
-        doc.delivery_date = opp_data.custom_delivery_date
+    # Existing special logic mappings (Warehouse and Date)
+    if qtn_data.custom_delivery_date and not doc.delivery_date:
+        doc.delivery_date = qtn_data.custom_delivery_date
     
-    if opp_data.custom_delivery_store and not doc.set_warehouse:
-        doc.set_warehouse = opp_data.custom_delivery_store
+    if qtn_data.custom_delivery_store and not doc.set_warehouse:
+        doc.set_warehouse = qtn_data.custom_delivery_store
         
     # Push delivery_date to child items
     if doc.delivery_date:

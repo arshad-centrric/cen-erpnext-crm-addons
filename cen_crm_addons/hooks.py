@@ -33,6 +33,8 @@ fixtures = [
         "custom_delivery_detail", # Section Break
         "custom_delivery_info", # Column Break 1
         "custom_customer_address", # Column Break 2
+        "custom_general",
+        "custom_address",
         "custom_delivery_store",
         "custom_mode_of_delivery", 
         "custom_delivery_partner", 
@@ -61,6 +63,7 @@ fixtures = [
         # Delivery & Payment
         "custom_payment_status",
         "custom_picking_status",
+        "custom_packing_image",
         "custom_payment_screenshot",
 
         # Opportunity Tabs
