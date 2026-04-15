@@ -14,11 +14,13 @@
    "default": "0",
    "fieldname": "enable_strict_lead_isolation",
    "fieldtype": "Check",
+   "hidden": 1,
    "label": "Enable Strict Lead Isolation"
   },
   {
    "fieldname": "default_sales_target",
    "fieldtype": "Currency",
+   "hidden": 1,
    "label": "Default Sales Target Amount"
   },
   {
@@ -32,7 +34,7 @@
  "index_web_pages_for_search": 1,
  "issingle": 1,
  "links": [],
- "modified": "2026-04-12 01:01:08.528778",
+ "modified": "2026-04-15 19:52:14.948262",
  "modified_by": "Administrator",
  "module": "Cen Crm Addons",
  "name": "Cen CRM Settings",
