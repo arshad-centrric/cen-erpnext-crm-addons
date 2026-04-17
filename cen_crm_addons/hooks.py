@@ -94,8 +94,11 @@ fixtures = [
 # ------------------
 
 # include js, css files in header of desk.html
-# app_include_css = "/assets/cen_crm_addons/css/cen_crm_addons.css"
-# app_include_js = "/assets/cen_crm_addons/js/cen_crm_addons.js"
+app_include_css = "/assets/cen_crm_addons/css/jquery-clockpicker.min.css"
+app_include_js = [
+    "/assets/cen_crm_addons/js/jquery-clockpicker.min.js",
+    "/assets/cen_crm_addons/js/time_patch.js"
+]
 
 # include js, css files in header of web template
 # web_include_css = "/assets/cen_crm_addons/css/cen_crm_addons.css"
