@@ -114,7 +114,9 @@ fixtures = [
 doctype_js = {
     "Opportunity": "public/js/opportunity.js",
     "Item": "public/js/item.js",
-    "Payment Entry": "public/js/payment_entry.js"
+    "Payment Entry": "public/js/payment_entry.js",
+    "Quotation": "public/js/quotation_form.js",
+    "Sales Order": "public/js/sales_order_form.js"
 }
 doctype_list_js = {
 	"Lead": "public/js/crm_list_formatters.js",

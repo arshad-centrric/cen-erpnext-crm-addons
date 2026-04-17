@@ -280,6 +280,22 @@ frappe.ui.form.on('Opportunity', {
         frm.set_df_property('custom_quotation_tab', 'hidden', 1);
         frm.set_df_property('custom_sales_order_tab', 'hidden', 1);
 
+        // Add WhatsApp Chat Redirection Button
+        if (frm.doc.custom_wa_chat_link) {
+            setTimeout(() => {
+                if (frm.page.wrapper.find('.wa-chat-icon').length === 0) {
+                    let btn = $(`<button class="btn btn-default wa-chat-icon" title="Chat on WhatsApp" style="background: transparent; border: none; box-shadow: none; padding: 4px 8px; margin-right: 5px;">
+                        <i class="fa fa-whatsapp" style="color: #25D366; font-size: 26px;"></i>
+                    </button>`).on('click', function() {
+                        window.open(frm.doc.custom_wa_chat_link, '_blank');
+                    });
+                    
+                    // prepend to the page actions header so it sits next to other icons
+                    frm.page.wrapper.find('.page-actions').prepend(btn);
+                }
+            }, 200);
+        }
+
         if (!frm.is_new()) {
             frappe.call({
                 method: "cen_crm_addons.api.opportunity_details.get_linked_documents",
