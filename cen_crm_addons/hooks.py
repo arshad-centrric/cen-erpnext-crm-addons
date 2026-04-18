@@ -73,7 +73,10 @@ fixtures = [
         "custom_sales_order_html",
 
         #Quotation
-        "custom_revision_reason"
+        "custom_revision_reason",
+
+        #Sales Order
+        "custom_packing_instructions"
     )]]}
 ]
 
