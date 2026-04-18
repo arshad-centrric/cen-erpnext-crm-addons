@@ -342,6 +342,10 @@ frappe.ui.form.on('Opportunity', {
 });
 
 
+
+
+
+
 function cen_crm_generate_docs_html(docs, doctype_label) {
     let ht = `<div class="row" style="margin-top: 10px; padding: 10px;">`;
     docs.forEach(doc => {
