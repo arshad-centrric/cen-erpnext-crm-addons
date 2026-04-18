@@ -126,7 +126,9 @@ doctype_js = {
 }
 doctype_list_js = {
 	"Lead": "public/js/crm_list_formatters.js",
-	"Opportunity": "public/js/crm_list_formatters.js"
+	"Opportunity": "public/js/crm_list_formatters.js",
+	"Quotation": "public/js/quotation_list.js",
+	"Sales Order": "public/js/sales_order_list.js"
 }
 
 # doctype_tree_js = {"doctype" : "public/js/doctype_tree.js"}

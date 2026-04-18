@@ -9,12 +9,12 @@ def setup_module_profiles():
         {
             "name": "Sales Staff Profile",
             # FIXED: Added "cen_crm_addons" to exactly match the database Module Def
-            "allowed": ["Cen Crm Addons", "Core", "Desk"]
+            "allowed": ["Cen Crm Addons"]
         },
         {
             "name": "Sales Supervisor Profile",
             # FIXED: Added "cen_crm_addons" here as well
-            "allowed": ["Cen Crm Addons", "Core", "Desk"]
+            "allowed": ["Cen Crm Addons"]
         }
     ]
 
