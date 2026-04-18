@@ -9,16 +9,17 @@ def setup_opportunity_statuses():
     
     statuses = [
         "Open",
+        "Replied",
         "To be quoted",
         "Quotation",
         "Quotation Send",
+        "Revise the Quote",
         "Converted",
         "Packed",
         "Delivered",
         "To be paid",
         "Closed",
-        "Lost",
-        "Replied"
+        "Lost"
     ]
     
     options = "\n".join(statuses)

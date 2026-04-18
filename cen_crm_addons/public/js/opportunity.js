@@ -407,6 +407,13 @@ function cen_crm_generate_docs_html(docs, doctype_label) {
                         <div class="text-muted" style="font-size: 12px;">
                             <i class="fa fa-calendar" style="width: 14px; text-align: center;"></i> ${display_date}
                         </div>
+                        ${(doctype_label === 'quotation' && doc.custom_revision_reason) ? `
+                            <div style="margin-top: 5px; line-height: 1.4;">
+                                <span style="color: #d9534f; font-size: 11px;">
+                                    <b>Revision Reason:</b> ${doc.custom_revision_reason}
+                                </span>
+                            </div>
+                        ` : ''}
                     </div>
                     <div style="display: flex; flex-direction: column; align-items: flex-end; gap: 8px;">
                         ${badges_html}

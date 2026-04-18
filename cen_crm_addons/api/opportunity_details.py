@@ -60,7 +60,7 @@ def get_linked_documents(opportunity_name):
     quotations = frappe.get_all(
         "Quotation",
         filters={"opportunity": opportunity_name},
-        fields=["name", "status", "transaction_date", "grand_total", "currency"]
+        fields=["name", "status", "transaction_date", "grand_total", "currency", "custom_revision_reason"]
     )
 
     sales_orders = []

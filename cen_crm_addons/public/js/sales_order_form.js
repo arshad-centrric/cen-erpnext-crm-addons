@@ -39,6 +39,42 @@ frappe.ui.form.on("Sales Order", {
                     }
                 }
             });
+
+            // Assign Packing Automation (Smart Button)
+            if (frm.doc.docstatus === 1 && (!frm.doc.custom_picking_status || frm.doc.custom_picking_status === "Pending")) {
+                let btn = frm.add_custom_button(__('Assign Packing'), () => {
+                    frappe.db.get_single_value('Cen CRM Settings', 'default_picking_slip_format').then(print_format => {
+                        if (!print_format) {
+                            frappe.msgprint({
+                                title: __('Missing Setup'),
+                                indicator: 'red',
+                                message: __('Please set the <b>Default Picking Slip Format</b> in <a href="/app/cen-crm-settings" target="_blank">Cen CRM Settings</a> before assign packing.')
+                            });
+                            return;
+                        }
+
+                        // Update Status and Save
+                        frm.set_value('custom_picking_status', 'Assigned to Pack');
+                        frm.save().then(() => {
+                            frappe.show_alert({
+                                message: __('Status updated to Assigned to Pack. Opening Print View...'),
+                                indicator: 'green'
+                            });
+                            
+                            // Set route options to pass print format cleanly
+                            frappe.route_options = { "print_format": print_format };
+                            frappe.set_route('print', 'Sales Order', frm.doc.name);
+                        });
+                    });
+                });
+
+                btn.removeClass('btn-default').css({
+                    'background-color': '#000',
+                    'color': '#fff',
+                    'border-color': '#000'
+                });
+            }
         }
     }
 });
+
