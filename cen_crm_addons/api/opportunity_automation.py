@@ -175,3 +175,20 @@ def request_quotation_revision(quotation, reason):
         
     return {"status": "success", "message": "Quotation revision reason updated"}
 
+@frappe.whitelist()
+def update_sales_order_status(sales_order, status):
+    """
+    Updates the custom_picking_status for a Sales Order (bypassing full validation).
+    Used to avoid 'In Words' errors on submitted documents.
+    """
+    if not sales_order:
+        frappe.throw("Sales Order name is missing")
+    
+    doc = frappe.get_doc("Sales Order", sales_order)
+    doc.db_set("custom_picking_status", status, update_modified=True)
+    
+    # Trigger the sync hook manually to ensure Opportunity is updated if logic exists
+    on_sales_order_update(doc, None)
+    
+    return {"status": "success", "message": f"Sales Order {sales_order} status updated to {status}"}
+
