@@ -70,7 +70,10 @@ fixtures = [
         "custom_quotation_tab",
         "custom_quotation_html",
         "custom_sales_order_tab",
-        "custom_sales_order_html"
+        "custom_sales_order_html",
+
+        #Quotation
+        "custom_revision_reason"
     )]]}
 ]
 
