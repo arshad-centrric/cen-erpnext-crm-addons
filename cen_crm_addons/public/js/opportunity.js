@@ -320,9 +320,27 @@ frappe.ui.form.on('Opportunity', {
                     }
                 }
             });
+
+            // Set Status Header Buttons (Dropdown)
+            if (!frm.doc.__islocal) {
+                const statuses = ["Replied", "To be quoted", "Quotation Sent"];
+                
+                statuses.forEach(status => {
+                    frm.page.add_inner_button(__(status), () => {
+                        frm.set_value('status', status);
+                        frm.save().then(() => {
+                            frappe.show_alert({
+                                message: __(`Status updated to {0}`, [status]),
+                                indicator: 'green'
+                            });
+                        });
+                    }, __('Set Status'));
+                });
+            }
         }
     }
 });
+
 
 function cen_crm_generate_docs_html(docs, doctype_label) {
     let ht = `<div class="row" style="margin-top: 10px; padding: 10px;">`;

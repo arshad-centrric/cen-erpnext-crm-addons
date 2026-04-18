@@ -12,7 +12,7 @@ def setup_opportunity_statuses():
         "Replied",
         "To be quoted",
         "Quotation",
-        "Quotation Send",
+        "Quotation Sent",
         "Revise the Quote",
         "Converted",
         "Packed",
