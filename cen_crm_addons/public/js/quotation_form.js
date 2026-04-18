@@ -33,6 +33,60 @@ frappe.ui.form.on("Quotation", {
                     }
                 }
             });
+
+            // Request Revision Flow (Section 1 & 2)
+            const add_revision_dialog = (label) => {
+                frm.add_custom_button(label, function() {
+                    let d = new frappe.ui.Dialog({
+                        title: __('Revision Details'),
+                        fields: [
+                            {
+                                label: __('Reason for Revision'),
+                                fieldname: 'reason',
+                                fieldtype: 'Small Text',
+                                default: frm.doc.custom_revision_reason || '',
+                                reqd: 1
+                            }
+                        ],
+                        primary_action_label: __('Submit'),
+                        primary_action(values) {
+                            frappe.call({
+                                method: 'cen_crm_addons.api.opportunity_automation.request_quotation_revision',
+                                args: {
+                                    quotation: frm.doc.name,
+                                    reason: values.reason
+                                },
+                                freeze: true,
+                                callback: function(r) {
+                                    if (!r.exc) {
+                                        d.hide();
+                                        frappe.show_alert({
+                                            message: __('Revision reason updated and Opportunity status changed.'),
+                                            indicator: 'green'
+                                        });
+                                        frm.reload_doc();
+                                    }
+                                }
+                            });
+                        }
+                    });
+                    d.show();
+                });
+            };
+
+            // Rule 1: Always show 'View Revise Reason' if reason exists (even if canceled)
+            if (frm.doc.custom_revision_reason) {
+                add_revision_dialog(__('View Revise Reason'));
+            } 
+            // Rule 2: Show 'Request Revision' only if Submitted and Opportunity is NOT Delivered/Closed
+            else if (frm.doc.docstatus === 1 && frm.doc.opportunity) {
+                frappe.db.get_value("Opportunity", frm.doc.opportunity, "status", (r) => {
+                    if (r && r.status && !["Delivered", "Closed"].includes(r.status)) {
+                        add_revision_dialog(__('Request Revision'));
+                    }
+                });
+            }
         }
     }
 });
+

@@ -7,7 +7,8 @@
  "field_order": [
   "enable_strict_lead_isolation",
   "default_sales_target",
-  "delivery_charge_item"
+  "delivery_charge_item",
+  "default_picking_slip_format"
  ],
  "fields": [
   {
@@ -28,13 +29,19 @@
    "fieldtype": "Link",
    "label": "Courier Delivery Charge Item",
    "options": "Item"
+  },
+  {
+   "fieldname": "default_picking_slip_format",
+   "fieldtype": "Link",
+   "label": "Default Picking Slip Format",
+   "options": "Print Format"
   }
  ],
  "grid_page_length": 50,
  "index_web_pages_for_search": 1,
  "issingle": 1,
  "links": [],
- "modified": "2026-04-15 19:52:14.948262",
+ "modified": "2026-04-17 19:51:54.281929",
  "modified_by": "Administrator",
  "module": "Cen Crm Addons",
  "name": "Cen CRM Settings",
