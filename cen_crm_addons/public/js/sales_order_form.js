@@ -53,17 +53,28 @@ frappe.ui.form.on("Sales Order", {
                             return;
                         }
 
-                        // Update Status and Save
-                        frm.set_value('custom_picking_status', 'Assigned to Pack');
-                        frm.save().then(() => {
-                            frappe.show_alert({
-                                message: __('Status updated to Assigned to Pack. Opening Print View...'),
-                                indicator: 'green'
-                            });
-                            
-                            // Set route options to pass print format cleanly
-                            frappe.route_options = { "print_format": print_format };
-                            frappe.set_route('print', 'Sales Order', frm.doc.name);
+                        // Update Status via Server API (to avoid 'In Words' save error on submitted docs)
+                        frappe.call({
+                            method: 'cen_crm_addons.api.opportunity_automation.update_sales_order_status',
+                            args: {
+                                sales_order: frm.doc.name,
+                                status: 'Assigned to Pack'
+                            },
+                            freeze: true,
+                            callback: function(r) {
+                                if (r.message && r.message.status === "success") {
+                                    frm.reload_doc().then(() => {
+                                        frappe.show_alert({
+                                            message: __('Status updated to Assigned to Pack. Opening Print View...'),
+                                            indicator: 'green'
+                                        });
+                                        
+                                        // Set route options to pass print format cleanly
+                                        frappe.route_options = { "print_format": print_format };
+                                        frappe.set_route('print', 'Sales Order', frm.doc.name);
+                                    });
+                                }
+                            }
                         });
                     });
                 });
