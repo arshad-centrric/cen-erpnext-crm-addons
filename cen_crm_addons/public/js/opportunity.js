@@ -336,6 +336,45 @@ frappe.ui.form.on('Opportunity', {
                         });
                     }, __('Set Status'));
                 });
+
+                // Smart Quotation Flow
+                // Remove all predefined inner options to "empty out" the Create button 
+                // without destroying the parent, preventing Frappe from re-rendering them.
+                setTimeout(() => {
+                    frm.page.remove_inner_button('Quotation', 'Create');
+                    frm.page.remove_inner_button('Supplier Quotation', 'Create');
+                    frm.page.remove_inner_button('Request For Quotation', 'Create');
+                    frm.page.remove_inner_button('Customer', 'Create');
+                }, 200);
+
+
+                frappe.db.get_list('Quotation', {
+                    filters: {
+                        opportunity: frm.doc.name,
+                        docstatus: ['in', [0, 1]]
+                    },
+                    fields: ['name'],
+                    limit: 1
+                }).then(records => {
+                    if (records && records.length > 0) {
+                        // Active Quotation exists
+                        let active_quotation = records[0].name;
+                        frm.add_custom_button(__('View Active Quotation'), () => {
+                            frappe.set_route('Form', 'Quotation', active_quotation);
+                        });
+                    } else {
+                        // No active Quotation, allow creation
+                        let btn = frm.add_custom_button(__('Create Quotation'), () => {
+                            frappe.model.open_mapped_doc({
+                                method: 'erpnext.crm.doctype.opportunity.opportunity.make_quotation',
+                                frm: frm
+                            });
+                        });
+
+                        // Apply primary style for emphasis
+                        btn.removeClass('btn-default').addClass('btn-primary');
+                    }
+                });
             }
         }
     }
