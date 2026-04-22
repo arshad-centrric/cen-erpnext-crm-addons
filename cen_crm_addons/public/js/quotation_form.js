@@ -4,7 +4,9 @@ frappe.ui.form.on("Quotation", {
             // View Opportunity Link
             if (frm.doc.opportunity) {
                 let btn = frm.add_custom_button(__('View Opportunity'), function() {
-                    frappe.set_route('Form', 'Opportunity', frm.doc.opportunity);
+                    frappe.set_route('Form', 'Opportunity', frm.doc.opportunity).then(() => {
+                        cur_frm.reload_doc();
+                    });
                 });
                 btn.removeClass('btn-default').css({
                     'background-color': '#000',

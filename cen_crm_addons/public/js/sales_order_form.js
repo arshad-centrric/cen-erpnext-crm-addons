@@ -8,7 +8,9 @@ frappe.ui.form.on("Sales Order", {
                 callback: function(r) {
                     if (r.message) {
                         let btn = frm.add_custom_button(__('View Opportunity'), function() {
-                            frappe.set_route('Form', 'Opportunity', r.message);
+                            frappe.set_route('Form', 'Opportunity', r.message).then(() => {
+                                cur_frm.reload_doc();
+                            });
                         });
                         btn.removeClass('btn-default').css({
                             'background-color': '#000',
