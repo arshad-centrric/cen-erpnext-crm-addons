@@ -336,6 +336,45 @@ frappe.ui.form.on('Opportunity', {
                         });
                     }, __('Set Status'));
                 });
+
+                // Smart Quotation Flow
+                // Remove all predefined inner options to "empty out" the Create button 
+                // without destroying the parent, preventing Frappe from re-rendering them.
+                setTimeout(() => {
+                    frm.page.remove_inner_button('Quotation', 'Create');
+                    frm.page.remove_inner_button('Supplier Quotation', 'Create');
+                    frm.page.remove_inner_button('Request For Quotation', 'Create');
+                    frm.page.remove_inner_button('Customer', 'Create');
+                }, 200);
+
+
+                frappe.db.get_list('Quotation', {
+                    filters: {
+                        opportunity: frm.doc.name,
+                        docstatus: ['in', [0, 1]]
+                    },
+                    fields: ['name'],
+                    limit: 1
+                }).then(records => {
+                    if (records && records.length > 0) {
+                        // Active Quotation exists
+                        let active_quotation = records[0].name;
+                        frm.add_custom_button(__('View Active Quotation'), () => {
+                            frappe.set_route('Form', 'Quotation', active_quotation);
+                        });
+                    } else {
+                        // No active Quotation, allow creation
+                        let btn = frm.add_custom_button(__('Create Quotation'), () => {
+                            frappe.model.open_mapped_doc({
+                                method: 'erpnext.crm.doctype.opportunity.opportunity.make_quotation',
+                                frm: frm
+                            });
+                        });
+
+                        // Apply primary style for emphasis
+                        btn.removeClass('btn-default').addClass('btn-primary');
+                    }
+                });
             }
         }
     }
@@ -417,7 +456,7 @@ function cen_crm_generate_docs_html(docs, doctype_label) {
 
         ht += `
         <div class="col-md-6 mb-3">
-            <a href="/app/${link_doctype_url_part}/${doc.name}" class="card border" target="_blank" style="text-decoration: none; color: inherit; padding: 15px; border-radius: 8px; display: block; box-shadow: 0 1px 3px rgba(0,0,0,0.05); transition: 0.2s;">
+            <a href="/app/${link_doctype_url_part}/${doc.name}" class="card border" style="text-decoration: none; color: inherit; padding: 15px; border-radius: 8px; display: block; box-shadow: 0 1px 3px rgba(0,0,0,0.05); transition: 0.2s;">
                 <div class="d-flex justify-content-between align-items-start">
                     <div style="display: flex; flex-direction: column; gap: 4px;">
                         <h5 style="margin: 0; font-weight: bold; color: var(--primary); font-size: 15px; display: flex; align-items: center; gap: 8px;">
@@ -495,11 +534,11 @@ function cen_crm_generate_docs_html(docs, doctype_label) {
                     <div class="card border" style="padding: 15px; border-radius: 8px; box-shadow: 0 2px 4px rgba(0,0,0,0.03); background: #ffffff;">
                         <div class="d-flex justify-content-between align-items-start mb-2">
                             <div style="display: flex; flex-direction: column; gap: 6px;">
-                                <a href="/app/payment-entry/${pe.name}" target="_blank" style="font-size: 14px; font-weight: bold; color: var(--primary); text-decoration: none;">${pe.name}</a>
+                                <a href="/app/payment-entry/${pe.name}" style="font-size: 14px; font-weight: bold; color: var(--primary); text-decoration: none;">${pe.name}</a>
                                 <span class="badge" style="background-color: var(--blue-100); color: var(--blue-600); font-size: 11px; width: max-content;">${mode}</span>
                             </div>
                             <div style="display: flex; flex-direction: column; align-items: flex-end; gap: 6px;">
-                                <a href="/app/sales-order/${pe.so_name}" target="_blank" style="font-size: 13px; font-weight: 600; color: var(--text-muted); text-decoration: none;">${pe.so_name}</a>
+                                <a href="/app/sales-order/${pe.so_name}" style="font-size: 13px; font-weight: 600; color: var(--text-muted); text-decoration: none;">${pe.so_name}</a>
                                 <strong style="color: var(--green-600); font-size: 15px;">${amount_formatted}</strong>
                             </div>
                         </div>

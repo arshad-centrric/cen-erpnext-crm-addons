@@ -176,27 +176,6 @@
  {
   "docstatus": 0,
   "doctype": "Role Profile",
-  "modified": "2026-04-12 01:05:43.327989",
-  "name": "CRM Sales Person",
-  "role_profile": "CRM Sales Person",
-  "roles": [
-   {
-    "parent": "CRM Sales Person",
-    "parentfield": "roles",
-    "parenttype": "Role Profile",
-    "role": "Sales Person"
-   },
-   {
-    "parent": "CRM Sales Person",
-    "parentfield": "roles",
-    "parenttype": "Role Profile",
-    "role": "Sales User"
-   }
-  ]
- },
- {
-  "docstatus": 0,
-  "doctype": "Role Profile",
   "modified": "2026-04-13 14:22:47.026354",
   "name": "CRM Picking User",
   "role_profile": "CRM Picking User",
@@ -212,6 +191,27 @@
     "parentfield": "roles",
     "parenttype": "Role Profile",
     "role": "Desk User"
+   }
+  ]
+ },
+ {
+  "docstatus": 0,
+  "doctype": "Role Profile",
+  "modified": "2026-04-12 01:05:43.327989",
+  "name": "CRM Sales Person",
+  "role_profile": "CRM Sales Person",
+  "roles": [
+   {
+    "parent": "CRM Sales Person",
+    "parentfield": "roles",
+    "parenttype": "Role Profile",
+    "role": "Sales Person"
+   },
+   {
+    "parent": "CRM Sales Person",
+    "parentfield": "roles",
+    "parenttype": "Role Profile",
+    "role": "Sales User"
    }
   ]
  }

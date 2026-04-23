@@ -101,7 +101,7 @@ fixtures = [
 # ------------------
 
 # include js, css files in header of desk.html
-app_include_css = "/assets/cen_crm_addons/css/jquery-clockpicker.min.css"
+app_include_css = "/assets/cen_crm_addons/css/clockpicker_clean.css"
 app_include_js = [
     "/assets/cen_crm_addons/js/jquery-clockpicker.min.js",
     "/assets/cen_crm_addons/js/time_patch.js"
