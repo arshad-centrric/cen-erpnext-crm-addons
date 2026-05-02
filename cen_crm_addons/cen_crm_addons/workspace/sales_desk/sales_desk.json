@@ -1,6 +1,6 @@
 {
  "charts": [],
- "content": "[{\"id\":\"0xHqvUr69R\",\"type\":\"header\",\"data\":{\"text\":\"<span class=\\\"h4\\\">Sales Desk</span>\",\"col\":12}},{\"id\":\"6Y66C_pcwD\",\"type\":\"spacer\",\"data\":{\"col\":12}},{\"id\":\"h24xX9E7Ny\",\"type\":\"paragraph\",\"data\":{\"text\":\"<span class=\\\"h4\\\">Sales&nbsp;Workflow</span>\",\"col\":12}},{\"id\":\"ugc_KkxLuN\",\"type\":\"shortcut\",\"data\":{\"shortcut_name\":\"Opportunity\",\"col\":4}},{\"id\":\"4QvSRqWt_Q\",\"type\":\"shortcut\",\"data\":{\"shortcut_name\":\"Quotation\\t\",\"col\":4}},{\"id\":\"AeS3CYb86b\",\"type\":\"shortcut\",\"data\":{\"shortcut_name\":\"Sales Order\",\"col\":4}},{\"id\":\"AfRHsK99b8\",\"type\":\"spacer\",\"data\":{\"col\":12}},{\"id\":\"HpgNNdkv_x\",\"type\":\"paragraph\",\"data\":{\"text\":\"<span class=\\\"h4\\\">Masters</span>\",\"col\":12}},{\"id\":\"-yaCyk4zJ_\",\"type\":\"shortcut\",\"data\":{\"shortcut_name\":\"Customer\",\"col\":3}},{\"id\":\"MqWilVThkQ\",\"type\":\"shortcut\",\"data\":{\"shortcut_name\":\"Item\",\"col\":3}},{\"id\":\"HPuuuxduzg\",\"type\":\"shortcut\",\"data\":{\"shortcut_name\":\"Product Bundle\\t\",\"col\":3}},{\"id\":\"eaGUKTfkFE\",\"type\":\"shortcut\",\"data\":{\"shortcut_name\":\"Item Price\\t\",\"col\":3}}]",
+ "content": "[{\"id\":\"0xHqvUr69R\",\"type\":\"header\",\"data\":{\"text\":\"<span class=\\\"h4\\\">Sales Desk</span>\",\"col\":12}},{\"id\":\"6Y66C_pcwD\",\"type\":\"spacer\",\"data\":{\"col\":12}},{\"id\":\"smXt8jeQkn\",\"type\":\"header\",\"data\":{\"text\":\"<span class=\\\"h4\\\">Operations</span>\",\"col\":12}},{\"id\":\"S0r6m5zK5u\",\"type\":\"shortcut\",\"data\":{\"shortcut_name\":\"Create Lead\",\"col\":3}},{\"id\":\"SzeVCDSQjj\",\"type\":\"spacer\",\"data\":{\"col\":12}},{\"id\":\"h24xX9E7Ny\",\"type\":\"paragraph\",\"data\":{\"text\":\"<span class=\\\"h4\\\">Sales&nbsp;Workflow</span>\",\"col\":12}},{\"id\":\"ugc_KkxLuN\",\"type\":\"shortcut\",\"data\":{\"shortcut_name\":\"Opportunity\",\"col\":4}},{\"id\":\"4QvSRqWt_Q\",\"type\":\"shortcut\",\"data\":{\"shortcut_name\":\"Quotation\\t\",\"col\":4}},{\"id\":\"AeS3CYb86b\",\"type\":\"shortcut\",\"data\":{\"shortcut_name\":\"Sales Order\",\"col\":4}},{\"id\":\"AfRHsK99b8\",\"type\":\"spacer\",\"data\":{\"col\":12}},{\"id\":\"HpgNNdkv_x\",\"type\":\"paragraph\",\"data\":{\"text\":\"<span class=\\\"h4\\\">Masters</span>\",\"col\":12}},{\"id\":\"-yaCyk4zJ_\",\"type\":\"shortcut\",\"data\":{\"shortcut_name\":\"Customer\",\"col\":3}},{\"id\":\"MqWilVThkQ\",\"type\":\"shortcut\",\"data\":{\"shortcut_name\":\"Item\",\"col\":3}},{\"id\":\"HPuuuxduzg\",\"type\":\"shortcut\",\"data\":{\"shortcut_name\":\"Product Bundle\\t\",\"col\":3}},{\"id\":\"eaGUKTfkFE\",\"type\":\"shortcut\",\"data\":{\"shortcut_name\":\"Item Price\\t\",\"col\":3}}]",
  "creation": "2026-04-10 18:50:28.656663",
  "custom_blocks": [],
  "docstatus": 0,
@@ -13,7 +13,7 @@
  "is_hidden": 0,
  "label": "Sales Desk",
  "links": [],
- "modified": "2026-04-15 20:29:40.815064",
+ "modified": "2026-05-02 11:04:14.900070",
  "modified_by": "Administrator",
  "module": "Cen Crm Addons",
  "name": "Sales Desk",
@@ -29,6 +29,13 @@
  ],
  "sequence_id": 1.0,
  "shortcuts": [
+  {
+   "color": "Grey",
+   "doc_view": "List",
+   "label": "Create Lead",
+   "link_to": "quick-lead-entry",
+   "type": "Page"
+  },
   {
    "color": "Grey",
    "doc_view": "List",
