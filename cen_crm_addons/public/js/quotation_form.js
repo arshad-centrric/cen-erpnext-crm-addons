@@ -88,6 +88,231 @@ frappe.ui.form.on("Quotation", {
                     }
                 });
             }
+
+            // Phase 2: Split Delivery Wizard Logic
+            if (frm.doc.docstatus === 1) {
+                setTimeout(() => {
+                    frm.remove_custom_button('Sales Order', 'Create');
+                    frm.add_custom_button(__('Sales Order'), function() {
+                        frm.reload_doc().then(() => {
+                            let locations = frm.doc.custom_location_details || [];
+                    
+                    if (locations.length === 0) {
+                        // Standard flow
+                        frappe.model.open_mapped_doc({
+                            method: "erpnext.selling.doctype.quotation.quotation.make_sales_order",
+                            frm: frm
+                        });
+                    } else if (locations.length === 1) {
+                        // Single Address Bypass - automatically select the only address and all pending items
+                        let allocate_items = [];
+                        let has_pending = false;
+                        
+                        (frm.doc.items || []).forEach((item) => {
+                            let ordered_qty = item.ordered_qty || 0;
+                            let pending_qty = item.qty - ordered_qty;
+                            
+                            if (pending_qty > 0) {
+                                allocate_items.push({
+                                    item_code: item.item_code,
+                                    quotation_item_name: item.name,
+                                    allocate_qty: pending_qty
+                                });
+                                has_pending = true;
+                            }
+                        });
+                        
+                        if (!has_pending) {
+                            frappe.msgprint(__('All items have already been ordered.'));
+                            return;
+                        }
+                        
+                        frappe.model.open_mapped_doc({
+                            method: "cen_crm_addons.api.sales_order_hooks.make_split_sales_order",
+                            frm: frm,
+                            args: {
+                                source_name: frm.doc.name,
+                                payload: {
+                                    target_address_row_name: locations[0].name,
+                                    items: allocate_items
+                                }
+                            }
+                        });
+                    } else {
+                        // Split Delivery Wizard Dialog
+                        let address_options = locations.map(row => ({
+                            label: row.delivery_label || row.name,
+                            value: row.name
+                        }));
+                        
+                        let items_html = `
+                            <table class="table table-bordered">
+                                <thead>
+                                    <tr>
+                                        <th>Item Code</th>
+                                        <th>Item Name</th>
+                                        <th>Total Qty</th>
+                                        <th>Pending Qty</th>
+                                        <th>Allocate Qty</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                        `;
+                        
+                        let has_pending = false;
+                        
+                        (frm.doc.items || []).forEach((item, idx) => {
+                            let ordered_qty = item.ordered_qty || 0;
+                            let pending_qty = item.qty - ordered_qty;
+                            
+                            items_html += `
+                                <tr data-item-code="${item.item_code}" data-name="${item.name}" data-pending="${pending_qty}">
+                                    <td>${item.item_code}</td>
+                                    <td>${item.item_name}</td>
+                                    <td>${item.qty}</td>
+                                    <td>${pending_qty}</td>
+                                    <td>
+                                        <input type="number" class="form-control allocate-qty-input" data-idx="${idx}" max="${pending_qty}" min="0" value="0" ${pending_qty <= 0 ? 'disabled' : ''}>
+                                    </td>
+                                </tr>
+                            `;
+                            
+                            if (pending_qty > 0) has_pending = true;
+                        });
+                        
+                        items_html += `
+                                </tbody>
+                            </table>
+                        `;
+                        
+                        if (!has_pending) {
+                            frappe.msgprint(__('All items have already been ordered.'));
+                            return;
+                        }
+
+                        let d = new frappe.ui.Dialog({
+                            title: __('Split Delivery Allocation'),
+                            fields: [
+                                {
+                                    label: __('Select Target Address'),
+                                    fieldname: 'selected_address',
+                                    fieldtype: 'Select',
+                                    options: address_options,
+                                    reqd: 1
+                                },
+                                {
+                                    fieldname: 'items_html',
+                                    fieldtype: 'HTML',
+                                    options: items_html
+                                }
+                            ],
+                            primary_action_label: __('Create Sales Order'),
+                            primary_action(values) {
+                                let allocate_items = [];
+                                let has_error = false;
+                                let total_allocated_qty = 0;
+                                let total_pending_qty = 0;
+                                
+                                d.$wrapper.find('.allocate-qty-input').each(function() {
+                                    let qty = parseFloat($(this).val()) || 0;
+                                    let max = parseFloat($(this).attr('max')) || 0;
+                                    let item_name = $(this).closest('tr').attr('data-name');
+                                    let item_code = $(this).closest('tr').attr('data-item-code');
+                                    
+                                    total_pending_qty += max;
+                                    
+                                    if (qty > max) {
+                                        frappe.msgprint(__('Cannot allocate more than Pending Qty for item {0}', [item_code]));
+                                        has_error = true;
+                                        return false;
+                                    }
+                                    
+                                    if (qty > 0) {
+                                        total_allocated_qty += qty;
+                                        allocate_items.push({
+                                            item_code: item_code,
+                                            quotation_item_name: item_name,
+                                            allocate_qty: qty
+                                        });
+                                    }
+                                });
+                                
+                                if (has_error) return;
+                                
+                                if (allocate_items.length === 0) {
+                                    frappe.msgprint(__('Please allocate at least 1 item.'));
+                                    return;
+                                }
+                                
+                                d.get_primary_btn().prop('disabled', true);
+                                
+                                frappe.call({
+                                    method: 'cen_crm_addons.api.sales_order_hooks.get_linked_sales_orders',
+                                    args: {
+                                        quotation_name: frm.doc.name
+                                    },
+                                    callback: function(r) {
+                                        let sales_orders = r.message || [];
+                                        let fulfilled_locations_count = sales_orders.length;
+                                        let total_locations = frm.doc.custom_location_details ? frm.doc.custom_location_details.length : 0;
+                                        let unfulfilled_locations = total_locations - fulfilled_locations_count;
+                                        let remaining_items_after_allocation = total_pending_qty - total_allocated_qty;
+                                        
+                                        if (unfulfilled_locations > 1) {
+                                            let required_buffer = unfulfilled_locations - 1;
+                                            if (remaining_items_after_allocation < required_buffer) {
+                                                frappe.msgprint(__('Cannot allocate all items. You must leave at least {0} item(s) pending for the remaining {1} delivery location(s).', [required_buffer, required_buffer]));
+                                                d.get_primary_btn().prop('disabled', false);
+                                                return;
+                                            }
+                                        }
+                                        
+                                        frappe.model.open_mapped_doc({
+                                            method: "cen_crm_addons.api.sales_order_hooks.make_split_sales_order",
+                                            frm: frm,
+                                            args: {
+                                                source_name: frm.doc.name,
+                                                payload: {
+                                                    target_address_row_name: values.selected_address,
+                                                    items: allocate_items
+                                                }
+                                            }
+                                        });
+                                        
+                                        d.hide();
+                                    }
+                                });
+                            }
+                        });
+                        
+                        d.show();
+                    }
+                        });
+                }, __('Create'));
+                
+                    // Polish Create Button Group
+                    let create_btn = frm.page.wrapper.find('.page-actions button:contains("Create")').filter(function() {
+                        return $(this).text().trim() === "Create" || $(this).text().trim() === __("Create");
+                    }).first();
+                    
+                    if (create_btn.length === 0) {
+                        create_btn = frm.page.wrapper.find('.page-actions button:contains("Create")').first();
+                    }
+                    
+                    if (create_btn.length > 0) {
+                        create_btn.removeClass('btn-default').css({
+                            'background-color': '#000',
+                            'color': '#fff',
+                            'border-color': '#000'
+                        });
+                        
+                        let view_opp_btn = frm.page.wrapper.find('.page-actions button:contains("View Opportunity")');
+                        if (view_opp_btn.length > 0) {
+                            create_btn.closest('.custom-btn-group, .btn-group').insertAfter(view_opp_btn);
+                        }
+                    }
+                }, 100);
+            }
         }
     }
 });

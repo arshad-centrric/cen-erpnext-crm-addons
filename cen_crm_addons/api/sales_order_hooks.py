@@ -61,40 +61,42 @@ def _apply_opportunity_mapping_to_quotation(doc, source_name=None):
     if not opportunity_id:
         return
 
-    # Fetch all custom logistics and address fields
-    fields_to_fetch = [
-        "custom_delivery_partner", "custom_mode_of_delivery", "custom_delivery_time", 
-        "custom_delivery_store", "custom_delivery_date", "custom_address_line_1", 
-        "custom_address_line_2", "custom_delivery_city", "custom_delivery_state", 
-        "custom_pincode", "custom_delivery_country"
-    ]
-    
-    opp_data = frappe.db.get_value("Opportunity", opportunity_id, fields_to_fetch, as_dict=1)
+    opp_doc = frappe.get_doc("Opportunity", opportunity_id)
 
-    if not opp_data:
-        return
+    # Map Delivery Locations child table
+    if opp_doc.get("custom_location_details"):
+        doc.set("custom_location_details", [])
+        has_courier = False
+        
+        for row in opp_doc.custom_location_details:
+            new_row = doc.append("custom_location_details", {})
+            for fieldname in [
+                "delivery_label", "custom_delivery_store", "custom_mode_of_delivery", 
+                "custom_delivery_partner", "custom_delivery_date", "custom_delivery_time", 
+                "custom_address_line_1", "custom_address_line_2", "custom_delivery_city", 
+                "custom_delivery_state", "custom_pincode", "custom_delivery_country"
+            ]:
+                new_row.set(fieldname, row.get(fieldname))
+                
+            if row.get("custom_mode_of_delivery") == "Courier":
+                has_courier = True
 
-    # Map only if target fields are blank
-    for field in fields_to_fetch:
-        if opp_data.get(field) and not doc.get(field):
-            doc.set(field, opp_data.get(field))
-
-    # Auto-append delivery charge item if mapped to Courier
-    if getattr(doc, "custom_mode_of_delivery", None) == "Courier":
-        delivery_item = frappe.db.get_single_value("Cen CRM Settings", "delivery_charge_item")
-        if delivery_item:
-            # Prevent appending identical delivery line if someone refreshes somehow
-            existing_items = [d.item_code for d in doc.items] if hasattr(doc, "items") and doc.items else []
-            if delivery_item not in existing_items:
-                item_details = frappe.db.get_value("Item", delivery_item, ["item_name", "description", "stock_uom"], as_dict=1)
-                if item_details:
-                    doc.append("items", {
-                        "item_code": delivery_item,
-                        "item_name": item_details.item_name,
-                        "description": item_details.description,
-                        "qty": 1,
-                        "uom": item_details.stock_uom
-                    })
+        # Auto-append delivery charge item if mapped to Courier
+        if has_courier:
+            delivery_item = frappe.db.get_single_value("Cen CRM Settings", "delivery_charge_item")
+            if delivery_item:
+                # Prevent appending identical delivery line if someone refreshes somehow
+                existing_items = [d.item_code for d in doc.items] if hasattr(doc, "items") and doc.items else []
+                if delivery_item not in existing_items:
+                    item_details = frappe.db.get_value("Item", delivery_item, ["item_name", "description", "stock_uom"], as_dict=1)
+                    if item_details:
+                        doc.append("items", {
+                            "item_code": delivery_item,
+                            "item_name": item_details.item_name,
+                            "description": item_details.description,
+                            "qty": 1,
+                            "uom": item_details.stock_uom
+                        })
 
 @frappe.whitelist()
 def make_quotation_wrapper(source_name, target_doc=None, args=None):
@@ -128,35 +130,48 @@ def _apply_quotation_mapping_to_sales_order(doc, source_name=None):
     if not quotation_id:
         return
         
-    # Fetch custom logistics and address fields from Quotation
-    fields_to_fetch = [
-        "custom_delivery_partner", "custom_mode_of_delivery", "custom_delivery_time", 
-        "custom_delivery_store", "custom_delivery_date", "custom_address_line_1", 
-        "custom_address_line_2", "custom_delivery_city", "custom_delivery_state", 
-        "custom_pincode", "custom_delivery_country"
-    ]
+    quotation = frappe.get_doc("Quotation", quotation_id)
+    locations = quotation.get("custom_location_details", [])
     
-    qtn_data = frappe.db.get_value("Quotation", quotation_id, fields_to_fetch, as_dict=1)
-    
-    if not qtn_data:
-        return
+    if locations:
+        target_row = locations[0]
         
-    # Map Quotation fields to Sales Order
-    for field in fields_to_fetch:
-        if qtn_data.get(field) and not doc.get(field):
-            doc.set(field, qtn_data.get(field))
+        fields_to_copy = [
+            "custom_mode_of_delivery", "custom_delivery_partner", "custom_delivery_store", 
+            "custom_delivery_date", "custom_delivery_time", "custom_address_line_1", 
+            "custom_address_line_2", "custom_delivery_city", "custom_delivery_state", 
+            "custom_pincode", "custom_delivery_country"
+        ]
+        
+        for field in fields_to_copy:
+            if target_row.get(field):
+                doc.set(field, target_row.get(field))
+                
+        if target_row.get("custom_delivery_date"):
+            doc.delivery_date = target_row.get("custom_delivery_date")
+            for item in doc.items:
+                item.delivery_date = target_row.get("custom_delivery_date")
+                
+        delivery_store = target_row.get("custom_delivery_store")
+        if not delivery_store:
+            delivery_store = frappe.db.get_single_value("Stock Settings", "default_warehouse")
+            
+        if delivery_store:
+            doc.set_warehouse = delivery_store
+            for item in doc.items:
+                item.warehouse = delivery_store
 
-    # Existing special logic mappings (Warehouse and Date)
-    if qtn_data.custom_delivery_date and not doc.delivery_date:
-        doc.delivery_date = qtn_data.custom_delivery_date
+@frappe.whitelist()
+def get_linked_sales_orders(quotation_name):
+    """Securely fetches unique Sales Orders linked to a Quotation, bypassing child table API permission errors."""
+    sales_orders = frappe.db.sql("""
+        SELECT DISTINCT parent 
+        FROM `tabSales Order Item` 
+        WHERE prevdoc_docname = %s 
+        AND docstatus < 2
+    """, quotation_name, as_dict=True)
     
-    if qtn_data.custom_delivery_store and not doc.set_warehouse:
-        doc.set_warehouse = qtn_data.custom_delivery_store
-        
-    # Push delivery_date to child items
-    if doc.delivery_date:
-        for item in doc.items:
-            item.delivery_date = doc.delivery_date
+    return [so.parent for so in sales_orders]
 
 @frappe.whitelist()
 def make_sales_order_wrapper(source_name, target_doc=None, args=None):
@@ -164,3 +179,122 @@ def make_sales_order_wrapper(source_name, target_doc=None, args=None):
     doc = make_sales_order(source_name, target_doc, args=args)
     _apply_quotation_mapping_to_sales_order(doc, source_name=source_name)
     return doc
+
+@frappe.whitelist()
+def make_split_sales_order(source_name, payload=None):
+    if not payload:
+        args = getattr(frappe.flags, "args", {})
+        payload = args.get("payload", {})
+        
+    if isinstance(payload, str):
+        payload = frappe.parse_json(payload)
+        
+    target_address_row_name = payload.get("target_address_row_name")
+    items_payload = payload.get("items", [])
+    
+    quotation = frappe.get_doc("Quotation", source_name)
+    target_row = next((row for row in quotation.get("custom_location_details", []) if row.name == target_address_row_name), None)
+    
+    if not target_row:
+        frappe.throw("Selected delivery address row not found in Quotation.")
+        
+    from erpnext.selling.doctype.quotation.quotation import make_sales_order
+    mapped_so = make_sales_order(source_name)
+    
+    original_items = mapped_so.get("items")
+    mapped_so.set("items", [])
+    
+    payload_item_map = {p.get("quotation_item_name"): p.get("allocate_qty") for p in items_payload}
+    
+    for item in original_items:
+        if item.quotation_item in payload_item_map:
+            item.qty = payload_item_map[item.quotation_item]
+            mapped_so.append("items", item)
+            
+    if not mapped_so.get("items"):
+        frappe.throw("No valid items allocated for this Sales Order.")
+        
+    fields_to_copy = [
+        "custom_mode_of_delivery", "custom_delivery_partner", "custom_delivery_store", 
+        "custom_delivery_date", "custom_delivery_time", "custom_address_line_1", 
+        "custom_address_line_2", "custom_delivery_city", "custom_delivery_state", 
+        "custom_pincode", "custom_delivery_country"
+    ]
+    
+    for field in fields_to_copy:
+        mapped_so.set(field, target_row.get(field))
+        
+    if target_row.get("custom_delivery_date"):
+        mapped_so.delivery_date = target_row.get("custom_delivery_date")
+        for item in mapped_so.items:
+            item.delivery_date = target_row.get("custom_delivery_date")
+            
+    delivery_store = target_row.get("custom_delivery_store")
+    if not delivery_store:
+        # Fallback to default stock settings to scrub any disabled warehouses from the old quotation
+        delivery_store = frappe.db.get_single_value("Stock Settings", "default_warehouse")
+        
+    if delivery_store:
+        mapped_so.set_warehouse = delivery_store
+        for item in mapped_so.items:
+            item.warehouse = delivery_store
+
+    return mapped_so
+
+@frappe.whitelist()
+def get_consolidated_payment_entry_data(source_name, target_doc=None):
+    from frappe.utils import flt
+    from erpnext.accounts.doctype.payment_entry.payment_entry import get_payment_entry
+    
+    # 1. Fetch Quotations linked to the Opportunity
+    quotations = frappe.get_all("Quotation", filters={"opportunity": source_name}, pluck="name")
+    if not quotations:
+        frappe.throw("No active, unpaid Sales Orders found for this Opportunity. They may already be fully paid.")
+        
+    # 2. Fetch Sales Orders linked to these Quotations via items table
+    so_items = frappe.get_all(
+        "Sales Order Item",
+        filters={"prevdoc_docname": ("in", quotations)},
+        pluck="parent"
+    )
+    if not so_items:
+        frappe.throw("No active, unpaid Sales Orders found for this Opportunity. They may already be fully paid.")
+        
+    so_names = list(set(so_items))
+    
+    sales_orders = frappe.get_all(
+        "Sales Order",
+        filters={"name": ("in", so_names), "docstatus": 1},
+        fields=["name", "grand_total", "advance_paid", "customer"]
+    )
+    
+    valid_sos = []
+    for so in sales_orders:
+        outstanding = flt(so.grand_total) - flt(so.advance_paid)
+        if outstanding > 0:
+            valid_sos.append({"name": so.name, "outstanding": outstanding, "customer": so.customer})
+            
+    if not valid_sos:
+        frappe.throw("No active, unpaid Sales Orders found for this Opportunity. They may already be fully paid.")
+        
+    # Generate the base Payment Entry using the FIRST valid Sales Order
+    base_so = valid_sos[0]
+    pe_doc = get_payment_entry("Sales Order", base_so["name"])
+    
+    # We already have the first SO in pe_doc.references. Let's add the rest.
+    total_amount = flt(pe_doc.paid_amount)
+    
+    for so in valid_sos[1:]:
+        pe_doc.append("references", {
+            "reference_doctype": "Sales Order",
+            "reference_name": so["name"],
+            "total_amount": flt(so["outstanding"]),
+            "outstanding_amount": flt(so["outstanding"]),
+            "allocated_amount": flt(so["outstanding"])
+        })
+        total_amount += flt(so["outstanding"])
+        
+    pe_doc.paid_amount = total_amount
+    pe_doc.received_amount = total_amount
+    
+    return pe_doc

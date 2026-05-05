@@ -264,81 +264,66 @@ def sync_opportunity_list_fields(doc, method=None):
         doc.custom_wa_chat_link = ""
 
     # 3. Create/Update Standard Address (Cross-Doc Sync)
-    if doc.custom_address_line_1 and doc.custom_delivery_city:
+    if getattr(doc, "custom_location_details", None):
         sync_opportunity_to_address(doc)
 
 def sync_opportunity_to_address(doc):
-    """Creates or updates a standard Address record from Opportunity custom fields."""
-    if not doc.party_name:
+    """Creates or updates standard Address records from Opportunity Delivery Locations child table."""
+    if not doc.party_name or not getattr(doc, "custom_location_details", None):
         return
 
     party_type = doc.opportunity_from
     party_name = doc.party_name
 
-    # 1. Search for an address already officially linked to this specific Opportunity
-    existing_address = frappe.db.get_value("Dynamic Link", {
-        "link_doctype": "Opportunity",
-        "link_name": doc.name,
-        "parenttype": "Address"
-    }, "parent")
+    for row in doc.custom_location_details:
+        if not row.custom_address_line_1 or not row.custom_delivery_city:
+            continue
 
-    # 2. If it exists, update it
-    if existing_address:
-        address_doc = frappe.get_doc("Address", existing_address)
-        address_doc.update({
-            "address_line1": doc.custom_address_line_1,
-            "address_line2": doc.custom_address_line_2,
-            "city": doc.custom_delivery_city,
-            "state": doc.custom_delivery_state,
-            "pincode": doc.custom_pincode,
-            "country": doc.custom_delivery_country
+        base_title = frappe.db.get_value(party_type, party_name, "customer_name" if party_type=="Customer" else "lead_name") or party_name
+        address_title = f"{base_title} - {row.delivery_label}" if row.delivery_label else base_title
+
+        # Check if an address already exists with this exact content
+        match_by_content = frappe.db.get_value("Address", {
+            "address_line1": row.custom_address_line_1,
+            "city": row.custom_delivery_city,
+            "address_type": "Billing"
+        }, "name")
+
+        if match_by_content:
+            address_doc = frappe.get_doc("Address", match_by_content)
+            # Link this new Opportunity to the matched address if not linked
+            is_linked = any(link.link_doctype == "Opportunity" and link.link_name == doc.name for link in address_doc.links)
+            if not is_linked:
+                address_doc.append("links", {
+                    "link_doctype": "Opportunity",
+                    "link_name": doc.name
+                })
+                address_doc.save(ignore_permissions=True)
+            continue
+
+        # If nothing else fits, create a new Address record
+        new_address = frappe.get_doc({
+            "doctype": "Address",
+            "address_title": address_title,
+            "address_type": "Billing",
+            "address_line1": row.custom_address_line_1,
+            "address_line2": row.custom_address_line_2,
+            "city": row.custom_delivery_city,
+            "state": row.custom_delivery_state,
+            "pincode": row.custom_pincode,
+            "country": row.custom_delivery_country,
+            "links": [
+                {
+                    "link_doctype": party_type,
+                    "link_name": party_name
+                },
+                {
+                    "link_doctype": "Opportunity",
+                    "link_name": doc.name
+                }
+            ]
         })
-        address_doc.save(ignore_permissions=True)
-        return
-
-    # 3. If no link exists, check if any Address with this content exists for this Lead/Customer
-    # (Optional: this prevents duplicate addresses if multiple people have the same address)
-    match_by_content = frappe.db.get_value("Address", {
-        "address_line1": doc.custom_address_line_1,
-        "city": doc.custom_delivery_city,
-        "address_type": "Billing"
-    }, "name")
-
-    if match_by_content:
-        address_doc = frappe.get_doc("Address", match_by_content)
-        # Link this new Opportunity to the matched address
-        address_doc.append("links", {
-            "link_doctype": "Opportunity",
-            "link_name": doc.name
-        })
-        address_doc.save(ignore_permissions=True)
-        return
-
-    # 4. If nothing else fits, create a new Address record
-    address_title = frappe.db.get_value(party_type, party_name, "customer_name" if party_type=="Customer" else "lead_name") or party_name
-    
-    new_address = frappe.get_doc({
-        "doctype": "Address",
-        "address_title": address_title,
-        "address_type": "Billing",
-        "address_line1": doc.custom_address_line_1,
-        "address_line2": doc.custom_address_line_2,
-        "city": doc.custom_delivery_city,
-        "state": doc.custom_delivery_state,
-        "pincode": doc.custom_pincode,
-        "country": doc.custom_delivery_country,
-        "links": [
-            {
-                "link_doctype": party_type,
-                "link_name": party_name
-            },
-            {
-                "link_doctype": "Opportunity",
-                "link_name": doc.name
-            }
-        ]
-    })
-    new_address.insert(ignore_permissions=True)
+        new_address.insert(ignore_permissions=True)
 
 def item_query(user):
     # Filter out customized/one-off items from standard searches

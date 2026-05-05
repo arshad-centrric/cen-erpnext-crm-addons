@@ -30,6 +30,7 @@ fixtures = [
         "custom_assigned_to", 
         "custom_assigned_full_name",
         "custom_wa_chat_link", 
+
         "custom_delivery_detail", # Section Break
         "custom_delivery_info", # Column Break 1
         "custom_customer_address", # Column Break 2
@@ -46,6 +47,10 @@ fixtures = [
         "custom_delivery_state",
         "custom_pincode",
         "custom_delivery_country",
+
+        "custom_delivery_locations", # Section Break
+        "custom_location_details",
+
         "custom_remarks",
 
         #Opportunity Item

@@ -13,10 +13,10 @@ We are executing a multi-phase refactor to support 1-to-Many delivery routing.
 - **Phase 2**: Build a custom allocation UI/wizard. When creating a Sales Order from a Quotation, the user will select which items/quantities go to which saved delivery address, generating multiple separate Sales Orders.
 
 ## Status
-**Phase 1, Task 2 Complete**: 
-- Created `Delivery Info Detail` Child Table.
-- Added New Section **"Delivery Locations"** in Opportunity.
-- Added Table Field **"Location Details"** (`custom_location_details`) linked to the child table.
-- Original delivery fields and section (`custom_delivery_detail`) are set to hidden.
-
-**Next Task**: Phase 1, Task 3: Data Migration Script.
+**Phase 2 Complete**: 
+- **Allocation Wizard**: Fully functional with strict backend quantity validation. Single-address bypass logic updated to utilize custom backend API seamlessly.
+- **UI/UX Polish**: 
+  - Standardized custom action buttons across forms (black styling).
+  - Explicitly rendering "Cancelled" red badges for cancelled Sales Orders in the Opportunity dashboard.
+  - Grouped related document links ("View Opportunity", "View Quotation") under a unified "View Links" dropdown on Sales Order forms to preserve header space. Lookups handle Frappe's dynamic `prevdoc_docname` references cleanly.
+- **Accounting Integration**: Built a Consolidated Payment Entry Generator (`frappe.model.open_mapped_doc`). It aggregates all outstanding balances across multiple split-delivery Sales Orders linked to a single Opportunity, utilizing standard Frappe engines to auto-resolve party accounts, currencies, and references into an unsaved UI draft.
