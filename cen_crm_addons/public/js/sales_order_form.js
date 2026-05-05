@@ -7,19 +7,54 @@ frappe.ui.form.on("Sales Order", {
                 args: { doctype: frm.doc.doctype, docname: frm.doc.name },
                 callback: function(r) {
                     if (r.message) {
-                        let btn = frm.add_custom_button(__('View Opportunity'), function() {
+                        frm.add_custom_button(__('Opportunity'), function() {
                             frappe.set_route('Form', 'Opportunity', r.message).then(() => {
                                 cur_frm.reload_doc();
                             });
-                        });
-                        btn.removeClass('btn-default').css({
+                        }, __('View Links'));
+                        
+                        setTimeout(() => {
+                            let group_btn = frm.page.wrapper.find('.page-actions button:contains("View Links")');
+                            if(group_btn.length > 0) {
+                                group_btn.removeClass('btn-default').css({
+                                    'background-color': '#000',
+                                    'color': '#fff',
+                                    'border-color': '#000'
+                                });
+                            }
+                        }, 50);
+                    }
+                }
+            });
+
+            // View Quotation Link
+            let linked_quotation = null;
+            if (frm.doc.items && frm.doc.items.length > 0) {
+                // Sales Order Items map Quotation names into prevdoc_docname (prevdoc_doctype is not used here)
+                let quote_item = frm.doc.items.find(item => item.prevdoc_docname);
+                if (quote_item) {
+                    linked_quotation = quote_item.prevdoc_docname;
+                }
+            }
+            
+            if (linked_quotation) {
+                frm.add_custom_button(__('Quotation'), function() {
+                    frappe.set_route('Form', 'Quotation', linked_quotation).then(() => {
+                        cur_frm.reload_doc();
+                    });
+                }, __('View Links'));
+                
+                setTimeout(() => {
+                    let group_btn = frm.page.wrapper.find('.page-actions button:contains("View Links")');
+                    if(group_btn.length > 0) {
+                        group_btn.removeClass('btn-default').css({
                             'background-color': '#000',
                             'color': '#fff',
                             'border-color': '#000'
                         });
                     }
-                }
-            });
+                }, 50);
+            }
 
             // WhatsApp Icon Injection
             frappe.call({

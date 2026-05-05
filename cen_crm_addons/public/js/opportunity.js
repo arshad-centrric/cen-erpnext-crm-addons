@@ -276,10 +276,6 @@ function cen_crm_render_popup(parent_item_code, bundle_doc, frm, cdt, cdn) {
 
 frappe.ui.form.on('Opportunity', {
     refresh: function (frm) {
-        // Start by hiding the tabs. They will be revealed if data exists.
-        frm.set_df_property('custom_quotation_tab', 'hidden', 1);
-        frm.set_df_property('custom_sales_order_tab', 'hidden', 1);
-
         // Add WhatsApp Chat Redirection Button
         if (frm.doc.custom_wa_chat_link) {
             setTimeout(() => {
@@ -302,20 +298,26 @@ frappe.ui.form.on('Opportunity', {
                 args: { opportunity_name: frm.doc.name },
                 callback: function (r) {
                     if (r.message) {
-                        let data = r.message;
+                        let data = r.message || {};
+                        let has_quotations = data.quotations && data.quotations.length > 0;
+                        let has_sales_orders = data.sales_orders && data.sales_orders.length > 0;
 
-                        // Handle Quotations
-                        if (data.quotations && data.quotations.length > 0) {
-                            frm.set_df_property('custom_quotation_tab', 'hidden', 0);
+                        if (has_quotations) {
                             let q_html = cen_crm_generate_docs_html(data.quotations, 'quotation');
                             frm.set_df_property('custom_quotation_html', 'options', q_html);
                         }
 
-                        // Handle Sales Orders
-                        if (data.sales_orders && data.sales_orders.length > 0) {
-                            frm.set_df_property('custom_sales_order_tab', 'hidden', 0);
+                        if (has_sales_orders) {
                             let so_html = cen_crm_generate_docs_html(data.sales_orders, 'sales order');
                             frm.set_df_property('custom_sales_order_html', 'options', so_html);
+
+                            // Consolidated Payment Entry Generator
+                            frm.add_custom_button(__('Payment Entry'), function() {
+                                frappe.model.open_mapped_doc({
+                                    method: 'cen_crm_addons.api.sales_order_hooks.get_consolidated_payment_entry_data',
+                                    frm: frm
+                                });
+                            }, __('Create'));
                         }
                     }
                 }
@@ -404,41 +406,53 @@ function cen_crm_generate_docs_html(docs, doctype_label) {
             badges_html = `<span class="badge" style="background-color: var(--${status_class}-100); color: var(--${status_class}-600);">${doc.status || 'Unknown'}</span>`;
         } else {
             // Sales Order Specific Statuses
-            let picking = doc.custom_picking_status || "Pending";
-            let payment = doc.custom_payment_status || "Unpaid";
-            let delivery = doc.delivery_status || "Not Delivered";
-
-            let pick_color = "gray";
-            let p_lower = picking.toLowerCase();
-            if (p_lower.includes("completed") || p_lower.includes("packed")) pick_color = "green";
-            else if (p_lower.includes("pending")) pick_color = "orange";
-            else if (p_lower.includes("progress")) pick_color = "blue";
-
-            let pay_color = "gray";
-            let pay_lower = payment.toLowerCase();
-            if (pay_lower === "paid") pay_color = "green";
-            else if (pay_lower.includes("unpaid") || pay_lower.includes("pending")) pay_color = "orange";
-            else if (pay_lower.includes("partially")) pay_color = "yellow";
-
-            let del_color = "gray";
-            let d_lower = delivery.toLowerCase();
-            if (d_lower === "delivered") del_color = "green";
-            else if (d_lower.includes("not delivered") || d_lower.includes("pending")) del_color = "orange";
-            else if (d_lower.includes("partially")) del_color = "yellow";
-
-            badges_html = `
-                <div style="display: flex; flex-direction: column; gap: 6px; align-items: flex-end;">
-                    <span class="badge" style="background-color: var(--${pick_color}-100); color: var(--${pick_color}-600); width: max-content;">
-                        <i class="fa fa-cube text-muted" style="margin-right: 4px;"></i> Picking: ${picking}
-                    </span>
-                    <span class="badge" style="background-color: var(--${pay_color}-100); color: var(--${pay_color}-600); width: max-content;">
-                        <i class="fa fa-credit-card text-muted" style="margin-right: 4px;"></i> Payment: ${payment}
-                    </span>
-                    <span class="badge" style="background-color: var(--${del_color}-100); color: var(--${del_color}-600); width: max-content;">
-                        <i class="fa fa-truck text-muted" style="margin-right: 4px;"></i> Delivery: ${delivery}
-                    </span>
-                </div>
-            `;
+            let so_status = (doc.status || "").toLowerCase();
+            
+            if (so_status === "cancelled") {
+                badges_html = `
+                    <div style="display: flex; flex-direction: column; gap: 6px; align-items: flex-end;">
+                        <span class="badge" style="background-color: var(--red-100); color: var(--red-600); width: max-content; font-weight: bold; padding: 5px 10px;">
+                            <i class="fa fa-ban" style="margin-right: 4px;"></i> Cancelled
+                        </span>
+                    </div>
+                `;
+            } else {
+                let picking = doc.custom_picking_status || "Pending";
+                let payment = doc.custom_payment_status || "Unpaid";
+                let delivery = doc.delivery_status || "Not Delivered";
+    
+                let pick_color = "gray";
+                let p_lower = picking.toLowerCase();
+                if (p_lower.includes("completed") || p_lower.includes("packed")) pick_color = "green";
+                else if (p_lower.includes("pending")) pick_color = "orange";
+                else if (p_lower.includes("progress")) pick_color = "blue";
+    
+                let pay_color = "gray";
+                let pay_lower = payment.toLowerCase();
+                if (pay_lower === "paid") pay_color = "green";
+                else if (pay_lower.includes("unpaid") || pay_lower.includes("pending")) pay_color = "orange";
+                else if (pay_lower.includes("partially")) pay_color = "yellow";
+    
+                let del_color = "gray";
+                let d_lower = delivery.toLowerCase();
+                if (d_lower === "delivered") del_color = "green";
+                else if (d_lower.includes("not delivered") || d_lower.includes("pending")) del_color = "orange";
+                else if (d_lower.includes("partially")) del_color = "yellow";
+    
+                badges_html = `
+                    <div style="display: flex; flex-direction: column; gap: 6px; align-items: flex-end;">
+                        <span class="badge" style="background-color: var(--${pick_color}-100); color: var(--${pick_color}-600); width: max-content;">
+                            <i class="fa fa-cube text-muted" style="margin-right: 4px;"></i> Picking: ${picking}
+                        </span>
+                        <span class="badge" style="background-color: var(--${pay_color}-100); color: var(--${pay_color}-600); width: max-content;">
+                            <i class="fa fa-credit-card text-muted" style="margin-right: 4px;"></i> Payment: ${payment}
+                        </span>
+                        <span class="badge" style="background-color: var(--${del_color}-100); color: var(--${del_color}-600); width: max-content;">
+                            <i class="fa fa-truck text-muted" style="margin-right: 4px;"></i> Delivery: ${delivery}
+                        </span>
+                    </div>
+                `;
+            }
         }
 
         let packing_attachment_html = '';
