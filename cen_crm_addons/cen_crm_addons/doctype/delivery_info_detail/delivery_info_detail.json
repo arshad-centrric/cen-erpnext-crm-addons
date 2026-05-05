@@ -1,0 +1,106 @@
+{
+ "actions": [],
+ "allow_rename": 1,
+ "creation": "2026-05-04 17:22:45.739596",
+ "doctype": "DocType",
+ "editable_grid": 1,
+ "engine": "InnoDB",
+ "field_order": [
+  "delivery_label",
+  "custom_mode_of_delivery",
+  "custom_delivery_partner",
+  "custom_delivery_store",
+  "custom_delivery_date",
+  "custom_delivery_time",
+  "custom_address_line_1",
+  "custom_address_line_2",
+  "custom_delivery_city",
+  "custom_delivery_state",
+  "custom_pincode",
+  "custom_delivery_country"
+ ],
+ "fields": [
+  {
+   "fieldname": "delivery_label",
+   "fieldtype": "Data",
+   "in_list_view": 1,
+   "label": "Delivery Reference (e.g., Friend 1)",
+   "reqd": 1
+  },
+  {
+   "fieldname": "custom_mode_of_delivery",
+   "fieldtype": "Select",
+   "in_list_view": 1,
+   "label": "Mode of Delivery",
+   "options": "Airport\nPick up from store\nCourier"
+  },
+  {
+   "fieldname": "custom_delivery_partner",
+   "fieldtype": "Link",
+   "label": "Delivery Partner",
+   "options": "Delivery Partner"
+  },
+  {
+   "fieldname": "custom_delivery_store",
+   "fieldtype": "Link",
+   "label": "Delivery Store",
+   "options": "Warehouse"
+  },
+  {
+   "fieldname": "custom_delivery_date",
+   "fieldtype": "Date",
+   "label": "Delivery Date"
+  },
+  {
+   "fieldname": "custom_delivery_time",
+   "fieldtype": "Time",
+   "label": "Delivery Time"
+  },
+  {
+   "fieldname": "custom_address_line_1",
+   "fieldtype": "Data",
+   "label": "Address Line 1"
+  },
+  {
+   "fieldname": "custom_address_line_2",
+   "fieldtype": "Data",
+   "label": "Address Line 2"
+  },
+  {
+   "fieldname": "custom_delivery_city",
+   "fieldtype": "Data",
+   "label": "Delivery City"
+  },
+  {
+   "fieldname": "custom_delivery_state",
+   "fieldtype": "Data",
+   "label": "Delivery State"
+  },
+  {
+   "fieldname": "custom_pincode",
+   "fieldtype": "Data",
+   "label": "Pincode"
+  },
+  {
+   "fieldname": "custom_delivery_country",
+   "fieldtype": "Link",
+   "label": "Delivery Country",
+   "options": "Country"
+  }
+ ],
+ "grid_page_length": 50,
+ "index_web_pages_for_search": 1,
+ "istable": 1,
+ "links": [],
+ "modified": "2026-05-04 17:37:57.734450",
+ "modified_by": "Administrator",
+ "module": "Cen Crm Addons",
+ "name": "Delivery Info Detail",
+ "owner": "Administrator",
+ "permissions": [],
+ "row_format": "Dynamic",
+ "rows_threshold_for_grid_search": 20,
+ "sort_field": "modified",
+ "sort_order": "DESC",
+ "states": []
+}
