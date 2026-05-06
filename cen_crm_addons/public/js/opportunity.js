@@ -293,6 +293,10 @@ frappe.ui.form.on('Opportunity', {
         }
 
         if (!frm.is_new()) {
+            // Clear the HTML wrappers instantly to prevent state leakage from previously viewed Opportunities
+            $(frm.fields_dict.custom_quotation_html.wrapper).empty();
+            $(frm.fields_dict.custom_sales_order_html.wrapper).empty();
+            
             frappe.call({
                 method: "cen_crm_addons.api.opportunity_details.get_linked_documents",
                 args: { opportunity_name: frm.doc.name },
@@ -304,12 +308,12 @@ frappe.ui.form.on('Opportunity', {
 
                         if (has_quotations) {
                             let q_html = cen_crm_generate_docs_html(data.quotations, 'quotation');
-                            frm.set_df_property('custom_quotation_html', 'options', q_html);
+                            $(frm.fields_dict.custom_quotation_html.wrapper).html(q_html);
                         }
 
                         if (has_sales_orders) {
                             let so_html = cen_crm_generate_docs_html(data.sales_orders, 'sales order');
-                            frm.set_df_property('custom_sales_order_html', 'options', so_html);
+                            $(frm.fields_dict.custom_sales_order_html.wrapper).html(so_html);
 
                             // Consolidated Payment Entry Generator
                             frm.add_custom_button(__('Payment Entry'), function() {
@@ -427,11 +431,23 @@ function cen_crm_generate_docs_html(docs, doctype_label) {
                 else if (p_lower.includes("pending")) pick_color = "orange";
                 else if (p_lower.includes("progress")) pick_color = "blue";
     
-                let pay_color = "gray";
-                let pay_lower = payment.toLowerCase();
-                if (pay_lower === "paid") pay_color = "green";
-                else if (pay_lower.includes("unpaid") || pay_lower.includes("pending")) pay_color = "orange";
-                else if (pay_lower.includes("partially")) pay_color = "yellow";
+                let outstanding = flt(doc.grand_total) - flt(doc.advance_paid);
+                let payment_text = "Unpaid";
+                let pay_color = "orange";
+                let outstanding_html = "";
+                
+                if (outstanding <= 0) {
+                    payment_text = "Paid";
+                    pay_color = "green";
+                } else if (outstanding === flt(doc.grand_total)) {
+                    payment_text = "Unpaid";
+                    pay_color = "orange";
+                } else {
+                    payment_text = "Partially Paid";
+                    pay_color = "yellow";
+                    let formatted_out = format_currency(outstanding, doc.currency);
+                    outstanding_html = `<span style="font-size: 11px; color: var(--text-muted); font-weight: 500; margin-top: 2px;">Due: ${formatted_out}</span>`;
+                }
     
                 let del_color = "gray";
                 let d_lower = delivery.toLowerCase();
@@ -444,9 +460,12 @@ function cen_crm_generate_docs_html(docs, doctype_label) {
                         <span class="badge" style="background-color: var(--${pick_color}-100); color: var(--${pick_color}-600); width: max-content;">
                             <i class="fa fa-cube text-muted" style="margin-right: 4px;"></i> Picking: ${picking}
                         </span>
-                        <span class="badge" style="background-color: var(--${pay_color}-100); color: var(--${pay_color}-600); width: max-content;">
-                            <i class="fa fa-credit-card text-muted" style="margin-right: 4px;"></i> Payment: ${payment}
-                        </span>
+                        <div style="display: flex; flex-direction: column; align-items: flex-end; gap: 2px;">
+                            <span class="badge" style="background-color: var(--${pay_color}-100); color: var(--${pay_color}-600); width: max-content;">
+                                <i class="fa fa-credit-card text-muted" style="margin-right: 4px;"></i> Payment: ${payment_text}
+                            </span>
+                            ${outstanding_html}
+                        </div>
                         <span class="badge" style="background-color: var(--${del_color}-100); color: var(--${del_color}-600); width: max-content;">
                             <i class="fa fa-truck text-muted" style="margin-right: 4px;"></i> Delivery: ${delivery}
                         </span>
@@ -546,13 +565,13 @@ function cen_crm_generate_docs_html(docs, doctype_label) {
 
                 ht += `<div class="col-md-4 mb-3">
                     <div class="card border" style="padding: 15px; border-radius: 8px; box-shadow: 0 2px 4px rgba(0,0,0,0.03); background: #ffffff;">
-                        <div class="d-flex justify-content-between align-items-start mb-2">
-                            <div style="display: flex; flex-direction: column; gap: 6px;">
+                        <div style="display: flex; flex-direction: column; gap: 8px; margin-bottom: 12px;">
+                            <div style="display: flex; justify-content: space-between; align-items: center;">
                                 <a href="/app/payment-entry/${pe.name}" style="font-size: 14px; font-weight: bold; color: var(--primary); text-decoration: none;">${pe.name}</a>
-                                <span class="badge" style="background-color: var(--blue-100); color: var(--blue-600); font-size: 11px; width: max-content;">${mode}</span>
-                            </div>
-                            <div style="display: flex; flex-direction: column; align-items: flex-end; gap: 6px;">
                                 <a href="/app/sales-order/${pe.so_name}" style="font-size: 13px; font-weight: 600; color: var(--text-muted); text-decoration: none;">${pe.so_name}</a>
+                            </div>
+                            <div style="display: flex; flex-direction: column; gap: 4px;">
+                                <span class="badge" style="background-color: var(--blue-100); color: var(--blue-600); font-size: 11px; width: max-content; white-space: normal; text-align: left; line-height: 1.4;">${mode}</span>
                                 <strong style="color: var(--green-600); font-size: 15px;">${amount_formatted}</strong>
                             </div>
                         </div>
