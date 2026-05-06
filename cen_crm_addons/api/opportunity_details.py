@@ -85,41 +85,39 @@ def get_linked_documents(opportunity_name):
                 "Sales Order",
                 filters={"name": ("in", so_names)},
                 fields=["name", "status", "transaction_date", "grand_total", "currency", 
-                        "custom_picking_status", "custom_payment_status", "delivery_status", "custom_packing_image"]
+                        "custom_picking_status", "custom_payment_status", "delivery_status", "custom_packing_image", "advance_paid"]
             )
             
             # For each Sales Order, check for attached files in their Payment Entries
             for so in sales_orders:
                 so["payment_entries"] = []
-                payment_status = so.get("custom_payment_status") or ""
                 
-                if "unpaid" not in payment_status.strip().lower() and "pending" not in payment_status.strip().lower():
-                    # Find Payment Entries linked to this SO
-                    pe_refs = frappe.get_all(
-                        "Payment Entry Reference",
-                        filters={"reference_doctype": "Sales Order", "reference_name": so["name"]},
-                        fields=["parent"]
+                # Find Payment Entries linked to this SO
+                pe_refs = frappe.get_all(
+                    "Payment Entry Reference",
+                    filters={"reference_doctype": "Sales Order", "reference_name": so["name"]},
+                    fields=["parent"]
+                )
+                pe_names = list(set([ref["parent"] for ref in pe_refs]))
+                
+                if pe_names:
+                    # Find Payment Entries Details
+                    pes = frappe.get_all(
+                        "Payment Entry",
+                        filters={"name": ("in", pe_names), "docstatus": 1},
+                        fields=["name", "mode_of_payment", "paid_amount"]
                     )
-                    pe_names = list(set([ref["parent"] for ref in pe_refs]))
+                        
+                    # Find Files attached to those Payment Entries
+                    files = frappe.get_all(
+                        "File",
+                        filters={"attached_to_doctype": "Payment Entry", "attached_to_name": ("in", pe_names)},
+                        fields=["file_url", "file_name", "attached_to_name"]
+                    )
                     
-                    if pe_names:
-                        # Find Payment Entries Details
-                        pes = frappe.get_all(
-                            "Payment Entry",
-                            filters={"name": ("in", pe_names), "docstatus": ("<", 2)},
-                            fields=["name", "mode_of_payment", "paid_amount"]
-                        )
-                        
-                        # Find Files attached to those Payment Entries
-                        files = frappe.get_all(
-                            "File",
-                            filters={"attached_to_doctype": "Payment Entry", "attached_to_name": ("in", pe_names)},
-                            fields=["file_url", "file_name", "attached_to_name"]
-                        )
-                        
-                        so["payment_entries"] = pes
-                        for pe in so["payment_entries"]:
-                            pe["files"] = [f for f in files if f.attached_to_name == pe["name"]]
+                    so["payment_entries"] = pes
+                    for pe in so["payment_entries"]:
+                        pe["files"] = [f for f in files if f.attached_to_name == pe["name"]]
                         
     return {
         "quotations": quotations,

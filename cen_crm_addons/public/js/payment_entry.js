@@ -58,6 +58,32 @@ frappe.ui.form.on('Payment Entry', {
     },
     mode_of_payment: function(frm) {
         set_screenshot_mandatory(frm);
+    },
+    before_save: function(frm) {
+        if (frm._doc_before_save && frm._doc_before_save.custom_payment_screenshot && !frm.doc.custom_payment_screenshot) {
+            frappe.call({
+                method: "frappe.client.get_list",
+                args: {
+                    doctype: "File",
+                    filters: {
+                        file_url: frm._doc_before_save.custom_payment_screenshot,
+                        attached_to_doctype: "Payment Entry",
+                        attached_to_name: frm.doc.name
+                    }
+                },
+                callback: function(r) {
+                    if (r.message && r.message.length > 0) {
+                        frappe.call({
+                            method: "frappe.client.delete",
+                            args: {
+                                doctype: "File",
+                                name: r.message[0].name
+                            }
+                        });
+                    }
+                }
+            });
+        }
     }
 });
 
