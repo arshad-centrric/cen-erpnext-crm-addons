@@ -63,6 +63,10 @@ def _apply_opportunity_mapping_to_quotation(doc, source_name=None):
 
     opp_doc = frappe.get_doc("Opportunity", opportunity_id)
 
+    # Pass the Box ID from Opportunity to Quotation
+    if opp_doc.get("custom_box_id"):
+        doc.custom_box_id = opp_doc.custom_box_id
+
     # Map Delivery Locations child table
     if opp_doc.get("custom_location_details"):
         doc.set("custom_location_details", [])
@@ -131,6 +135,10 @@ def _apply_quotation_mapping_to_sales_order(doc, source_name=None):
         return
         
     quotation = frappe.get_doc("Quotation", quotation_id)
+    
+    if quotation.get("custom_box_id"):
+        doc.custom_box_id = quotation.custom_box_id
+        
     locations = quotation.get("custom_location_details", [])
     
     if locations:
@@ -200,6 +208,9 @@ def make_split_sales_order(source_name, payload=None):
         
     from erpnext.selling.doctype.quotation.quotation import make_sales_order
     mapped_so = make_sales_order(source_name)
+    
+    if quotation.get("custom_box_id"):
+        mapped_so.custom_box_id = quotation.custom_box_id
     
     original_items = mapped_so.get("items")
     mapped_so.set("items", [])
@@ -296,5 +307,10 @@ def get_consolidated_payment_entry_data(source_name, target_doc=None):
         
     pe_doc.paid_amount = total_amount
     pe_doc.received_amount = total_amount
+    
+    # Map Box ID from Opportunity
+    box_id = frappe.db.get_value("Opportunity", source_name, "custom_box_id")
+    if box_id:
+        pe_doc.custom_box_id = box_id
     
     return pe_doc

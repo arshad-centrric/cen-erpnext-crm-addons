@@ -2,6 +2,19 @@ frappe.ui.form.on('Payment Entry', {
     refresh: function(frm) {
         set_screenshot_mandatory(frm);
 
+        // Auto-fetch Box ID when created from standard Sales Order / Invoice button
+        if (!frm.doc.custom_box_id && frm.doc.references && frm.doc.references.length > 0) {
+            let first_ref = frm.doc.references[0];
+            if (first_ref.reference_doctype === 'Sales Order' || first_ref.reference_doctype === 'Sales Invoice') {
+                frappe.db.get_value(first_ref.reference_doctype, first_ref.reference_name, 'custom_box_id')
+                    .then(r => {
+                        if (r.message && r.message.custom_box_id) {
+                            frm.set_value('custom_box_id', r.message.custom_box_id);
+                        }
+                    });
+            }
+        }
+
         if (frappe.route_options && frappe.route_options.from_delivery_dashboard) {
             frm.from_delivery_dashboard = true;
             delete frappe.route_options.from_delivery_dashboard;
