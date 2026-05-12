@@ -78,7 +78,8 @@ def _apply_opportunity_mapping_to_quotation(doc, source_name=None):
                 "delivery_label", "custom_delivery_store", "custom_mode_of_delivery", 
                 "custom_delivery_partner", "custom_delivery_date", "custom_delivery_time", 
                 "custom_address_line_1", "custom_address_line_2", "custom_delivery_city", 
-                "custom_delivery_state", "custom_pincode", "custom_delivery_country"
+                "custom_delivery_state", "custom_pincode", "custom_delivery_country",
+                "custom_delivery_contact"
             ]:
                 new_row.set(fieldname, row.get(fieldname))
                 
@@ -148,7 +149,7 @@ def _apply_quotation_mapping_to_sales_order(doc, source_name=None):
             "custom_mode_of_delivery", "custom_delivery_partner", "custom_delivery_store", 
             "custom_delivery_date", "custom_delivery_time", "custom_address_line_1", 
             "custom_address_line_2", "custom_delivery_city", "custom_delivery_state", 
-            "custom_pincode", "custom_delivery_country"
+            "custom_pincode", "custom_delivery_country", "custom_delivery_contact"
         ]
         
         for field in fields_to_copy:
@@ -229,7 +230,7 @@ def make_split_sales_order(source_name, payload=None):
         "custom_mode_of_delivery", "custom_delivery_partner", "custom_delivery_store", 
         "custom_delivery_date", "custom_delivery_time", "custom_address_line_1", 
         "custom_address_line_2", "custom_delivery_city", "custom_delivery_state", 
-        "custom_pincode", "custom_delivery_country"
+        "custom_pincode", "custom_delivery_country", "custom_delivery_contact"
     ]
     
     for field in fields_to_copy:

@@ -586,3 +586,37 @@ function cen_crm_generate_docs_html(docs, doctype_label) {
 
     return ht;
 }
+
+frappe.ui.form.on('Opportunity', {
+    custom_location_details_add: function(frm, cdt, cdn) {
+        if (frm.doc.contact_mobile) {
+            frappe.model.set_value(cdt, cdn, 'custom_delivery_contact', frm.doc.contact_mobile);
+        } else if (frm.doc.opportunity_from && frm.doc.party_name) {
+            frappe.db.get_value(frm.doc.opportunity_from, frm.doc.party_name, 'mobile_no')
+                .then(r => {
+                    if (r && r.message && r.message.mobile_no) {
+                        frappe.model.set_value(cdt, cdn, 'custom_delivery_contact', r.message.mobile_no);
+                    }
+                });
+        }
+    }
+});
+
+frappe.ui.form.on('Delivery Info Detail', {
+    form_render: function(frm, cdt, cdn) {
+        let row = frappe.get_doc(cdt, cdn);
+        // Only auto-fill if it's currently empty
+        if (!row.custom_delivery_contact) {
+            if (frm.doc.contact_mobile) {
+                frappe.model.set_value(cdt, cdn, 'custom_delivery_contact', frm.doc.contact_mobile);
+            } else if (frm.doc.opportunity_from && frm.doc.party_name) {
+                frappe.db.get_value(frm.doc.opportunity_from, frm.doc.party_name, 'mobile_no')
+                    .then(r => {
+                        if (r && r.message && r.message.mobile_no) {
+                            frappe.model.set_value(cdt, cdn, 'custom_delivery_contact', r.message.mobile_no);
+                        }
+                    });
+            }
+        }
+    }
+});
