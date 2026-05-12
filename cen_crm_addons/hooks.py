@@ -83,6 +83,7 @@ fixtures = [
 
         #Sales Order
         "custom_packing_instructions",
+        "custom_delivery_contact",
 
         #Opportunity, Quotation, Sales Order, Delivery Note, Payment Entry
         "custom_box_id"

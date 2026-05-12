@@ -12,6 +12,7 @@
   "custom_delivery_partner",
   "custom_delivery_date",
   "custom_delivery_time",
+  "custom_delivery_contact",
   "column_break_jstm",
   "custom_address_line_1",
   "custom_address_line_2",
@@ -111,13 +112,19 @@
   {
    "fieldname": "column_break_jstm",
    "fieldtype": "Column Break"
+  },
+  {
+   "allow_on_submit": 1,
+   "fieldname": "custom_delivery_contact",
+   "fieldtype": "Data",
+   "label": "Delivery Contact No."
   }
  ],
  "grid_page_length": 50,
  "index_web_pages_for_search": 1,
  "istable": 1,
  "links": [],
- "modified": "2026-05-06 10:28:57.001796",
+ "modified": "2026-05-12 17:20:26.256764",
  "modified_by": "Administrator",
  "module": "Cen Crm Addons",
  "name": "Delivery Info Detail",
