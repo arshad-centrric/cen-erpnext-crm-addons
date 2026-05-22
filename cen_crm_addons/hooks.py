@@ -88,7 +88,7 @@ fixtures = [
         #Opportunity, Quotation, Sales Order, Delivery Note, Payment Entry
         "custom_box_id",
 
-        #Quotation Item
+        #Quotation Item and Sales Order Item
         "custom_cen_crm_fields",
         "custom_is_customized_bundle",
         "custom_original_bundle_item"
