@@ -8,7 +8,10 @@
   "enable_strict_lead_isolation",
   "default_sales_target",
   "delivery_charge_item",
-  "default_picking_slip_format"
+  "default_picking_slip_format",
+  "mobile_app_print_settings",
+  "quotation_print_formats",
+  "sales_order_print_formats"
  ],
  "fields": [
   {
@@ -35,13 +38,30 @@
    "fieldtype": "Link",
    "label": "Default Picking Slip Format",
    "options": "Print Format"
+  },
+  {
+   "fieldname": "mobile_app_print_settings",
+   "fieldtype": "Section Break",
+   "label": "Mobile App Print Settings"
+  },
+  {
+   "fieldname": "quotation_print_formats",
+   "fieldtype": "Table",
+   "label": "Quotation Print Formats",
+   "options": "CRM Mobile Print Config"
+  },
+  {
+   "fieldname": "sales_order_print_formats",
+   "fieldtype": "Table",
+   "label": "Sales Order Print Formats",
+   "options": "CRM Mobile Print Config"
   }
  ],
  "grid_page_length": 50,
  "index_web_pages_for_search": 1,
  "issingle": 1,
  "links": [],
- "modified": "2026-04-17 19:51:54.281929",
+ "modified": "2026-06-02 14:09:19.503922",
  "modified_by": "Administrator",
  "module": "Cen Crm Addons",
  "name": "Cen CRM Settings",
