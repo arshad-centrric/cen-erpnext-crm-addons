@@ -32,5 +32,19 @@ frappe.query_reports["CRM Performance"] = {
 				};
 			}
 		}
-	]
+	],
+	"formatter": function(value, row, column, data, default_formatter) {
+		// Intercept only our specific column
+		if (column.fieldname === "opp_to_so_percent") {
+			// Safely identify the Total row (Frappe often makes 'data' undefined or sets 'is_total_row')
+			if (!data || data.is_total_row || (data.sales_person && data.sales_person.includes("Total"))) {
+				return ""; // Hide the value by returning a blank string
+			}
+		}
+		// Fallback to default for everything else
+		if (default_formatter) {
+			return default_formatter(value, row, column, data);
+		}
+		return value;
+	}
 };

@@ -99,7 +99,7 @@ def setup_custom_permissions():
         "read": 1, "write": 1, "create": 1, "submit": 1, "print": 1
     })
     set_permission("Payment Entry", "Supervisor", {
-        "read": 1, "write": 1, "create": 1, "submit": 1, "print": 1
+        "read": 1, "write": 1, "create": 1, "submit": 1, "print": 1, "report":1
     })
     set_permission("Payment Entry", "Picking User", {
         "read": 1, "write": 1, "create": 1, "submit": 1, "print": 1
@@ -190,4 +190,15 @@ def setup_custom_permissions():
             "create": 1
         })
     
+    # Accounts Settings permissions
+    if frappe.db.exists("Role", "Supervisor"):
+        set_permission("Accounts Settings", "Supervisor", {
+            "read": 1,
+            "write": 1,
+            "create": 1,
+            "email": 1,
+            "print": 1,
+            "share": 1
+        })
+
     frappe.db.commit()

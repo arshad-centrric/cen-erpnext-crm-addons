@@ -38,7 +38,14 @@ def get_columns():
 			"label": _("Opp to Quotation %"),
 			"fieldname": "opp_to_quotation_perc",
 			"fieldtype": "Percent",
-			"width": 160
+			"width": 160,
+			"hidden": 1
+		},
+		{
+			"label": _("Opp to Sales Order %"),
+			"fieldname": "opp_to_so_percent",
+			"fieldtype": "Percent",
+			"width": 180
 		},
 		{
 			"label": _("Total Payments Received"),
@@ -132,6 +139,7 @@ def get_data(filters):
 		
 		# 6. Ratios
 		opp_to_quotation_perc = (total_quotations / total_opportunities * 100) if total_opportunities > 0 else 0
+		opp_to_so_percent = (total_sales_orders / total_opportunities * 100) if total_opportunities > 0 else 0
 		
 		data.append({
 			"sales_person": user_name,
@@ -140,7 +148,8 @@ def get_data(filters):
 			"total_quotations": total_quotations,
 			"total_sales_orders": total_sales_orders,
 			"total_payments_received": total_payments,
-			"opp_to_quotation_perc": opp_to_quotation_perc
+			"opp_to_quotation_perc": opp_to_quotation_perc,
+			"opp_to_so_percent": opp_to_so_percent
 		})
 		
 	return data
@@ -199,6 +208,10 @@ def get_report_summary(data):
 	total_opps = sum([d.get("total_opportunities") for d in data])
 	total_quotations = sum([d.get("total_quotations") for d in data])
 	total_payments = sum([d.get("total_payments_received") for d in data])
+	
+	total_company_opps = sum(row.get("total_opportunities", 0) for row in data)
+	total_company_sos = sum(row.get("total_sales_orders", 0) for row in data)
+	company_yield = (total_company_sos / total_company_opps * 100) if total_company_opps > 0 else 0
 
 	return [
 		{
@@ -212,6 +225,12 @@ def get_report_summary(data):
 			"indicator": "Red",
 			"label": _("Total Quotations"),
 			"datatype": "Int",
+		},
+		{
+			"value": company_yield,
+			"indicator": "Blue",
+			"label": _("Opportunity to Sales Order %"),
+			"datatype": "Percent",
 		},
 		{
 			"value": total_payments,
