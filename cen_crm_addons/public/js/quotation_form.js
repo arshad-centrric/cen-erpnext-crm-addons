@@ -314,10 +314,10 @@ frappe.ui.form.on("Quotation", {
                 }, 100);
             }
             // Custom Update Items Flow
-            if (frm.doc.docstatus === 1) {
+            if (frm.doc.docstatus === 1 && !['Lost', 'Ordered', 'Cancelled'].includes(frm.doc.status)) {
                 frappe.dom.set_style('.btn[data-label="Update%20Items"] { display: none !important; }');
                 
-                frm.add_custom_button(__('Adjust Items & Amount'), function() {
+                frm.add_custom_button(__('Update Items and Rate'), function() {
                     let initial_data = (frm.doc.items || []).map(row => {
                         return {
                             item_code: row.item_code,
