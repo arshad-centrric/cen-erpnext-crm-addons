@@ -313,6 +313,81 @@ frappe.ui.form.on("Quotation", {
                     }
                 }, 100);
             }
+            // Custom Update Items Flow
+            if (frm.doc.docstatus === 1 && !['Lost', 'Ordered', 'Cancelled'].includes(frm.doc.status)) {
+                frappe.dom.set_style('.btn[data-label="Update%20Items"] { display: none !important; }');
+                
+                frm.add_custom_button(__('Update Items and Rate'), function() {
+                    let initial_data = (frm.doc.items || []).map(row => {
+                        return {
+                            item_code: row.item_code,
+                            qty: row.qty,
+                            rate: row.rate,
+                            amount: (row.qty || 0) * (row.rate || 0),
+                            name: row.name
+                        };
+                    });
+
+                    let d = new frappe.ui.Dialog({
+                        title: __('Update Items'),
+                        size: 'large',
+                        fields: [
+                            {
+                                fieldname: 'items',
+                                fieldtype: 'Table',
+                                label: __('Items'),
+                                data: initial_data,
+                                get_data: () => { return initial_data; },
+                                fields: [
+                                    { fieldname: 'item_code', fieldtype: 'Data', in_list_view: 1, label: __('Item Code'), read_only: 1 },
+                                    { fieldname: 'qty', fieldtype: 'Float', in_list_view: 1, label: __('Qty') },
+                                    { fieldname: 'rate', fieldtype: 'Currency', in_list_view: 1, label: __('Rate') },
+                                    { fieldname: 'amount', fieldtype: 'Currency', in_list_view: 1, label: __('Amount'), read_only: 1 }
+                                ]
+                            }
+                        ],
+                        primary_action_label: __('Update'),
+                        primary_action: function(values) {
+                            let updated_items = values.items || [];
+                            let trans_items = updated_items.map(u => {
+                                return {
+                                    docname: u.name,
+                                    item_code: u.item_code,
+                                    qty: u.qty,
+                                    rate: u.rate
+                                };
+                            });
+
+                            frappe.call({
+                                method: 'erpnext.controllers.accounts_controller.update_child_qty_rate',
+                                freeze: true,
+                                args: {
+                                    parent_doctype: frm.doc.doctype,
+                                    parent_doctype_name: frm.doc.name,
+                                    child_docname: 'items',
+                                    trans_items: trans_items
+                                },
+                                callback: function(r) {
+                                    if (!r.exc) {
+                                        d.hide();
+                                        frm.reload_doc();
+                                    }
+                                }
+                            });
+                        }
+                    });
+                    
+                    // Attach math listener
+                    d.$wrapper.on('change', 'input[data-fieldname="qty"], input[data-fieldname="rate"]', function() {
+                        (d.fields_dict.items.grid.data || []).forEach(row => {
+                            row.amount = flt(row.qty) * flt(row.rate);
+                        });
+                        d.fields_dict.items.grid.refresh();
+                    });
+
+                    d.show();
+                });
+            }
         }
     }
 });
