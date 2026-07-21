@@ -22,8 +22,9 @@ app_license = "mit"
 # ]
 
 fixtures = [
-    "Role Profile", 
-    "Role", 
+    {"dt": "Role Profile", "filters": [["name", "in", ("CRM Sales Person", "CRM Picking User", "CRM Supervisor")]]},
+    {"dt": "Role", "filters": [["name", "in", ("Sales Person", "Supervisor", "Picking User")]]},
+    {"dt": "Module Profile", "filters": [["name", "in", ("Sales Staff Profile", "Sales Supervisor Profile")]]},
     "Custom DocPerm",
     {"dt": "Property Setter", "filters": [["doc_type", "in", ("Opportunity", "Lead", "Opportunity Item", "Item", "Payment Entry", "Sales Order", "Quotation", "Sales Order Item", "Quotation Item", "Opportunity Item")]]},
     {"dt": "Custom Field", "filters": [["fieldname", "in", (
