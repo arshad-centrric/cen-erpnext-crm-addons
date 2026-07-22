@@ -1,5 +1,6 @@
 {
  "actions": [],
+ "allow_bulk_edit": 1,
  "allow_rename": 1,
  "creation": "2026-04-12 01:00:34.376608",
  "doctype": "DocType",
@@ -11,7 +12,11 @@
   "default_picking_slip_format",
   "mobile_app_print_settings",
   "quotation_print_formats",
-  "sales_order_print_formats"
+  "sales_order_print_formats",
+  "delivery_note_print_formats",
+  "purchase_receipt_print_formats",
+  "sales_invoice_print_formats",
+  "packing_print_formats"
  ],
  "fields": [
   {
@@ -55,13 +60,37 @@
    "fieldtype": "Table",
    "label": "Sales Order Print Formats",
    "options": "CRM Mobile Print Config"
+  },
+  {
+   "fieldname": "delivery_note_print_formats",
+   "fieldtype": "Table",
+   "label": "Delivery Note Print Formats",
+   "options": "CRM Mobile Print Config"
+  },
+  {
+   "fieldname": "purchase_receipt_print_formats",
+   "fieldtype": "Table",
+   "label": "Purchase Receipt Print Formats",
+   "options": "CRM Mobile Print Config"
+  },
+  {
+   "fieldname": "sales_invoice_print_formats",
+   "fieldtype": "Table",
+   "label": "Sales Invoice Print Formats",
+   "options": "CRM Mobile Print Config"
+  },
+  {
+   "fieldname": "packing_print_formats",
+   "fieldtype": "Table",
+   "label": "Packing Print Formats",
+   "options": "CRM Mobile Print Config"
   }
  ],
  "grid_page_length": 50,
  "index_web_pages_for_search": 1,
  "issingle": 1,
  "links": [],
- "modified": "2026-06-02 14:09:19.503922",
+ "modified": "2026-07-22 18:09:51.158515",
  "modified_by": "Administrator",
  "module": "Cen Crm Addons",
  "name": "Cen CRM Settings",
