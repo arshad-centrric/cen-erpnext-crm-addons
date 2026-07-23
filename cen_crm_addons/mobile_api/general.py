@@ -101,3 +101,41 @@ def get_payment_attachments(sales_order):
         })
             
     return response
+
+@frappe.whitelist()
+def get_mobile_user_profile():
+    user = frappe.session.user
+    
+    if not frappe.db.exists("Mobile User Profile", user):
+        return {
+            "has_profile": 0,
+            "message": "Mobile User Profile not found for current user.",
+            "allowed_warehouses": [],
+            "modules": {},
+            "sub_tabs": {}
+        }
+        
+    doc = frappe.get_doc("Mobile User Profile", user)
+    
+    return {
+        "has_profile": 1,
+        "user": doc.user,
+        "full_name": doc.full_name,
+        "email": doc.email,
+        "allowed_warehouses": [w.warehouse for w in doc.get("allowed_warehouses", [])],
+        "modules": {
+            "CRM": doc.module_crm,
+            "BOM": doc.module_bom,
+            "Purchase Receipt/GRN": doc.module_pr_grn,
+            "Delivery": doc.module_delivery,
+            "Packing": doc.module_packing
+        },
+        "sub_tabs": {
+            "CRM": {
+                "Opportunities": doc.tab_opportunities,
+                "Quotation": doc.tab_quotation,
+                "Sales Order": doc.tab_sales_order
+            }
+        }
+    }
+

@@ -1,0 +1,194 @@
+{
+ "actions": [],
+ "allow_bulk_edit": 1,
+ "allow_rename": 1,
+ "autoname": "field:user",
+ "creation": "2026-07-23 15:13:20.741627",
+ "doctype": "DocType",
+ "editable_grid": 1,
+ "engine": "InnoDB",
+ "field_order": [
+  "user_details_section",
+  "user",
+  "full_name",
+  "column_break_exqz",
+  "email",
+  "mobile_app_modules_section",
+  "module_crm",
+  "module_bom",
+  "module_pr_grn",
+  "column_break_1n4q",
+  "module_delivery",
+  "module_packing",
+  "crm_sub_tabs_section",
+  "tab_opportunities",
+  "tab_quotation",
+  "tab_sales_order",
+  "allowed_warehouses_section",
+  "allowed_warehouses"
+ ],
+ "fields": [
+  {
+   "fieldname": "user_details_section",
+   "fieldtype": "Section Break",
+   "label": "User Details"
+  },
+  {
+   "fieldname": "user",
+   "fieldtype": "Link",
+   "in_list_view": 1,
+   "label": "User",
+   "options": "User",
+   "reqd": 1,
+   "unique": 1
+  },
+  {
+   "fetch_from": "user.full_name",
+   "fieldname": "full_name",
+   "fieldtype": "Data",
+   "label": "Full Name",
+   "read_only": 1
+  },
+  {
+   "fieldname": "column_break_exqz",
+   "fieldtype": "Column Break"
+  },
+  {
+   "fetch_from": "user.email",
+   "fieldname": "email",
+   "fieldtype": "Data",
+   "label": "Email",
+   "read_only": 1
+  },
+  {
+   "fieldname": "mobile_app_modules_section",
+   "fieldtype": "Section Break",
+   "label": "Mobile App Modules"
+  },
+  {
+   "default": "0",
+   "fieldname": "module_crm",
+   "fieldtype": "Check",
+   "label": "CRM"
+  },
+  {
+   "default": "0",
+   "fieldname": "module_bom",
+   "fieldtype": "Check",
+   "label": "BOM"
+  },
+  {
+   "default": "0",
+   "fieldname": "module_pr_grn",
+   "fieldtype": "Check",
+   "label": "Purchase Receipt/GRN"
+  },
+  {
+   "fieldname": "column_break_1n4q",
+   "fieldtype": "Column Break"
+  },
+  {
+   "default": "0",
+   "fieldname": "module_delivery",
+   "fieldtype": "Check",
+   "label": "Delivery"
+  },
+  {
+   "default": "0",
+   "fieldname": "module_packing",
+   "fieldtype": "Check",
+   "label": "Packing"
+  },
+  {
+   "depends_on": "eval:doc.module_crm==1",
+   "fieldname": "crm_sub_tabs_section",
+   "fieldtype": "Section Break",
+   "label": "CRM Sub Tabs"
+  },
+  {
+   "default": "0",
+   "fieldname": "tab_opportunities",
+   "fieldtype": "Check",
+   "label": "Opportunities"
+  },
+  {
+   "default": "0",
+   "fieldname": "tab_quotation",
+   "fieldtype": "Check",
+   "label": "Quotation"
+  },
+  {
+   "default": "0",
+   "fieldname": "tab_sales_order",
+   "fieldtype": "Check",
+   "label": "Sales Order"
+  },
+  {
+   "fieldname": "allowed_warehouses_section",
+   "fieldtype": "Section Break",
+   "label": "Allowed Warehouses"
+  },
+  {
+   "fieldname": "allowed_warehouses",
+   "fieldtype": "Table",
+   "label": "Warehouses",
+   "options": "Mobile Allowed Warehouse"
+  }
+ ],
+ "grid_page_length": 50,
+ "index_web_pages_for_search": 1,
+ "links": [],
+ "modified": "2026-07-23 15:23:18.560542",
+ "modified_by": "Administrator",
+ "module": "Cen Crm Addons",
+ "name": "Mobile User Profile",
+ "owner": "Administrator",
+ "permissions": [
+  {
+   "create": 1,
+   "delete": 1,
+   "email": 1,
+   "export": 1,
+   "print": 1,
+   "read": 1,
+   "report": 1,
+   "role": "System Manager",
+   "share": 1,
+   "write": 1
+  },
+  {
+   "create": 1,
+   "email": 1,
+   "export": 1,
+   "print": 1,
+   "read": 1,
+   "report": 1,
+   "role": "Supervisor",
+   "share": 1,
+   "write": 1
+  },
+  {
+   "email": 1,
+   "export": 1,
+   "print": 1,
+   "read": 1,
+   "report": 1,
+   "role": "Sales Person",
+   "share": 1
+  },
+  {
+   "email": 1,
+   "export": 1,
+   "print": 1,
+   "read": 1,
+   "report": 1,
+   "role": "Picking User",
+   "share": 1
+  }
+ ],
+ "row_format": "Dynamic",
+ "rows_threshold_for_grid_search": 20,
+ "sort_field": "creation",
+ "sort_order": "DESC",
+ "states": []
+}
