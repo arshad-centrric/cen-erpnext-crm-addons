@@ -60,3 +60,18 @@ def submit_multi_mode_payment(sales_order, payments, write_off_amount=0.0):
         pe_ids.append(pe.name)
         
     return pe_ids
+
+@frappe.whitelist()
+def get_mode_of_payment_list():
+    user = frappe.session.user
+    
+    modes = frappe.get_list("Mode of Payment", fields=["name", "type"], ignore_permissions=False)
+    
+    response = []
+    for mode in modes:
+        response.append({
+            "mode_of_payment": mode.name,
+            "mandatory_fields": 1 if mode.type in ["Bank", "Cheque"] else 0
+        })
+        
+    return response
