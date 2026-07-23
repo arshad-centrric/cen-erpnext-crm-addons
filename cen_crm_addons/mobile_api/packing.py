@@ -3,12 +3,14 @@ from erpnext.selling.doctype.sales_order.sales_order import make_sales_invoice
 from frappe.utils.file_manager import save_file
 
 @frappe.whitelist()
-def get_packing_orders(status="Pending", limit_start=1, limit_page_length=10):
+def get_packing_orders(status="Pending", limit_start=1, limit_page_length=10, search_term=None, warehouse=None):
     """
     Fetch a paginated list of Sales Orders based on packing status.
     status: 'Pending' (maps to 'Assigned to Pack') or 'Completed' (maps to 'Packed')
     limit_start: Page number, defaults to 1
     limit_page_length: Number of items per page, defaults to 10
+    search_term: Optional string to search across name, customer, customer_name
+    warehouse: Optional string to filter by warehouse
     """
     try:
         page = int(limit_start)
@@ -29,12 +31,26 @@ def get_packing_orders(status="Pending", limit_start=1, limit_page_length=10):
     else:
         return []
 
+    filters = {
+        "docstatus": 1,
+        "custom_picking_status": picking_status
+    }
+    
+    if warehouse:
+        filters["set_warehouse"] = warehouse
+
+    or_filters = {}
+    if search_term:
+        or_filters = {
+            "name": ["like", f"%{search_term}%"],
+            "customer": ["like", f"%{search_term}%"],
+            "customer_name": ["like", f"%{search_term}%"]
+        }
+
     orders = frappe.get_all(
         "Sales Order",
-        filters={
-            "docstatus": 1,
-            "custom_picking_status": picking_status
-        },
+        filters=filters,
+        or_filters=or_filters,
         fields=[
             "name", 
             "customer", 
@@ -44,7 +60,8 @@ def get_packing_orders(status="Pending", limit_start=1, limit_page_length=10):
             "custom_delivery_time", 
             "custom_picking_status", 
             "status", 
-            "grand_total"
+            "grand_total",
+            "set_warehouse"
         ],
         limit_start=limit_start_idx,
         limit_page_length=page_length,
