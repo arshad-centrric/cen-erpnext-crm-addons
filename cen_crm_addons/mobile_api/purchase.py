@@ -3,13 +3,14 @@ import json
 from frappe.utils import cint, flt
 
 @frappe.whitelist()
-def get_goods_receipt_notes(status="Draft", search_term=None, limit_start=1, limit_page_length=10):
+def get_goods_receipt_notes(status="Draft", search_term=None, limit_start=1, limit_page_length=10, warehouse=None):
     """
     Fetch a paginated list of Goods Receipt Notes (Purchase Receipts) with an optional search.
     status: 'Draft' (docstatus 0), 'Submitted' (docstatus 1), or 'Cancelled' (docstatus 2)
     search_term: String to search by PR number, supplier, or supplier name
     limit_start: Page number, defaults to 1
     limit_page_length: Number of items per page, defaults to 10
+    warehouse: Optional string to filter by accepted warehouse
     """
     try:
         page = int(limit_start)
@@ -35,6 +36,9 @@ def get_goods_receipt_notes(status="Draft", search_term=None, limit_start=1, lim
         "docstatus": docstatus
     }
     
+    if warehouse:
+        filters["set_warehouse"] = str(warehouse).strip()
+    
     # Optional search filters (OR conditions)
     or_filters = {}
     if search_term:
@@ -57,7 +61,8 @@ def get_goods_receipt_notes(status="Draft", search_term=None, limit_start=1, lim
             "posting_time", 
             "company", 
             "status", 
-            "grand_total"
+            "grand_total",
+            "set_warehouse"
         ],
         limit_start=limit_start_idx,
         limit_page_length=page_length,
@@ -207,18 +212,23 @@ def get_purchase_receipt_details(receipt_id):
         frappe.throw(f"Failed to fetch details: {str(e)}")
 
 @frappe.whitelist()
-def create_purchase_receipt(supplier, company, items, accepted_warehouse, supplier_delivery_note=None, submit=0):
+def create_purchase_receipt(supplier=None, company=None, items=None, accepted_warehouse=None, supplier_delivery_note=None, submit=0):
     """
     Create a new Purchase Receipt.
     supplier: Exact name of the Supplier (Required)
-    company: Exact name of the Company (Required)
+    company: Exact name of the Company (Optional, defaults to Global/User default)
     accepted_warehouse: The default warehouse for all items (Required)
-    items: JSON string or list of dicts containing item_code, qty, rate (Required)
+    items: JSON string or list of dicts containing item_code, qty, rate, uom (Required)
     supplier_delivery_note: Delivery note number provided by the supplier (Optional)
     submit: 1 to submit immediately, 0 to leave as Draft
     """
-    if not supplier or not company or not accepted_warehouse or not items:
-        frappe.throw("Supplier, Company, Accepted Warehouse, and Items are required parameters")
+    if not supplier or not accepted_warehouse or not items:
+        frappe.throw("Supplier, Accepted Warehouse, and Items are required parameters")
+
+    if not company:
+        company = frappe.defaults.get_user_default("Company") or frappe.db.get_single_value("Global Defaults", "default_company")
+        if not company:
+            frappe.throw("Company is required and no default company found")
 
     # If calling via REST, 'items' often comes through as a JSON string
     if isinstance(items, str):
@@ -251,12 +261,17 @@ def create_purchase_receipt(supplier, company, items, accepted_warehouse, suppli
             if not item.get("item_code") or not item.get("qty"):
                 frappe.throw("Each item must contain at least an 'item_code' and 'qty'")
                 
-            pr_doc.append("items", {
+            row_data = {
                 "item_code": item.get("item_code"),
                 "qty": flt(item.get("qty")),
                 "warehouse": str(accepted_warehouse).strip(), # Assign the general warehouse to the item row
                 "rate": flt(item.get("rate")) if item.get("rate") else 0.0
-            })
+            }
+            
+            if item.get("uom"):
+                row_data["uom"] = str(item.get("uom")).strip()
+                
+            pr_doc.append("items", row_data)
 
         # Insert the document (creates it as Draft)
         pr_doc.insert()
