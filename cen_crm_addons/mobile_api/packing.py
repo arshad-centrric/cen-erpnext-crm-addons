@@ -72,10 +72,11 @@ def get_packing_orders(status="Pending", limit_start=1, limit_page_length=10, se
 
 
 @frappe.whitelist()
-def mark_order_as_packed(sales_order, packing_image_url=None):
+def mark_order_as_packed(sales_order, packing_image_url=None, submit=0):
     """
     Update Sales Order as Packed, fill custom packing image (using a pre-uploaded file URL), 
     and create a Sales Invoice auto-fetching the existing Box ID.
+    If 'submit' is passed as 1, it will also submit the created Sales Invoice.
     """
     if not sales_order:
         frappe.throw("Sales Order parameter is required")
@@ -106,8 +107,18 @@ def mark_order_as_packed(sales_order, packing_image_url=None):
         if existing_box_id:
             si_doc.custom_box_id = existing_box_id
             
+        # Auto-allocate advances if submitting
+        from frappe.utils import cint
+        if cint(submit) == 1:
+            si_doc.allocate_advances_automatically = 1
+            si_doc.set_advances()
+            
         # Insert (save as Draft)
         si_doc.insert()
+        
+        # Submit if requested
+        if cint(submit) == 1:
+            si_doc.submit()
         
     except Exception as e:
         frappe.log_error(title="Auto Sales Invoice Creation Failed", message=frappe.get_traceback())
