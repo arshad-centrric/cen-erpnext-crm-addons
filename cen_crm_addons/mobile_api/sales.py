@@ -18,13 +18,28 @@ def get_order_details(sales_order):
     # Convert document to dictionary
     order_details = doc.as_dict()
     
-    # In standard ERPNext, the advance amount field is usually called 'advance_paid'.
-    # I have added a fallback to .get("advance_amount", 0) just in case you 
-    # created a custom field specifically named 'advance_amount'.
-    grand_total = flt(order_details.get("grand_total", 0.0))
-    advance_amount = flt(order_details.get("advance_paid", order_details.get("advance_amount", 0.0)))
+    # Dynamic outstanding calculation: check if there is an active Sales Invoice
+    active_si = frappe.db.sql("""
+        SELECT si.name, si.outstanding_amount
+        FROM `tabSales Invoice` si
+        JOIN `tabSales Invoice Item` sii ON sii.parent = si.name
+        WHERE sii.sales_order = %s AND si.docstatus = 1
+        LIMIT 1
+    """, (sales_order,), as_dict=True)
     
-    # Calculate and inject the pending amount
-    order_details["pending_amount"] = grand_total - advance_amount
+    if active_si:
+        outstanding = flt(active_si[0].outstanding_amount)
+        has_active_invoice = 1
+        order_details["active_invoice"] = active_si[0].name
+    else:
+        grand_total = flt(order_details.get("grand_total", 0.0))
+        advance_amount = flt(order_details.get("advance_paid", order_details.get("advance_amount", 0.0)))
+        outstanding = grand_total - advance_amount
+        has_active_invoice = 0
+        order_details["active_invoice"] = None
+        
+    order_details["pending_amount"] = outstanding
+    order_details["outstanding_amount"] = outstanding
+    order_details["has_active_invoice"] = has_active_invoice
     
     return order_details

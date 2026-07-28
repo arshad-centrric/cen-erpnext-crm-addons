@@ -11,8 +11,24 @@ def submit_multi_mode_payment(sales_order, payments, write_off_amount=0.0):
     write_off_amount = flt(write_off_amount)
     pe_ids = []
     
+    # Dynamic routing: check for active Sales Invoice
+    active_si = frappe.db.sql("""
+        SELECT si.name 
+        FROM `tabSales Invoice` si 
+        JOIN `tabSales Invoice Item` sii ON sii.parent = si.name 
+        WHERE sii.sales_order = %s AND si.docstatus = 1 
+        LIMIT 1
+    """, (sales_order,))
+    
+    if active_si:
+        target_doctype = "Sales Invoice"
+        target_docname = active_si[0][0]
+    else:
+        target_doctype = "Sales Order"
+        target_docname = sales_order
+    
     for i, payment in enumerate(payments):
-        pe = get_payment_entry("Sales Order", sales_order)
+        pe = get_payment_entry(target_doctype, target_docname)
         
         # Override amounts
         amount = flt(payment.get("amount"))
@@ -23,6 +39,16 @@ def submit_multi_mode_payment(sales_order, payments, write_off_amount=0.0):
         
         if payment.get("mode_of_payment"):
             pe.mode_of_payment = payment.get("mode_of_payment")
+            
+        if pe.references:
+            pe.references[0].reference_doctype = target_doctype
+            pe.references[0].reference_name = target_docname
+        else:
+            pe.append("references", {
+                "reference_doctype": target_doctype,
+                "reference_name": target_docname,
+                "allocated_amount": amount
+            })
         
         # Write-off logic (first payment only)
         if write_off_amount > 0 and i == 0:
@@ -31,6 +57,8 @@ def submit_multi_mode_payment(sales_order, payments, write_off_amount=0.0):
                 frappe.throw("Write-off account not found for company")
             
             cost_center = pe.cost_center
+            if not cost_center and target_doctype == "Sales Invoice":
+                cost_center = frappe.db.get_value("Sales Invoice Item", {"parent": target_docname}, "cost_center")
             if not cost_center:
                 cost_center = frappe.db.get_value("Sales Order Item", {"parent": sales_order}, "cost_center")
             if not cost_center:
@@ -59,7 +87,14 @@ def submit_multi_mode_payment(sales_order, payments, write_off_amount=0.0):
         pe.submit()
         pe_ids.append(pe.name)
         
-    return pe_ids
+    return {
+        "status": "success",
+        "payment_entries": pe_ids,
+        "target_document": {
+            "doctype": target_doctype,
+            "name": target_docname
+        }
+    }
 
 @frappe.whitelist()
 def get_mode_of_payment_list():
