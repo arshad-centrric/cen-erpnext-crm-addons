@@ -16,7 +16,10 @@
   "delivery_note_print_formats",
   "purchase_receipt_print_formats",
   "sales_invoice_print_formats",
-  "packing_print_formats"
+  "packing_print_formats",
+  "box_id_configuration",
+  "box_id_prefix",
+  "current_box_id_number"
  ],
  "fields": [
   {
@@ -84,6 +87,24 @@
    "fieldtype": "Table",
    "label": "Packing Print Formats",
    "options": "CRM Mobile Print Config"
+  },
+  {
+   "fieldname": "box_id_configuration",
+   "fieldtype": "Section Break",
+   "label": "Box ID Configuration"
+  },
+  {
+   "default": "B",
+   "fieldname": "box_id_prefix",
+   "fieldtype": "Data",
+   "label": "Box ID Prefix"
+  },
+  {
+   "default": "0",
+   "description": "The last used number for the Box ID sequence.",
+   "fieldname": "current_box_id_number",
+   "fieldtype": "Int",
+   "label": "Current Box ID Number"
   }
  ],
  "grid_page_length": 50,
