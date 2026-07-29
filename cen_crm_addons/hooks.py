@@ -278,13 +278,17 @@ doc_events = {
             "cen_crm_addons.api.opportunity_automation.on_sales_order_update"
         ]
     },
+    "Sales Invoice": {
+        "on_submit": "cen_crm_addons.api.payment_logic.trigger_so_payment_status_update",
+        "on_cancel": "cen_crm_addons.api.payment_logic.trigger_so_payment_status_update"
+    },
     "Payment Entry": {
         "validate": "cen_crm_addons.api.payment_logic.validate_payment_screenshot",
         "on_submit": [
-            "cen_crm_addons.api.payment_logic.on_payment_entry_update",
+            "cen_crm_addons.api.payment_logic.trigger_so_payment_status_update",
             "cen_crm_addons.api.opportunity_automation.on_payment_entry_submit"
         ],
-        "on_cancel": "cen_crm_addons.api.payment_logic.on_payment_entry_update"
+        "on_cancel": "cen_crm_addons.api.payment_logic.trigger_so_payment_status_update"
     },
     "Delivery Note": {
         "on_submit": [
