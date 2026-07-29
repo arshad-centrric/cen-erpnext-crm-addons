@@ -30,8 +30,7 @@ def update_so_payment_status(sales_order_name):
         new_status = "Partially Paid"
     else:
         new_status = "Unpaid"
-
-    frappe.db.set_value("Sales Order", sales_order_name, "custom_payment_status", new_status)
+    frappe.db.set_value("Sales Order", sales_order_name, "custom_payment_status", new_status, update_modified=False)
 
 def sync_payment_status(so_name):
     """Calculates and updates the custom_payment_status field on Sales Order."""
