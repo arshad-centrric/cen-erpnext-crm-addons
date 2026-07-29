@@ -43,3 +43,68 @@ def get_order_details(sales_order):
     order_details["has_active_invoice"] = has_active_invoice
     
     return order_details
+
+
+@frappe.whitelist()
+def cancel_sales_order(sales_order_id):
+    """
+    Cancel one or multiple Submitted Sales Orders.
+    `sales_order_id` can be a single string OR a JSON-encoded array of strings.
+    Automatically fetches and cancels any downstream linked documents first.
+    """
+    import json
+    if not sales_order_id:
+        frappe.throw("Sales Order ID is a required parameter")
+
+    # Parse if it's a JSON array string from the frontend
+    if isinstance(sales_order_id, str) and sales_order_id.startswith("["):
+        try:
+            so_list = json.loads(sales_order_id)
+        except Exception:
+            so_list = [sales_order_id]
+    elif isinstance(sales_order_id, list):
+        so_list = sales_order_id
+    else:
+        so_list = [sales_order_id]
+
+    results = []
+    from frappe.desk.form.linked_with import get_submitted_linked_docs, cancel_all_linked_docs
+
+    for so_id in so_list:
+        try:
+            if not frappe.db.exists("Sales Order", so_id):
+                results.append({"sales_order": so_id, "status": "failed", "message": "Not found"})
+                continue
+
+            doc = frappe.get_doc("Sales Order", so_id)
+
+            if doc.docstatus == 0:
+                results.append({"sales_order": so_id, "status": "failed", "message": "Draft cannot be cancelled"})
+                continue
+                
+            if doc.docstatus == 2:
+                results.append({"sales_order": so_id, "status": "success", "message": "Already cancelled"})
+                continue
+            
+            # Use ERPNext native logic to find and cancel all downstream documents automatically
+            linked_docs_info = get_submitted_linked_docs("Sales Order", so_id)
+            linked_docs = linked_docs_info.get("docs", [])
+            
+            if linked_docs:
+                cancel_all_linked_docs(json.dumps(linked_docs))
+                # Cancelling downstream docs updates the SO's status/modified timestamp in the DB. 
+                # We MUST reload the doc in memory before cancelling it to avoid TimestampMismatchError.
+                doc.reload()
+
+            # Cancel the Sales Order
+            doc.cancel()
+            results.append({"sales_order": so_id, "status": "success", "message": "Cancelled successfully"})
+
+        except Exception as e:
+            frappe.log_error(title=f"Sales Order Cancellation Error for {so_id}", message=frappe.get_traceback())
+            results.append({"sales_order": so_id, "status": "failed", "message": str(e)})
+
+    return {
+        "status": "success",
+        "data": results
+    }
