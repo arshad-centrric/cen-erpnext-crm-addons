@@ -110,3 +110,114 @@ def get_mode_of_payment_list():
         })
         
     return response
+
+@frappe.whitelist()
+def get_payment_attachments(sales_order):
+    """
+    Fetch all Payment Entries and their file attachments linked to a specific Sales Order.
+    Includes reference details (cheque numbers) and write-off amounts.
+    """
+    if not sales_order:
+        frappe.throw("Sales Order parameter is required.")
+        
+    # Check for active Sales Invoices linked to this Sales Order
+    linked_invoices = frappe.db.sql("""
+        SELECT DISTINCT parent 
+        FROM `tabSales Invoice Item`
+        WHERE sales_order = %s AND docstatus = 1
+    """, (sales_order,), pluck=True)
+    
+    # Find Payment Entries based on Invoices or Sales Order
+    if linked_invoices:
+        payment_references = frappe.get_all(
+            "Payment Entry Reference",
+            filters={
+                "reference_doctype": "Sales Invoice",
+                "reference_name": ["in", linked_invoices],
+                "docstatus": 1
+            },
+            fields=["parent", "allocated_amount", "reference_doctype", "reference_name"]
+        )
+    else:
+        payment_references = frappe.get_all(
+            "Payment Entry Reference",
+            filters={
+                "reference_doctype": "Sales Order",
+                "reference_name": sales_order,
+                "docstatus": 1
+            },
+            fields=["parent", "allocated_amount", "reference_doctype", "reference_name"]
+        )
+    
+    pe_ids = [ref.parent for ref in payment_references]
+    
+    if not pe_ids:
+        return []
+        
+    # Fetch Payment Entry core details including reference info
+    payment_entries = frappe.get_all(
+        "Payment Entry",
+        filters={"name": ["in", pe_ids]},
+        fields=["name", "posting_date", "mode_of_payment", "paid_amount", "reference_no", "reference_date"]
+    )
+    
+    # Fetch deductions to calculate write-off amount
+    deductions = frappe.get_all(
+        "Payment Entry Deduction",
+        filters={"parent": ["in", pe_ids]},
+        fields=["parent", "amount"]
+    )
+        
+    # Query standard sidebar File attachments
+    files = frappe.get_all(
+        "File",
+        filters={
+            "attached_to_doctype": "Payment Entry",
+            "attached_to_name": ["in", pe_ids]
+        },
+        fields=["file_url", "file_name", "attached_to_name"]
+    )
+    
+    # Map attachments and amounts to Payment Entries
+    response = []
+    
+    for pe in payment_entries:
+        pe_attachments = []
+        
+        # Standard sidebar files
+        for f in files:
+            if f.attached_to_name == pe.name:
+                pe_attachments.append({
+                    "file_url": f.file_url,
+                    "file_name": f.file_name
+                })
+                
+        # Calculate write off amount from deductions
+        write_off_amount = sum(flt(d.amount) for d in deductions if d.parent == pe.name)
+                
+        # Find allocated amount and references
+        allocated = 0
+        ref_doctype = None
+        ref_name = None
+        for ref in payment_references:
+            if ref.parent == pe.name:
+                allocated = ref.allocated_amount
+                ref_doctype = ref.reference_doctype
+                ref_name = ref.reference_name
+                break
+                
+        response.append({
+            "payment_entry": pe.name,
+            "posting_date": pe.posting_date,
+            "mode_of_payment": pe.mode_of_payment,
+            "paid_amount": pe.paid_amount,
+            "allocated_amount": allocated,
+            "write_off_amount": write_off_amount,
+            "reference_no": pe.reference_no,
+            "reference_date": pe.reference_date,
+            "reference_doctype": ref_doctype,
+            "reference_name": ref_name,
+            "attachments": pe_attachments
+        })
+            
+    return response
