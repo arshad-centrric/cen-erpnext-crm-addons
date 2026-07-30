@@ -38,9 +38,9 @@ def get_mobile_user_profile():
         return {
             "has_profile": 0,
             "message": "Mobile User Profile not found for current user.",
+            "is_admin_user": 0,
             "allowed_warehouses": [],
-            "modules": {},
-            "sub_tabs": {}
+            "modules": {}
         }
         
     doc = frappe.get_doc("Mobile User Profile", user)
@@ -50,20 +50,23 @@ def get_mobile_user_profile():
         "user": doc.user,
         "full_name": doc.full_name,
         "email": doc.email,
+        "is_admin_user": doc.is_admin_user or 0,
         "allowed_warehouses": [w.warehouse for w in doc.get("allowed_warehouses", [])],
         "modules": {
-            "CRM": doc.module_crm,
+            "opportunity": doc.opportunity,
+            "quotation": doc.quotation,
+            "sales_order": doc.sales_order,
+            "bom": doc.module_bom,
+            "purchase_receipt_grn": doc.module_pr_grn,
+            "delivery": doc.module_delivery,
+            "packing": doc.module_packing,
+            "Opportunities": doc.tab_opportunities,
+            "Quotation": doc.tab_quotation,
+            "Sales Order": doc.tab_sales_order,
             "BOM": doc.module_bom,
             "Purchase Receipt/GRN": doc.module_pr_grn,
             "Delivery": doc.module_delivery,
             "Packing": doc.module_packing
-        },
-        "sub_tabs": {
-            "CRM": {
-                "Opportunities": doc.tab_opportunities,
-                "Quotation": doc.tab_quotation,
-                "Sales Order": doc.tab_sales_order
-            }
         }
     }
 

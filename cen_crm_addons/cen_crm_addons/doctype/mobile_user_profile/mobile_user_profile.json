@@ -11,19 +11,18 @@
   "user_details_section",
   "user",
   "full_name",
+  "is_admin_user",
   "column_break_exqz",
   "email",
   "mobile_app_modules_section",
-  "module_crm",
-  "module_bom",
-  "module_pr_grn",
-  "column_break_1n4q",
+  "opportunity",
+  "sales_order",
   "module_delivery",
+  "module_bom",
+  "column_break_1n4q",
+  "quotation",
   "module_packing",
-  "crm_sub_tabs_section",
-  "tab_opportunities",
-  "tab_quotation",
-  "tab_sales_order",
+  "module_pr_grn",
   "allowed_warehouses_section",
   "allowed_warehouses"
  ],
@@ -50,6 +49,12 @@
    "read_only": 1
   },
   {
+   "default": "0",
+   "fieldname": "is_admin_user",
+   "fieldtype": "Check",
+   "label": "Admin User"
+  },
+  {
    "fieldname": "column_break_exqz",
    "fieldtype": "Column Break"
   },
@@ -64,12 +69,6 @@
    "fieldname": "mobile_app_modules_section",
    "fieldtype": "Section Break",
    "label": "Mobile App Modules"
-  },
-  {
-   "default": "0",
-   "fieldname": "module_crm",
-   "fieldtype": "Check",
-   "label": "CRM"
   },
   {
    "default": "0",
@@ -100,30 +99,6 @@
    "label": "Packing"
   },
   {
-   "depends_on": "eval:doc.module_crm==1",
-   "fieldname": "crm_sub_tabs_section",
-   "fieldtype": "Section Break",
-   "label": "CRM Sub Tabs"
-  },
-  {
-   "default": "0",
-   "fieldname": "tab_opportunities",
-   "fieldtype": "Check",
-   "label": "Opportunities"
-  },
-  {
-   "default": "0",
-   "fieldname": "tab_quotation",
-   "fieldtype": "Check",
-   "label": "Quotation"
-  },
-  {
-   "default": "0",
-   "fieldname": "tab_sales_order",
-   "fieldtype": "Check",
-   "label": "Sales Order"
-  },
-  {
    "fieldname": "allowed_warehouses_section",
    "fieldtype": "Section Break",
    "label": "Allowed Warehouses"
@@ -133,15 +108,34 @@
    "fieldtype": "Table",
    "label": "Warehouses",
    "options": "Mobile Allowed Warehouse"
+  },
+  {
+   "default": "0",
+   "fieldname": "opportunity",
+   "fieldtype": "Check",
+   "label": "Opportunity"
+  },
+  {
+   "default": "0",
+   "fieldname": "sales_order",
+   "fieldtype": "Check",
+   "label": "Sales Order"
+  },
+  {
+   "default": "0",
+   "fieldname": "quotation",
+   "fieldtype": "Check",
+   "label": "Quotation"
   }
  ],
  "grid_page_length": 50,
  "index_web_pages_for_search": 1,
  "links": [],
- "modified": "2026-07-23 15:23:18.560542",
+ "modified": "2026-07-30 12:09:02.953459",
  "modified_by": "Administrator",
  "module": "Cen Crm Addons",
  "name": "Mobile User Profile",
+ "naming_rule": "By fieldname",
  "owner": "Administrator",
  "permissions": [
   {
