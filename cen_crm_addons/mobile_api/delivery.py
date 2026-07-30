@@ -37,14 +37,13 @@ def get_delivery_list(status="Pending", limit_start=1, limit_page_length=20, sea
 
     # Search logic
     if search_term:
-        # Use exact match for SO ID, but LIKE for everything else
+        # Use partial match (LIKE) for all fields including SO ID
         conditions.append("""(
-            so.name = %(search_term)s OR 
+            so.name LIKE %(search_like)s OR 
             so.custom_box_id LIKE %(search_like)s OR 
             so.customer LIKE %(search_like)s OR 
             so.customer_name LIKE %(search_like)s
         )""")
-        values['search_term'] = search_term
         values['search_like'] = f"%{search_term}%"
 
     where_clause = " AND ".join(conditions)
