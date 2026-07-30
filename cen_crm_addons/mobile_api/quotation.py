@@ -2,6 +2,8 @@ import frappe
 import json
 from frappe.utils import cint, flt
 from cen_crm_addons.api.sales_order_hooks import make_quotation_wrapper as make_quotation
+from erpnext.controllers.accounts_controller import update_child_qty_rate
+from frappe.desk.form.linked_with import get_submitted_linked_docs, cancel_all_linked_docs
 
 
 @frappe.whitelist()
@@ -133,8 +135,6 @@ def update_quotation_items(quotation_id, items):
     items: JSON string or list of dicts. 
            Should contain 'name' (child row ID) to update an existing row.
     """
-    from erpnext.controllers.accounts_controller import update_child_qty_rate
-    
     if not quotation_id or not items:
         frappe.throw("Quotation ID and Items are required")
 
@@ -300,9 +300,6 @@ def cancel_quotation(quotation_id):
                 "message": f"Quotation {quotation_id} is already cancelled."
             }
 
-        from frappe.desk.form.linked_with import get_submitted_linked_docs, cancel_all_linked_docs
-        import json
-        
         # Use ERPNext native logic to find and cancel all downstream documents automatically
         linked_docs_info = get_submitted_linked_docs("Quotation", quotation_id)
         linked_docs = linked_docs_info.get("docs", [])
