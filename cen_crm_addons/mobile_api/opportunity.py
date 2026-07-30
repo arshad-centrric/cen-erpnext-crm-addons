@@ -69,7 +69,7 @@ def get_opportunity_details(opportunity_id):
         quotations = frappe.get_all(
             "Quotation",
             filters={"opportunity": opportunity_id, "docstatus": ["<", 2]},
-            fields=["name", "status", "grand_total", "transaction_date"]
+            fields=["name", "status", "docstatus", "grand_total", "transaction_date"]
         )
         data["linked_quotations"] = quotations
 
