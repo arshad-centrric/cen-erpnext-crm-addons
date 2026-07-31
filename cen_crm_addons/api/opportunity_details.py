@@ -64,6 +64,7 @@ def get_linked_documents(opportunity_name):
     )
 
     sales_orders = []
+    sales_invoices = []
 
     if quotations:
         quotation_names = [q["name"] for q in quotations]
@@ -88,8 +89,22 @@ def get_linked_documents(opportunity_name):
                         "custom_picking_status", "custom_payment_status", "delivery_status", "custom_packing_image", "advance_paid"]
             )
             
-            # For each Sales Order, check for attached files in their Payment Entries
+            # For each Sales Order, calculate due amount and check for attached files
             for so in sales_orders:
+                from frappe.utils import flt
+                # Calculate Due Amount factoring in Sales Invoices
+                linked_invoices = frappe.db.sql("""
+                    SELECT DISTINCT si.name, si.outstanding_amount
+                    FROM `tabSales Invoice` si
+                    JOIN `tabSales Invoice Item` sii ON sii.parent = si.name
+                    WHERE sii.sales_order = %s AND si.docstatus = 1
+                """, (so["name"],), as_dict=True)
+
+                if linked_invoices:
+                    so["due_amount"] = sum(flt(inv.outstanding_amount) for inv in linked_invoices)
+                else:
+                    so["due_amount"] = flt(so.get("grand_total")) - flt(so.get("advance_paid"))
+
                 so["payment_entries"] = []
                 
                 # Find Payment Entries linked to this SO
@@ -119,7 +134,53 @@ def get_linked_documents(opportunity_name):
                     for pe in so["payment_entries"]:
                         pe["files"] = [f for f in files if f.attached_to_name == pe["name"]]
                         
+        si_names_query = frappe.db.sql("""
+            SELECT DISTINCT si.name
+            FROM `tabSales Invoice` si
+            JOIN `tabSales Invoice Item` sii ON sii.parent = si.name
+            WHERE sii.sales_order IN %s AND si.docstatus = 1
+        """, (tuple(so_names),), pluck=True)
+        
+        if si_names_query:
+            sales_invoices = frappe.get_all(
+                "Sales Invoice",
+                filters={"name": ("in", si_names_query)},
+                fields=["name", "status", "posting_date", "grand_total", "currency", "outstanding_amount"]
+            )
+            
+            for si in sales_invoices:
+                si["transaction_date"] = si.get("posting_date") # Map for frontend uniformity
+                si["payment_entries"] = []
+                
+                # Find Payment Entries linked to this SI
+                pe_refs = frappe.get_all(
+                    "Payment Entry Reference",
+                    filters={"reference_doctype": "Sales Invoice", "reference_name": si["name"]},
+                    fields=["parent"]
+                )
+                pe_names = list(set([ref["parent"] for ref in pe_refs]))
+                
+                if pe_names:
+                    # Find Payment Entries Details
+                    pes = frappe.get_all(
+                        "Payment Entry",
+                        filters={"name": ("in", pe_names), "docstatus": 1},
+                        fields=["name", "mode_of_payment", "paid_amount"]
+                    )
+                        
+                    # Find Files attached to those Payment Entries
+                    files = frappe.get_all(
+                        "File",
+                        filters={"attached_to_doctype": "Payment Entry", "attached_to_name": ("in", pe_names)},
+                        fields=["file_url", "file_name", "attached_to_name"]
+                    )
+                    
+                    si["payment_entries"] = pes
+                    for pe in si["payment_entries"]:
+                        pe["files"] = [f for f in files if f.attached_to_name == pe["name"]]
+                        
     return {
         "quotations": quotations,
-        "sales_orders": sales_orders
+        "sales_orders": sales_orders,
+        "sales_invoices": sales_invoices
     }

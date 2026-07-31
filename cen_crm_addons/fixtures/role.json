@@ -11,7 +11,7 @@
   "restrict_to_domain": null,
   "role_name": "Picking User",
   "two_factor_auth": 0
- }, 
+ },
  {
   "desk_access": 1,
   "disabled": 0,

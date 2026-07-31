@@ -2,6 +2,7 @@ import frappe
 import json
 from erpnext.accounts.doctype.payment_entry.payment_entry import get_payment_entry
 from frappe.utils import flt
+from cen_crm_addons.api.payment_logic import sync_payment_status
 
 @frappe.whitelist()
 def submit_multi_mode_payment(sales_order, payments, write_off_amount=0.0):
@@ -86,6 +87,8 @@ def submit_multi_mode_payment(sales_order, payments, write_off_amount=0.0):
         pe.save(ignore_permissions=True)
         pe.submit()
         pe_ids.append(pe.name)
+        
+    sync_payment_status(sales_order)
         
     return {
         "status": "success",

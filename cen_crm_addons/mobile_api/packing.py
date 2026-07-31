@@ -61,7 +61,8 @@ def get_packing_orders(status="Pending", limit_start=1, limit_page_length=10, se
             "custom_picking_status", 
             "status", 
             "grand_total",
-            "set_warehouse"
+            "set_warehouse",
+            "custom_box_id"
         ],
         limit_start=limit_start_idx,
         limit_page_length=page_length,
