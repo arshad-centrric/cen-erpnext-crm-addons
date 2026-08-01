@@ -3,7 +3,7 @@ from erpnext.selling.doctype.sales_order.sales_order import make_sales_invoice
 from frappe.utils.file_manager import save_file
 
 @frappe.whitelist()
-def get_packing_orders(status="Pending", limit_start=1, limit_page_length=10, search_term=None, warehouse=None):
+def get_packing_orders(status="Pending", limit_start=1, limit_page_length=10, search_term=None, warehouse=None, company=None):
     """
     Fetch a paginated list of Sales Orders based on packing status.
     status: 'Pending' (maps to 'Assigned to Pack') or 'Completed' (maps to 'Packed')
@@ -38,6 +38,9 @@ def get_packing_orders(status="Pending", limit_start=1, limit_page_length=10, se
     
     if warehouse:
         filters["set_warehouse"] = warehouse
+        
+    if company:
+        filters["company"] = str(company).strip()
 
     or_filters = {}
     if search_term:

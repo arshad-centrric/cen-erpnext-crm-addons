@@ -3,7 +3,7 @@ import json
 from frappe.utils import cint, flt
 
 @frappe.whitelist()
-def get_goods_receipt_notes(status="Draft", search_term=None, limit_start=1, limit_page_length=10, warehouse=None):
+def get_goods_receipt_notes(status="Draft", search_term=None, limit_start=1, limit_page_length=10, warehouse=None, company=None):
     """
     Fetch a paginated list of Goods Receipt Notes (Purchase Receipts) with an optional search.
     status: 'Draft' (docstatus 0), 'Submitted' (docstatus 1), or 'Cancelled' (docstatus 2)
@@ -38,6 +38,9 @@ def get_goods_receipt_notes(status="Draft", search_term=None, limit_start=1, lim
     
     if warehouse:
         filters["set_warehouse"] = str(warehouse).strip()
+        
+    if company:
+        filters["company"] = str(company).strip()
     
     # Optional search filters (OR conditions)
     or_filters = {}
@@ -181,9 +184,6 @@ def create_supplier(supplier_name, supplier_type, supplier_group="All Supplier G
         frappe.log_error(title="Supplier Creation API Error", message=frappe.get_traceback())
         frappe.throw(f"Failed to create Supplier: {str(e)}")
 
-
-import frappe
-
 @frappe.whitelist()
 def get_purchase_receipt_details(receipt_id):
     """
@@ -226,7 +226,14 @@ def create_purchase_receipt(supplier=None, company=None, items=None, accepted_wa
         frappe.throw("Supplier, Accepted Warehouse, and Items are required parameters")
 
     if not company:
-        company = frappe.defaults.get_user_default("Company") or frappe.db.get_single_value("Global Defaults", "default_company")
+        # Auto-detect the company from the provided warehouse
+        if accepted_warehouse:
+            company = frappe.db.get_value("Warehouse", accepted_warehouse, "company")
+            
+        # Fallback to default if somehow the warehouse has no company linked
+        if not company:
+            company = frappe.defaults.get_user_default("Company") or frappe.db.get_single_value("Global Defaults", "default_company")
+            
         if not company:
             frappe.throw("Company is required and no default company found")
 
@@ -274,7 +281,8 @@ def create_purchase_receipt(supplier=None, company=None, items=None, accepted_wa
             pr_doc.append("items", row_data)
 
         # Insert the document (creates it as Draft)
-        pr_doc.insert()
+        pr_doc.flags.ignore_permissions = True
+        pr_doc.insert(ignore_permissions=True)
 
         # Submit if requested
         if cint(submit) == 1:
