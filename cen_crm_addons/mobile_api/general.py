@@ -52,6 +52,8 @@ def get_mobile_user_profile():
         "email": doc.email,
         "company": frappe.defaults.get_user_default("Company") or frappe.db.get_single_value("Global Defaults", "default_company"),
         "allowed_companies": frappe.get_list("Company", pluck="name"),
+        "selling_price_lists": frappe.get_list("Price List", filters={"selling": 1}, pluck="name"),
+        "buying_price_lists": frappe.get_list("Price List", filters={"buying": 1}, pluck="name"),
         "is_admin_user": doc.is_admin_user or 0,
         "allowed_warehouses": [w.warehouse for w in doc.get("allowed_warehouses", [])],
         "modules": {
