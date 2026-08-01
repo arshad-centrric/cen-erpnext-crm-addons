@@ -9,5 +9,9 @@ frappe.ui.form.on("Cen CRM Settings", {
 		frm.set_query("print_format", "sales_order_print_formats", function() {
 			return { filters: { doc_type: "Sales Order" } };
 		});
+		
+		frm.set_query("parent_warehouse", "store_box_id_configurations", function() {
+			return { filters: { is_group: 1 } };
+		});
 	},
 });
