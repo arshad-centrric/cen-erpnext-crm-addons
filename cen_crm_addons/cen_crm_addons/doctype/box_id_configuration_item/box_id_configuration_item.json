@@ -1,0 +1,53 @@
+{
+ "actions": [],
+ "allow_bulk_edit": 1,
+ "allow_rename": 1,
+ "creation": "2026-08-01 16:00:49.830487",
+ "doctype": "DocType",
+ "editable_grid": 1,
+ "engine": "InnoDB",
+ "field_order": [
+  "parent_warehouse",
+  "box_id_prefix",
+  "current_box_id_number"
+ ],
+ "fields": [
+  {
+   "fieldname": "parent_warehouse",
+   "fieldtype": "Link",
+   "in_list_view": 1,
+   "label": "Parent Warehouse",
+   "options": "Warehouse",
+   "reqd": 1
+  },
+  {
+   "fieldname": "box_id_prefix",
+   "fieldtype": "Data",
+   "in_list_view": 1,
+   "label": "Box ID Prefix",
+   "reqd": 1
+  },
+  {
+   "default": "0",
+   "fieldname": "current_box_id_number",
+   "fieldtype": "Int",
+   "in_list_view": 1,
+   "label": "Current Box ID Number"
+  }
+ ],
+ "grid_page_length": 50,
+ "index_web_pages_for_search": 1,
+ "istable": 1,
+ "links": [],
+ "modified": "2026-08-01 17:48:31.756658",
+ "modified_by": "Administrator",
+ "module": "Cen Crm Addons",
+ "name": "Box ID Configuration Item",
+ "owner": "Administrator",
+ "permissions": [],
+ "row_format": "Dynamic",
+ "rows_threshold_for_grid_search": 20,
+ "sort_field": "creation",
+ "sort_order": "DESC",
+ "states": []
+}
