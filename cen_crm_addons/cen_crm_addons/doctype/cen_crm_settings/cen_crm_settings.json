@@ -10,16 +10,15 @@
   "default_sales_target",
   "delivery_charge_item",
   "default_picking_slip_format",
+  "box_id_configuration",
+  "store_box_id_configurations",
   "mobile_app_print_settings",
   "quotation_print_formats",
   "sales_order_print_formats",
   "delivery_note_print_formats",
   "purchase_receipt_print_formats",
   "sales_invoice_print_formats",
-  "packing_print_formats",
-  "box_id_configuration",
-  "box_id_prefix",
-  "current_box_id_number"
+  "packing_print_formats"
  ],
  "fields": [
   {
@@ -94,24 +93,17 @@
    "label": "Box ID Configuration"
   },
   {
-   "default": "B",
-   "fieldname": "box_id_prefix",
-   "fieldtype": "Data",
-   "label": "Box ID Prefix"
-  },
-  {
-   "default": "0",
-   "description": "The last used number for the Box ID sequence.",
-   "fieldname": "current_box_id_number",
-   "fieldtype": "Int",
-   "label": "Current Box ID Number"
+   "fieldname": "store_box_id_configurations",
+   "fieldtype": "Table",
+   "label": "Store Box ID Configurations",
+   "options": "Box ID Configuration Item"
   }
  ],
  "grid_page_length": 50,
  "index_web_pages_for_search": 1,
  "issingle": 1,
  "links": [],
- "modified": "2026-07-22 18:09:51.158515",
+ "modified": "2026-08-01 16:49:03.654562",
  "modified_by": "Administrator",
  "module": "Cen Crm Addons",
  "name": "Cen CRM Settings",
