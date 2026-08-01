@@ -3,7 +3,7 @@ from erpnext.selling.doctype.sales_order.sales_order import make_delivery_note
 from frappe import _
 
 @frappe.whitelist()
-def get_delivery_list(status="Pending", limit_start=1, limit_page_length=20, search_term="", warehouse=""):
+def get_delivery_list(status="Pending", limit_start=1, limit_page_length=20, search_term="", warehouse="", company=""):
     # Convert frontend's 1-based index to SQL's 0-based OFFSET
     frontend_start = int(limit_start)
     sql_offset = max(0, frontend_start - 1)
@@ -21,6 +21,11 @@ def get_delivery_list(status="Pending", limit_start=1, limit_page_length=20, sea
     if warehouse:
         conditions.append("so.set_warehouse = %(warehouse)s")
         values["warehouse"] = warehouse
+        
+    # Company Filter
+    if company:
+        conditions.append("so.company = %(company)s")
+        values["company"] = company
 
     # Tab-specific logic
     if status == "Pending":

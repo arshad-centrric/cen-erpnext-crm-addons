@@ -2,7 +2,7 @@ import frappe
 
 
 @frappe.whitelist()
-def admin_opportunity_list(status=None, search_term=None, limit_start=1, limit_page_length=20):
+def admin_opportunity_list(status=None, search_term=None, limit_start=1, limit_page_length=20, company=None):
     """
     Fetch a paginated list of Opportunities.
     If 'status' is not provided, defaults to showing both 'To be quoted' and 'Revise the Quote'.
@@ -19,6 +19,9 @@ def admin_opportunity_list(status=None, search_term=None, limit_start=1, limit_p
         filters = {"status": str(status).strip()}
     else:
         filters = {"status": ["in", ["To be quoted", "Revise the Quote"]]}
+        
+    if company:
+        filters["company"] = str(company).strip()
 
     or_filters = {}
     if search_term:
