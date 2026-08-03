@@ -1,18 +1,21 @@
 import frappe
 import json
 from frappe.utils import cint, flt
-from cen_crm_addons.api.sales_order_hooks import make_quotation_wrapper as make_quotation
+from erpnext.crm.doctype.opportunity.opportunity import make_quotation as erpnext_make_quotation
+from cen_crm_addons.api.sales_order_hooks import _apply_customer_auto_creation, _apply_opportunity_mapping_to_quotation
 from erpnext.controllers.accounts_controller import update_child_qty_rate
 from frappe.desk.form.linked_with import get_submitted_linked_docs, cancel_all_linked_docs
 
 
 @frappe.whitelist()
-def create_quotation(opportunity_id, items=None, submit=0):
+def create_quotation(opportunity_id, items=None, submit=0, selling_price_list=None, customer=None):
     """
     Create a Quotation from an Opportunity.
     opportunity_id: The ID of the Opportunity (Required)
     items: JSON string or list of dicts containing item_code, qty, rate (Optional. If provided, overrides the items from Opportunity)
     submit: 1 to submit immediately, 0 to leave as Draft
+    selling_price_list: The Price List to use for the Quotation (Optional)
+    customer: The exact ID of a Customer. Useful when the Opportunity was from a Lead. (Optional)
     """
     if not opportunity_id:
         frappe.throw("Opportunity ID is a required parameter")
@@ -27,9 +30,18 @@ def create_quotation(opportunity_id, items=None, submit=0):
             frappe.throw("Invalid JSON format for items payload")
 
     try:
-        # Create mapped Quotation document from Opportunity
-        # This copies over customer, company, taxes, and items automatically
-        quotation_doc = make_quotation(opportunity_id)
+        # Create mapped Quotation document from Opportunity using standard ERPNext method
+        quotation_doc = erpnext_make_quotation(opportunity_id)
+            
+        # Apply standard custom mappings (delivery, logistics)
+        _apply_opportunity_mapping_to_quotation(quotation_doc, opportunity_id)
+        
+        if customer:
+            quotation_doc.quotation_to = "Customer"
+            quotation_doc.party_name = str(customer).strip()
+            
+        if selling_price_list:
+            quotation_doc.selling_price_list = str(selling_price_list).strip()
         
         # If the mobile app provides specific items/prices, replace the default ones
         if items and isinstance(items, list):
