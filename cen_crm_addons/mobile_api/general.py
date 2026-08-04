@@ -78,14 +78,7 @@ def get_mobile_user_profile():
             "bom": doc.module_bom,
             "purchase_receipt_grn": doc.module_pr_grn,
             "delivery": doc.module_delivery,
-            "packing": doc.module_packing,
-            "Opportunities": doc.tab_opportunities,
-            "Quotation": doc.tab_quotation,
-            "Sales Order": doc.tab_sales_order,
-            "BOM": doc.module_bom,
-            "Purchase Receipt/GRN": doc.module_pr_grn,
-            "Delivery": doc.module_delivery,
-            "Packing": doc.module_packing
+            "packing": doc.module_packing
         }
     }
 
