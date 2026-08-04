@@ -42,6 +42,16 @@ def get_order_details(sales_order):
     order_details["outstanding_amount"] = outstanding
     order_details["has_active_invoice"] = has_active_invoice
     
+    # Fetch all non-cancelled linked Sales Invoices
+    linked_sales_invoices = frappe.db.sql("""
+        SELECT DISTINCT si.name, si.docstatus, si.status
+        FROM `tabSales Invoice` si
+        JOIN `tabSales Invoice Item` sii ON sii.parent = si.name
+        WHERE sii.sales_order = %s AND si.docstatus != 2
+    """, (sales_order,), as_dict=True)
+    
+    order_details["linked_sales_invoices"] = linked_sales_invoices
+    
     return order_details
 
 
@@ -108,3 +118,18 @@ def cancel_sales_order(sales_order_id):
         "status": "success",
         "data": results
     }
+
+
+@frappe.whitelist()
+def get_sales_invoice_details(sales_invoice_id):
+    """
+    Fetch full details of a specific Sales Invoice.
+    """
+    if not sales_invoice_id:
+        frappe.throw("Sales Invoice ID is required")
+        
+    if not frappe.db.exists("Sales Invoice", sales_invoice_id):
+        frappe.throw(f"Sales Invoice {sales_invoice_id} not found", frappe.DoesNotExistError)
+        
+    doc = frappe.get_doc("Sales Invoice", sales_invoice_id)
+    return doc.as_dict()

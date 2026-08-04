@@ -45,15 +45,30 @@ def get_mobile_user_profile():
         
     doc = frappe.get_doc("Mobile User Profile", user)
     
+    try:
+        allowed_companies = frappe.get_list("Company", pluck="name")
+    except frappe.exceptions.PermissionError:
+        allowed_companies = []
+        
+    try:
+        selling_price_lists = frappe.get_list("Price List", filters={"selling": 1}, pluck="name")
+    except frappe.exceptions.PermissionError:
+        selling_price_lists = []
+        
+    try:
+        buying_price_lists = frappe.get_list("Price List", filters={"buying": 1}, pluck="name")
+    except frappe.exceptions.PermissionError:
+        buying_price_lists = []
+
     return {
         "has_profile": 1,
         "user": doc.user,
         "full_name": doc.full_name,
         "email": doc.email,
         "company": frappe.defaults.get_user_default("Company") or frappe.db.get_single_value("Global Defaults", "default_company"),
-        "allowed_companies": frappe.get_list("Company", pluck="name"),
-        "selling_price_lists": frappe.get_list("Price List", filters={"selling": 1}, pluck="name"),
-        "buying_price_lists": frappe.get_list("Price List", filters={"buying": 1}, pluck="name"),
+        "allowed_companies": allowed_companies,
+        "selling_price_lists": selling_price_lists,
+        "buying_price_lists": buying_price_lists,
         "is_admin_user": doc.is_admin_user or 0,
         "allowed_warehouses": [w.warehouse for w in doc.get("allowed_warehouses", [])],
         "modules": {
