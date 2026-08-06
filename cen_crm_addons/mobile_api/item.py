@@ -25,6 +25,14 @@ def item_list(search_term=None, limit_start=1, limit_page_length=20, selling_pri
             "item_code": ["like", search_string],
             "item_name": ["like", search_string]
         }
+        
+        matching_barcodes = frappe.get_all(
+            "Item Barcode",
+            filters={"barcode": ["like", search_string]},
+            pluck="parent"
+        )
+        if matching_barcodes:
+            or_filters["name"] = ["in", matching_barcodes]
 
     # 1. Dynamically find the correct HSN Field based on installed apps
     meta = frappe.get_meta("Item")
