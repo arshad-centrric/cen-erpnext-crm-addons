@@ -200,11 +200,20 @@ def get_purchase_receipt_details(receipt_id):
     try:
         # Get the full document
         doc = frappe.get_doc("Purchase Receipt", receipt_id)
+        doc_data = doc.as_dict()
+        
+        # Fetch Attachments
+        attachments = frappe.get_all(
+            "File", 
+            filters={"attached_to_doctype": "Purchase Receipt", "attached_to_name": receipt_id}, 
+            fields=["name", "file_name", "file_url"]
+        )
+        doc_data["attachments"] = attachments
         
         # Return it as a dictionary (this automatically includes the 'items' child table)
         return {
             "status": "success",
-            "data": doc.as_dict()
+            "data": doc_data
         }
 
     except Exception as e:

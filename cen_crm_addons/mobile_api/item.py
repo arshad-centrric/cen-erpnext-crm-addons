@@ -147,3 +147,131 @@ def item_list(search_term=None, limit_start=1, limit_page_length=20, selling_pri
         item.pop("name", None)
 
     return items
+
+
+@frappe.whitelist()
+def get_item_groups(search_term="", limit_start=1, limit_page_length=20):
+    limit = int(limit_page_length)
+    offset = (int(limit_start) - 1) * limit
+    
+    filters = {}
+    if search_term:
+        filters = {"name": ["like", f"%{search_term}%"]}
+        
+    return frappe.db.get_list(
+        "Item Group",
+        filters=filters,
+        fields=["name"],
+        limit_start=offset,
+        limit_page_length=limit
+    )
+
+@frappe.whitelist()
+def get_uoms(search_term="", limit_start=1, limit_page_length=20):
+    limit = int(limit_page_length)
+    offset = (int(limit_start) - 1) * limit
+    
+    filters = {}
+    if search_term:
+        filters = {"name": ["like", f"%{search_term}%"]}
+        
+    return frappe.db.get_list(
+        "UOM",
+        filters=filters,
+        fields=["name"],
+        limit_start=offset,
+        limit_page_length=limit
+    )
+
+@frappe.whitelist()
+def get_hsn_codes(search_term="", limit_start=1, limit_page_length=20):
+    limit = int(limit_page_length)
+    offset = (int(limit_start) - 1) * limit
+    
+    or_filters = {}
+    if search_term:
+        or_filters = {
+            "name": ["like", f"%{search_term}%"],
+            "description": ["like", f"%{search_term}%"]
+        }
+        
+    return frappe.db.get_list(
+        "GST HSN Code",
+        or_filters=or_filters,
+        fields=["name", "description"],
+        limit_start=offset,
+        limit_page_length=limit
+    )
+
+@frappe.whitelist()
+def create_item(**kwargs):
+    try:
+        # Handle both direct JSON body and stringified 'item_data' form field
+        if "item_data" in kwargs and isinstance(kwargs["item_data"], str):
+            data = frappe.parse_json(kwargs["item_data"])
+        else:
+            data = frappe._dict(kwargs)
+        
+        item_doc = frappe.new_doc("Item")
+        item_doc.item_name = data.get("item_name")
+        item_doc.item_group = data.get("item_group")
+        item_doc.stock_uom = data.get("default_uom")
+        
+        warning_msg = ""
+        
+        if data.get("hsn_code"):
+            meta = frappe.get_meta("Item")
+            hsn_val = data.get("hsn_code")
+            if meta.has_field("gst_hsn_code"):
+                if frappe.db.exists("GST HSN Code", hsn_val):
+                    item_doc.gst_hsn_code = hsn_val
+                else:
+                    warning_msg = f" (Note: HSN Code '{hsn_val}' was ignored as it does not exist in GST HSN Code list)"
+            elif meta.has_field("custom_hsnsac"):
+                if frappe.db.exists("HSN SAC", hsn_val):
+                    item_doc.custom_hsnsac = hsn_val
+                else:
+                    warning_msg = f" (Note: HSN Code '{hsn_val}' was ignored as it does not exist in HSN SAC list)"
+            elif meta.has_field("customs_tariff_number"):
+                if frappe.db.exists("Customs Tariff Number", hsn_val):
+                    item_doc.customs_tariff_number = hsn_val
+                else:
+                    warning_msg = f" (Note: Customs Tariff Number '{hsn_val}' was ignored as it does not exist)"
+            else:
+                warning_msg = " (Note: HSN Code not saved because no matching HSN field was found on the system)"
+            
+        barcodes = data.get("barcodes", [])
+        if isinstance(barcodes, str):
+            barcodes = frappe.parse_json(barcodes)
+            
+        for b in barcodes:
+            item_doc.append("barcodes", {"barcode": b.get("barcode"), "uom": b.get("uom")})
+            
+        uom_conversions = data.get("uom_conversions", [])
+        if isinstance(uom_conversions, str):
+            uom_conversions = frappe.parse_json(uom_conversions)
+            
+        for u in uom_conversions:
+            item_doc.append("uoms", {"uom": u.get("uom"), "conversion_factor": u.get("conversion_factor")})
+            
+        item_doc.insert(ignore_permissions=True)
+        
+        price_list = data.get("selling_price_list")
+        rate = data.get("selling_rate")
+        
+        if price_list and rate:
+            price_doc = frappe.new_doc("Item Price")
+            price_doc.item_code = item_doc.name
+            price_doc.price_list = price_list
+            price_doc.price_list_rate = rate
+            price_doc.insert(ignore_permissions=True)
+            
+        return {
+            "status": "success", 
+            "item_code": item_doc.name, 
+            "message": f"Item created successfully{warning_msg}"
+        }
+    except Exception as e:
+        frappe.log_error(title="Mobile Item Creation Failed", message=frappe.get_traceback())
+        frappe.local.response['http_status_code'] = 400
+        return {"status": "error", "message": str(e)}
