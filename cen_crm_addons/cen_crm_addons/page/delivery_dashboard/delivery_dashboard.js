@@ -181,10 +181,10 @@ frappe.pages['delivery_dashboard'].on_page_load = function(wrapper) {
         $wrapper.find('#display_phone').text(data.contact_mobile || data.contact_phone || 'N/A');
         
         let currency = data.currency || 'INR';
-        $wrapper.find('#display_total').html(format_money(data.grand_total, currency));
-        $wrapper.find('#display_paid').html(format_money(data.advance_paid, currency));
+        $wrapper.find('#display_total').html(format_money(data.total_amount, currency));
+        $wrapper.find('#display_paid').html(format_money(data.paid_amount, currency));
         
-        let outstanding = data.grand_total - data.advance_paid;
+        let outstanding = data.outstanding_amount;
         $wrapper.find('#display_outstanding').html(format_money(outstanding, currency));
 
         // Update Badge & Buttons

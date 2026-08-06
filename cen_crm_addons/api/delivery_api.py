@@ -17,6 +17,26 @@ def get_order_info(order_id):
     contact_mobile = so.contact_mobile or customer.get("mobile_no") or customer.get("phone")
     contact_phone = so.contact_phone or customer.get("phone") or customer.get("customer_primary_phone")
     
+    # Check for linked active Sales Invoices
+    linked_invoices = frappe.db.sql("""
+        SELECT SUM(si.grand_total) as total_amount, SUM(si.outstanding_amount) as outstanding_amount
+        FROM (
+            SELECT DISTINCT si.name, si.grand_total, si.outstanding_amount
+            FROM `tabSales Invoice` si
+            JOIN `tabSales Invoice Item` sii ON sii.parent = si.name
+            WHERE sii.sales_order = %s AND si.docstatus = 1
+        ) si
+    """, (order_id,), as_dict=True)
+    
+    if linked_invoices and linked_invoices[0].total_amount is not None:
+        total_amount = linked_invoices[0].total_amount
+        outstanding_amount = linked_invoices[0].outstanding_amount
+        paid_amount = total_amount - outstanding_amount
+    else:
+        total_amount = so.grand_total
+        paid_amount = so.advance_paid
+        outstanding_amount = total_amount - paid_amount
+        
     return {
         "name": so.name,
         "customer": so.customer,
@@ -25,6 +45,9 @@ def get_order_info(order_id):
         "contact_phone": contact_phone,
         "grand_total": so.grand_total,
         "advance_paid": so.advance_paid,
+        "total_amount": total_amount,
+        "paid_amount": paid_amount,
+        "outstanding_amount": outstanding_amount,
         "currency": so.currency,
         "status": so.status,
         "delivery_status": so.delivery_status
