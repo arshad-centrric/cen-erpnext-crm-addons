@@ -47,7 +47,8 @@ def get_packing_orders(status="Pending", limit_start=1, limit_page_length=10, se
         or_filters = {
             "name": ["like", f"%{search_term}%"],
             "customer": ["like", f"%{search_term}%"],
-            "customer_name": ["like", f"%{search_term}%"]
+            "customer_name": ["like", f"%{search_term}%"],
+            "custom_box_id": ["like", f"%{search_term}%"]
         }
 
     orders = frappe.get_all(
