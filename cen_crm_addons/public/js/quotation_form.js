@@ -376,6 +376,7 @@ frappe.ui.form.on("Quotation", {
                                                         me.doc.rate = flt(r.message.price_list_rate) || flt(r.message.rate) || 0.0;
                                                         me.doc.amount = flt(me.doc.qty) * flt(me.doc.rate);
                                                         d.fields_dict.items.grid.refresh();
+                                                        if (typeof calculate_net_total === 'function') calculate_net_total();
                                                     }
                                                 }
                                             });
@@ -390,6 +391,7 @@ frappe.ui.form.on("Quotation", {
                                         change: function() {
                                             this.doc.amount = flt(this.doc.qty) * flt(this.doc.rate);
                                             d.fields_dict.items.grid.refresh();
+                                            if (typeof calculate_net_total === 'function') calculate_net_total();
                                         }
                                     },
                                     { 
@@ -400,11 +402,13 @@ frappe.ui.form.on("Quotation", {
                                         change: function() {
                                             this.doc.amount = flt(this.doc.qty) * flt(this.doc.rate);
                                             d.fields_dict.items.grid.refresh();
+                                            if (typeof calculate_net_total === 'function') calculate_net_total();
                                         }
                                     },
                                     { fieldname: 'amount', fieldtype: 'Currency', in_list_view: 1, label: __('Amount'), read_only: 1 }
                                 ]
-                            }
+                            },
+                            { fieldname: 'net_total', fieldtype: 'Currency', label: __('Net Total'), read_only: 1, bold: 1 }
                         ],
                         primary_action_label: __('Update'),
                         primary_action: function(values) {
@@ -437,8 +441,16 @@ frappe.ui.form.on("Quotation", {
                         }
                     });
                     
-
-
+                    function calculate_net_total() {
+                        let total = (d.fields_dict.items.grid.get_data() || []).reduce((sum, row) => sum + flt(row.amount), 0);
+                        d.set_value('net_total', total);
+                    }
+                    
+                    d.fields_dict.items.grid.wrapper.on('click', '.grid-remove-rows, .grid-remove-all-rows', () => { 
+                        setTimeout(calculate_net_total, 100); 
+                    });
+                    
+                    calculate_net_total();
                     d.show();
                 });
             }
