@@ -1,5 +1,10 @@
 frappe.ui.form.on("Sales Order", {
     refresh: function(frm) {
+        if (frm.doc.docstatus === 1) {
+            frm.set_df_property('custom_delivery_store', 'read_only', 1);
+            frm.set_df_property('set_warehouse', 'read_only', 1);
+        }
+
         if (!frm.is_new()) {
             // View Opportunity Link
             frappe.call({
@@ -122,6 +127,16 @@ frappe.ui.form.on("Sales Order", {
                     'border-color': '#000'
                 });
             }
+        }
+    },
+    custom_delivery_store: function(frm) {
+        if (frm.doc.custom_delivery_store !== frm.doc.set_warehouse) {
+            frm.set_value('set_warehouse', frm.doc.custom_delivery_store);
+        }
+    },
+    set_warehouse: function(frm) {
+        if (frm.doc.set_warehouse !== frm.doc.custom_delivery_store) {
+            frm.set_value('custom_delivery_store', frm.doc.set_warehouse);
         }
     }
 });
