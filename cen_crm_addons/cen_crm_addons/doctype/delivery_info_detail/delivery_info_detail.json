@@ -1,5 +1,6 @@
 {
  "actions": [],
+ "allow_bulk_edit": 1,
  "allow_rename": 1,
  "creation": "2026-05-04 17:22:45.739596",
  "doctype": "DocType",
@@ -36,7 +37,7 @@
    "fieldtype": "Select",
    "in_list_view": 1,
    "label": "Mode of Delivery",
-   "options": "Airport\nPick up from store\nCourier"
+   "options": "Airport\nPick up from store\nCourier\nHome Delivery"
   },
   {
    "allow_on_submit": 1,
@@ -124,7 +125,7 @@
  "index_web_pages_for_search": 1,
  "istable": 1,
  "links": [],
- "modified": "2026-05-12 17:20:26.256764",
+ "modified": "2026-08-10 15:04:10.346011",
  "modified_by": "Administrator",
  "module": "Cen Crm Addons",
  "name": "Delivery Info Detail",

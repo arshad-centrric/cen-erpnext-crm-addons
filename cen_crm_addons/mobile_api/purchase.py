@@ -3,7 +3,7 @@ import json
 from frappe.utils import cint, flt
 
 @frappe.whitelist()
-def get_goods_receipt_notes(status="Draft", search_term=None, limit_start=1, limit_page_length=10, warehouse=None, company=None):
+def get_goods_receipt_notes(status="Draft", search_term=None, limit_start=1, limit_page_length=10, warehouse=None, company=None, date=None):
     """
     Fetch a paginated list of Goods Receipt Notes (Purchase Receipts) with an optional search.
     status: 'Draft' (docstatus 0), 'Submitted' (docstatus 1), or 'Cancelled' (docstatus 2)
@@ -41,6 +41,9 @@ def get_goods_receipt_notes(status="Draft", search_term=None, limit_start=1, lim
         
     if company:
         filters["company"] = str(company).strip()
+    
+    if date:
+        filters["posting_date"] = date
     
     # Optional search filters (OR conditions)
     or_filters = {}

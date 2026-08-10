@@ -209,6 +209,9 @@ def update_quotation_items(quotation_id, items):
                         "rate": flt(existing_row.rate)
                     })
 
+            # Clear cache so the parent document registers the DB changes before update_child_qty_rate processes totals
+            frappe.clear_document_cache("Quotation", quotation_id)
+
             update_child_qty_rate(
                 parent_doctype="Quotation",
                 parent_doctype_name=quotation_id,
