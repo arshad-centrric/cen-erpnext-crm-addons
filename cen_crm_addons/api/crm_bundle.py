@@ -36,6 +36,8 @@ def create_customized_bundle(parent_item_code, new_items_json):
     new_item.description = f"Customized from Original Bundle: {parent_item_code}"
     new_item.item_group = group_name
     new_item.stock_uom = parent_item.stock_uom
+    if parent_item.get("gst_hsn_code"):
+        new_item.gst_hsn_code = parent_item.gst_hsn_code
     new_item.is_stock_item = 0
     new_item.custom_is_customized_bundle = 1
     new_item.custom_is_product_bundle = 1
