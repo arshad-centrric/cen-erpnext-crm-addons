@@ -194,13 +194,11 @@ def update_quotation_items(quotation_id, items):
                     # Fix for ERPNext core quirk: update_child_qty_rate doesn't recalculate discounts for Quotation!
                     # So we must update price_list_rate in the DB so that calculate_taxes_and_totals respects the new rate
                     # We also must clear margins to prevent the margin from being added on top of our new rate.
-                    frappe.db.set_value("Quotation Item", existing_row.name, {
-                        "price_list_rate": new_rate,
-                        "discount_percentage": 0.0,
-                        "discount_amount": 0.0,
-                        "margin_type": "",
-                        "margin_rate_or_amount": 0.0
-                    })
+                    frappe.db.sql("""
+                        UPDATE `tabQuotation Item`
+                        SET price_list_rate = %s, discount_percentage = 0.0, discount_amount = 0.0, margin_type = '', margin_rate_or_amount = 0.0
+                        WHERE name = %s
+                    """, (new_rate, existing_row.name))
                 else:
                     trans_items.append({
                         "docname": existing_row.name,
