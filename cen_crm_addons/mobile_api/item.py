@@ -72,27 +72,25 @@ def item_list(search_term=None, limit_start=1, limit_page_length=20, selling_pri
     item_prices = frappe.get_all(
         "Item Price",
         filters={"item_code": ["in", item_codes]},
-        fields=["item_code", "price_list_rate", "selling", "buying", "price_list"]
+        fields=["item_code", "price_list_rate", "selling", "buying", "price_list", "uom"]
     )
     
     prices_map = {}
     for ip in item_prices:
         if ip.item_code not in prices_map:
-            prices_map[ip.item_code] = {"selling": None, "buying": None}
+            prices_map[ip.item_code] = {"selling": {}, "buying": {}}
             
-        # Match selling price list (or fallback to default selling)
-        if selling_price_list:
-            if ip.price_list == selling_price_list:
-                prices_map[ip.item_code]["selling"] = ip.price_list_rate
-        elif ip.selling == 1 and prices_map[ip.item_code]["selling"] is None:
-            prices_map[ip.item_code]["selling"] = ip.price_list_rate
+        # Prepare lowercase comparison variables safely
+        target_sell = str(selling_price_list).strip().lower() if selling_price_list else None
+        target_buy = str(buying_price_list).strip().lower() if buying_price_list else None
+        
+        # Match selling price list (case-insensitive)
+        if target_sell and str(ip.price_list).lower() == target_sell:
+            prices_map[ip.item_code]["selling"][ip.uom] = ip.price_list_rate
             
-        # Match buying price list (or fallback to default buying)
-        if buying_price_list:
-            if ip.price_list == buying_price_list:
-                prices_map[ip.item_code]["buying"] = ip.price_list_rate
-        elif ip.buying == 1 and prices_map[ip.item_code]["buying"] is None:
-            prices_map[ip.item_code]["buying"] = ip.price_list_rate
+        # Match buying price list (case-insensitive)
+        if target_buy and str(ip.price_list).lower() == target_buy:
+            prices_map[ip.item_code]["buying"][ip.uom] = ip.price_list_rate
 
     # 3. Bulk fetch Multiple UOMs
     uoms = frappe.get_all(
@@ -125,20 +123,54 @@ def item_list(search_term=None, limit_start=1, limit_page_length=20, selling_pri
     # 5. Assemble final response
     for item in items:
         code = item.item_code
+        default_uom = item.default_uom
         
-        # Override selling/buying rate if an Item Price exists
+        # Strictly require an explicit Item Price for the Default UOM. Otherwise, default to 0.0.
+        explicit_selling = 0.0
+        explicit_buying = 0.0
+        
         if code in prices_map:
-            if prices_map[code]["selling"] is not None:
-                item.selling_rate = prices_map[code]["selling"]
-            if prices_map[code]["buying"] is not None:
-                item.buying_rate = prices_map[code]["buying"]
+            if prices_map[code]["selling"].get(default_uom) is not None:
+                explicit_selling = prices_map[code]["selling"][default_uom]
+
+            if prices_map[code]["buying"].get(default_uom) is not None:
+                explicit_buying = prices_map[code]["buying"][default_uom]
                 
-        # Ensure rates are at least 0.0
-        item.selling_rate = flt(item.selling_rate)
-        item.buying_rate = flt(item.buying_rate)
+        item.selling_rate = flt(explicit_selling)
+        item.buying_rate = flt(explicit_buying)
         
-        # Attach UOMs
-        item.uom_details = uom_map.get(code, [])
+        # Collect all unique UOMs linked to this item from the UOM Conversion Details table ONLY
+        all_uoms = {default_uom}
+        
+        for u in uom_map.get(code, []):
+            all_uoms.add(u["uom"])
+                
+        item.uom_details = []
+        
+        for uom_name in sorted(all_uoms):
+            # Find conversion factor (defaults to 1.0 if not in UOM table)
+            conv_factor = 1.0
+            if uom_name != default_uom:
+                for u in uom_map.get(code, []):
+                    if u["uom"] == uom_name:
+                        conv_factor = u["conversion_factor"]
+                        break
+                        
+            # Determine specific UOM prices
+            u_sell = prices_map.get(code, {}).get("selling", {}).get(uom_name)
+            if u_sell is None:
+                u_sell = item.selling_rate * flt(conv_factor)
+                
+            u_buy = prices_map.get(code, {}).get("buying", {}).get(uom_name)
+            if u_buy is None:
+                u_buy = item.buying_rate * flt(conv_factor)
+                
+            item.uom_details.append({
+                "uom": uom_name,
+                "conversion_factor": flt(conv_factor),
+                "selling_rate": flt(u_sell),
+                "buying_rate": flt(u_buy)
+            })
         
         # Attach Barcodes (from child table)
         item.barcodes = barcode_map.get(code, [])
