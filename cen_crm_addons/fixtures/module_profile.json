@@ -1,0 +1,218 @@
+[
+ {
+  "block_modules": [
+   {
+    "module": "EDI"
+   },
+   {
+    "module": "Subcontracting"
+   },
+   {
+    "module": "Bulk Transaction"
+   },
+   {
+    "module": "Telephony"
+   },
+   {
+    "module": "Communication"
+   },
+   {
+    "module": "Quality Management"
+   },
+   {
+    "module": "ERPNext Integrations"
+   },
+   {
+    "module": "Regional"
+   },
+   {
+    "module": "Maintenance"
+   },
+   {
+    "module": "Portal"
+   },
+   {
+    "module": "Assets"
+   },
+   {
+    "module": "Utilities"
+   },
+   {
+    "module": "Support"
+   },
+   {
+    "module": "Stock"
+   },
+   {
+    "module": "Manufacturing"
+   },
+   {
+    "module": "Setup"
+   },
+   {
+    "module": "Selling"
+   },
+   {
+    "module": "Projects"
+   },
+   {
+    "module": "Buying"
+   },
+   {
+    "module": "CRM"
+   },
+   {
+    "module": "Accounts"
+   },
+   {
+    "module": "Automation"
+   },
+   {
+    "module": "Social"
+   },
+   {
+    "module": "Contacts"
+   },
+   {
+    "module": "Printing"
+   },
+   {
+    "module": "Integrations"
+   },
+   {
+    "module": "Desk"
+   },
+   {
+    "module": "Geo"
+   },
+   {
+    "module": "Custom"
+   },
+   {
+    "module": "Email"
+   },
+   {
+    "module": "Workflow"
+   },
+   {
+    "module": "Website"
+   },
+   {
+    "module": "Core"
+   }
+  ],
+  "docstatus": 0,
+  "doctype": "Module Profile",
+  "modified": "2026-07-31 12:40:55.110700",
+  "module_profile_name": "Sales Supervisor Profile",
+  "name": "Sales Supervisor Profile"
+ },
+ {
+  "block_modules": [
+   {
+    "module": "EDI"
+   },
+   {
+    "module": "Subcontracting"
+   },
+   {
+    "module": "Bulk Transaction"
+   },
+   {
+    "module": "Telephony"
+   },
+   {
+    "module": "Communication"
+   },
+   {
+    "module": "Quality Management"
+   },
+   {
+    "module": "ERPNext Integrations"
+   },
+   {
+    "module": "Regional"
+   },
+   {
+    "module": "Maintenance"
+   },
+   {
+    "module": "Portal"
+   },
+   {
+    "module": "Assets"
+   },
+   {
+    "module": "Utilities"
+   },
+   {
+    "module": "Support"
+   },
+   {
+    "module": "Stock"
+   },
+   {
+    "module": "Manufacturing"
+   },
+   {
+    "module": "Setup"
+   },
+   {
+    "module": "Selling"
+   },
+   {
+    "module": "Projects"
+   },
+   {
+    "module": "Buying"
+   },
+   {
+    "module": "CRM"
+   },
+   {
+    "module": "Accounts"
+   },
+   {
+    "module": "Automation"
+   },
+   {
+    "module": "Social"
+   },
+   {
+    "module": "Contacts"
+   },
+   {
+    "module": "Printing"
+   },
+   {
+    "module": "Integrations"
+   },
+   {
+    "module": "Desk"
+   },
+   {
+    "module": "Geo"
+   },
+   {
+    "module": "Custom"
+   },
+   {
+    "module": "Email"
+   },
+   {
+    "module": "Workflow"
+   },
+   {
+    "module": "Website"
+   },
+   {
+    "module": "Core"
+   }
+  ],
+  "docstatus": 0,
+  "doctype": "Module Profile",
+  "modified": "2026-07-31 12:40:55.085011",
+  "module_profile_name": "Sales Staff Profile",
+  "name": "Sales Staff Profile"
+ }
+]

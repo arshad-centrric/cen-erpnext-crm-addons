@@ -320,7 +320,9 @@ frappe.ui.form.on("Quotation", {
                 frm.add_custom_button(__('Update Items and Rate'), function() {
                     let initial_data = (frm.doc.items || []).map(row => {
                         return {
+                            docname: row.name,
                             item_code: row.item_code,
+                            item_name: row.item_name,
                             qty: row.qty,
                             rate: row.rate,
                             amount: (row.qty || 0) * (row.rate || 0),
@@ -330,7 +332,7 @@ frappe.ui.form.on("Quotation", {
 
                     let d = new frappe.ui.Dialog({
                         title: __('Update Items'),
-                        size: 'large',
+                        size: 'extra-large',
                         fields: [
                             {
                                 fieldname: 'items',
@@ -339,19 +341,81 @@ frappe.ui.form.on("Quotation", {
                                 data: initial_data,
                                 get_data: () => { return initial_data; },
                                 fields: [
-                                    { fieldname: 'item_code', fieldtype: 'Data', in_list_view: 1, label: __('Item Code'), read_only: 1 },
-                                    { fieldname: 'qty', fieldtype: 'Float', in_list_view: 1, label: __('Qty') },
-                                    { fieldname: 'rate', fieldtype: 'Currency', in_list_view: 1, label: __('Rate') },
+                                    { fieldname: 'docname', fieldtype: 'Data', hidden: 1 },
+                                    { 
+                                        fieldname: 'item_code', 
+                                        fieldtype: 'Link', 
+                                        options: 'Item', 
+                                        in_list_view: 1, 
+                                        label: __('Item Code'), 
+                                        read_only: 0, 
+                                        only_select: 1, 
+                                        formatter: (value) => value,
+                                        change: function() {
+                                            const me = this;
+                                            if (!me.value) return;
+                                            me.doc.qty = 1;
+                                            frappe.call({
+                                                method: 'erpnext.stock.get_item_details.get_item_details',
+                                                args: {
+                                                    doc: frm.doc,
+                                                    ctx: {
+                                                        item_code: me.value,
+                                                        company: frm.doc.company,
+                                                        price_list: frm.doc.selling_price_list,
+                                                        currency: frm.doc.currency,
+                                                        doctype: frm.doc.doctype,
+                                                        name: frm.doc.name,
+                                                        customer: frm.doc.customer || frm.doc.party_name,
+                                                        qty: 1
+                                                    }
+                                                },
+                                                callback: function(r) {
+                                                    if (r && r.message) {
+                                                        me.doc.item_name = r.message.item_name;
+                                                        me.doc.rate = flt(r.message.price_list_rate) || flt(r.message.rate) || 0.0;
+                                                        me.doc.amount = flt(me.doc.qty) * flt(me.doc.rate);
+                                                        d.fields_dict.items.grid.refresh();
+                                                        if (typeof calculate_net_total === 'function') calculate_net_total();
+                                                    }
+                                                }
+                                            });
+                                        }
+                                    },
+                                    { fieldname: 'item_name', fieldtype: 'Data', in_list_view: 1, label: __('Item Name'), read_only: 1 },
+                                    { 
+                                        fieldname: 'qty', 
+                                        fieldtype: 'Float', 
+                                        in_list_view: 1, 
+                                        label: __('Qty'),
+                                        change: function() {
+                                            this.doc.amount = flt(this.doc.qty) * flt(this.doc.rate);
+                                            d.fields_dict.items.grid.refresh();
+                                            if (typeof calculate_net_total === 'function') calculate_net_total();
+                                        }
+                                    },
+                                    { 
+                                        fieldname: 'rate', 
+                                        fieldtype: 'Currency', 
+                                        in_list_view: 1, 
+                                        label: __('Rate'),
+                                        change: function() {
+                                            this.doc.amount = flt(this.doc.qty) * flt(this.doc.rate);
+                                            d.fields_dict.items.grid.refresh();
+                                            if (typeof calculate_net_total === 'function') calculate_net_total();
+                                        }
+                                    },
                                     { fieldname: 'amount', fieldtype: 'Currency', in_list_view: 1, label: __('Amount'), read_only: 1 }
                                 ]
-                            }
+                            },
+                            { fieldname: 'net_total', fieldtype: 'Currency', label: __('Net Total'), read_only: 1, bold: 1 }
                         ],
                         primary_action_label: __('Update'),
                         primary_action: function(values) {
                             let updated_items = values.items || [];
-                            let trans_items = updated_items.map(u => {
+                            let trans_items = updated_items.filter(u => !!u.item_code).map(u => {
                                 return {
-                                    docname: u.name,
+                                    docname: u.docname || null,
                                     item_code: u.item_code,
                                     qty: u.qty,
                                     rate: u.rate
@@ -377,14 +441,16 @@ frappe.ui.form.on("Quotation", {
                         }
                     });
                     
-                    // Attach math listener
-                    d.$wrapper.on('change', 'input[data-fieldname="qty"], input[data-fieldname="rate"]', function() {
-                        (d.fields_dict.items.grid.data || []).forEach(row => {
-                            row.amount = flt(row.qty) * flt(row.rate);
-                        });
-                        d.fields_dict.items.grid.refresh();
+                    function calculate_net_total() {
+                        let total = (d.fields_dict.items.grid.get_data() || []).reduce((sum, row) => sum + flt(row.amount), 0);
+                        d.set_value('net_total', total);
+                    }
+                    
+                    d.fields_dict.items.grid.wrapper.on('click', '.grid-remove-rows, .grid-remove-all-rows', () => { 
+                        setTimeout(calculate_net_total, 100); 
                     });
-
+                    
+                    calculate_net_total();
                     d.show();
                 });
             }

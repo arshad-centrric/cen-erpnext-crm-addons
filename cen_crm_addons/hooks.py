@@ -22,8 +22,9 @@ app_license = "mit"
 # ]
 
 fixtures = [
-    "Role Profile", 
-    "Role", 
+    {"dt": "Role Profile", "filters": [["name", "in", ("CRM Sales Person", "CRM Picking User", "CRM Supervisor")]]},
+    {"dt": "Role", "filters": [["name", "in", ("Sales Person", "Supervisor", "Picking User")]]},
+    {"dt": "Module Profile", "filters": [["name", "in", ("Sales Staff Profile", "Sales Supervisor Profile")]]},
     "Custom DocPerm",
     {"dt": "Property Setter", "filters": [["doc_type", "in", ("Opportunity", "Lead", "Opportunity Item", "Item", "Payment Entry", "Sales Order", "Quotation", "Sales Order Item", "Quotation Item", "Opportunity Item")]]},
     {"dt": "Custom Field", "filters": [["fieldname", "in", (
@@ -76,6 +77,8 @@ fixtures = [
         "custom_quotation_html",
         "custom_sales_order_tab",
         "custom_sales_order_html",
+        "custom_sales_invoices_tab",
+        "custom_sales_invoices_html",
 
         #Quotation
         "custom_revision_reason",
@@ -277,13 +280,17 @@ doc_events = {
             "cen_crm_addons.api.opportunity_automation.on_sales_order_update"
         ]
     },
+    "Sales Invoice": {
+        "on_submit": "cen_crm_addons.api.payment_logic.trigger_so_payment_status_update",
+        "on_cancel": "cen_crm_addons.api.payment_logic.trigger_so_payment_status_update"
+    },
     "Payment Entry": {
         "validate": "cen_crm_addons.api.payment_logic.validate_payment_screenshot",
         "on_submit": [
-            "cen_crm_addons.api.payment_logic.on_payment_entry_update",
+            "cen_crm_addons.api.payment_logic.trigger_so_payment_status_update",
             "cen_crm_addons.api.opportunity_automation.on_payment_entry_submit"
         ],
-        "on_cancel": "cen_crm_addons.api.payment_logic.on_payment_entry_update"
+        "on_cancel": "cen_crm_addons.api.payment_logic.trigger_so_payment_status_update"
     },
     "Delivery Note": {
         "on_submit": [

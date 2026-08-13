@@ -2,173 +2,23 @@
  {
   "docstatus": 0,
   "doctype": "Role Profile",
-  "modified": "2026-03-23 17:53:57.187710",
-  "name": "Inventory",
-  "role_profile": "Inventory",
-  "roles": [
-   {
-    "parent": "Inventory",
-    "parentfield": "roles",
-    "parenttype": "Role Profile",
-    "role": "Stock User"
-   },
-   {
-    "parent": "Inventory",
-    "parentfield": "roles",
-    "parenttype": "Role Profile",
-    "role": "Stock Manager"
-   },
-   {
-    "parent": "Inventory",
-    "parentfield": "roles",
-    "parenttype": "Role Profile",
-    "role": "Item Manager"
-   }
-  ]
- },
- {
-  "docstatus": 0,
-  "doctype": "Role Profile",
-  "modified": "2026-03-23 17:53:57.192691",
-  "name": "Manufacturing",
-  "role_profile": "Manufacturing",
-  "roles": [
-   {
-    "parent": "Manufacturing",
-    "parentfield": "roles",
-    "parenttype": "Role Profile",
-    "role": "Stock User"
-   },
-   {
-    "parent": "Manufacturing",
-    "parentfield": "roles",
-    "parenttype": "Role Profile",
-    "role": "Manufacturing User"
-   },
-   {
-    "parent": "Manufacturing",
-    "parentfield": "roles",
-    "parenttype": "Role Profile",
-    "role": "Manufacturing Manager"
-   }
-  ]
- },
- {
-  "docstatus": 0,
-  "doctype": "Role Profile",
-  "modified": "2026-03-23 17:53:57.201095",
-  "name": "Accounts",
-  "role_profile": "Accounts",
-  "roles": [
-   {
-    "parent": "Accounts",
-    "parentfield": "roles",
-    "parenttype": "Role Profile",
-    "role": "Accounts User"
-   },
-   {
-    "parent": "Accounts",
-    "parentfield": "roles",
-    "parenttype": "Role Profile",
-    "role": "Accounts Manager"
-   }
-  ]
- },
- {
-  "docstatus": 0,
-  "doctype": "Role Profile",
-  "modified": "2026-03-23 17:53:57.205112",
-  "name": "Sales",
-  "role_profile": "Sales",
-  "roles": [
-   {
-    "parent": "Sales",
-    "parentfield": "roles",
-    "parenttype": "Role Profile",
-    "role": "Sales User"
-   },
-   {
-    "parent": "Sales",
-    "parentfield": "roles",
-    "parenttype": "Role Profile",
-    "role": "Stock User"
-   },
-   {
-    "parent": "Sales",
-    "parentfield": "roles",
-    "parenttype": "Role Profile",
-    "role": "Sales Manager"
-   }
-  ]
- },
- {
-  "docstatus": 0,
-  "doctype": "Role Profile",
-  "modified": "2026-03-23 17:53:57.209397",
-  "name": "Purchase",
-  "role_profile": "Purchase",
-  "roles": [
-   {
-    "parent": "Purchase",
-    "parentfield": "roles",
-    "parenttype": "Role Profile",
-    "role": "Item Manager"
-   },
-   {
-    "parent": "Purchase",
-    "parentfield": "roles",
-    "parenttype": "Role Profile",
-    "role": "Stock User"
-   },
-   {
-    "parent": "Purchase",
-    "parentfield": "roles",
-    "parenttype": "Role Profile",
-    "role": "Purchase User"
-   },
-   {
-    "parent": "Purchase",
-    "parentfield": "roles",
-    "parenttype": "Role Profile",
-    "role": "Purchase Manager"
-   }
-  ]
- },
- {
-  "docstatus": 0,
-  "doctype": "Role Profile",
   "modified": "2026-04-12 01:10:13.918865",
   "name": "CRM Supervisor",
   "role_profile": "CRM Supervisor",
   "roles": [
    {
-    "parent": "CRM Supervisor",
-    "parentfield": "roles",
-    "parenttype": "Role Profile",
     "role": "Sales Manager"
    },
    {
-    "parent": "CRM Supervisor",
-    "parentfield": "roles",
-    "parenttype": "Role Profile",
     "role": "System Manager"
    },
    {
-    "parent": "CRM Supervisor",
-    "parentfield": "roles",
-    "parenttype": "Role Profile",
     "role": "Item Manager"
    },
    {
-    "parent": "CRM Supervisor",
-    "parentfield": "roles",
-    "parenttype": "Role Profile",
     "role": "Sales Master Manager"
    },
    {
-    "parent": "CRM Supervisor",
-    "parentfield": "roles",
-    "parenttype": "Role Profile",
     "role": "Supervisor"
    }
   ]
@@ -181,15 +31,9 @@
   "role_profile": "CRM Picking User",
   "roles": [
    {
-    "parent": "CRM Picking User",
-    "parentfield": "roles",
-    "parenttype": "Role Profile",
     "role": "Picking User"
    },
    {
-    "parent": "CRM Picking User",
-    "parentfield": "roles",
-    "parenttype": "Role Profile",
     "role": "Desk User"
    }
   ]
@@ -202,15 +46,9 @@
   "role_profile": "CRM Sales Person",
   "roles": [
    {
-    "parent": "CRM Sales Person",
-    "parentfield": "roles",
-    "parenttype": "Role Profile",
     "role": "Sales Person"
    },
    {
-    "parent": "CRM Sales Person",
-    "parentfield": "roles",
-    "parenttype": "Role Profile",
     "role": "Sales User"
    }
   ]

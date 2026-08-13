@@ -296,6 +296,7 @@ frappe.ui.form.on('Opportunity', {
             // Clear the HTML wrappers instantly to prevent state leakage from previously viewed Opportunities
             $(frm.fields_dict.custom_quotation_html.wrapper).empty();
             $(frm.fields_dict.custom_sales_order_html.wrapper).empty();
+            $(frm.fields_dict.custom_sales_invoices_html.wrapper).empty();
             
             frappe.call({
                 method: "cen_crm_addons.api.opportunity_details.get_linked_documents",
@@ -305,6 +306,7 @@ frappe.ui.form.on('Opportunity', {
                         let data = r.message || {};
                         let has_quotations = data.quotations && data.quotations.length > 0;
                         let has_sales_orders = data.sales_orders && data.sales_orders.length > 0;
+                        let has_sales_invoices = data.sales_invoices && data.sales_invoices.length > 0;
 
                         if (has_quotations) {
                             let q_html = cen_crm_generate_docs_html(data.quotations, 'quotation');
@@ -322,6 +324,11 @@ frappe.ui.form.on('Opportunity', {
                                     frm: frm
                                 });
                             }, __('Create'));
+                        }
+
+                        if (has_sales_invoices) {
+                            let si_html = cen_crm_generate_docs_html(data.sales_invoices, 'sales invoice');
+                            $(frm.fields_dict.custom_sales_invoices_html.wrapper).html(si_html);
                         }
                     }
                 }
@@ -402,12 +409,44 @@ function cen_crm_generate_docs_html(docs, doctype_label) {
         else if (s.includes('cancel')) status_class = "red";
         else status_class = "blue";
 
-        let link_doctype_url_part = doctype_label === 'quotation' ? 'quotation' : 'sales-order';
+        let link_doctype_url_part = doctype_label === 'quotation' ? 'quotation' : doctype_label === 'sales order' ? 'sales-order' : 'sales-invoice';
         let display_date = doc.transaction_date ? frappe.datetime.str_to_user(doc.transaction_date).split(' ')[0] : 'No Date';
 
         let badges_html = '';
         if (doctype_label === 'quotation') {
             badges_html = `<span class="badge" style="background-color: var(--${status_class}-100); color: var(--${status_class}-600);">${doc.status || 'Unknown'}</span>`;
+        } else if (doctype_label === 'sales invoice') {
+            let outstanding = flt(doc.outstanding_amount);
+            let payment_text = "Unpaid";
+            let pay_color = "orange";
+            let outstanding_html = "";
+            
+            if (outstanding <= 0) {
+                payment_text = "Paid";
+                pay_color = "green";
+            } else if (outstanding === flt(doc.grand_total)) {
+                payment_text = "Unpaid";
+                pay_color = "orange";
+            } else {
+                payment_text = "Partially Paid";
+                pay_color = "yellow";
+                let formatted_out = format_currency(outstanding, doc.currency);
+                outstanding_html = `<span style="font-size: 11px; color: var(--text-muted); font-weight: 500; margin-top: 2px;">Due: ${formatted_out}</span>`;
+            }
+            
+            badges_html = `
+                <div style="display: flex; flex-direction: column; gap: 6px; align-items: flex-end;">
+                    <span class="badge" style="background-color: var(--${status_class}-100); color: var(--${status_class}-600); width: max-content;">
+                        <i class="fa fa-file-text-o text-muted" style="margin-right: 4px;"></i> Status: ${doc.status || 'Unknown'}
+                    </span>
+                    <div style="display: flex; flex-direction: column; align-items: flex-end; gap: 2px;">
+                        <span class="badge" style="background-color: var(--${pay_color}-100); color: var(--${pay_color}-600); width: max-content;">
+                            <i class="fa fa-credit-card text-muted" style="margin-right: 4px;"></i> Payment: ${payment_text}
+                        </span>
+                        ${outstanding_html}
+                    </div>
+                </div>
+            `;
         } else {
             // Sales Order Specific Statuses
             let so_status = (doc.status || "").toLowerCase();
@@ -431,19 +470,17 @@ function cen_crm_generate_docs_html(docs, doctype_label) {
                 else if (p_lower.includes("pending")) pick_color = "orange";
                 else if (p_lower.includes("progress")) pick_color = "blue";
     
-                let outstanding = flt(doc.grand_total) - flt(doc.advance_paid);
-                let payment_text = "Unpaid";
+                let outstanding = flt(doc.due_amount);
+                let payment_text = doc.custom_payment_status || "Unpaid";
                 let pay_color = "orange";
                 let outstanding_html = "";
                 
-                if (outstanding <= 0) {
-                    payment_text = "Paid";
+                let pay_lower = payment_text.toLowerCase();
+                if (pay_lower === "paid") {
                     pay_color = "green";
-                } else if (outstanding === flt(doc.grand_total)) {
-                    payment_text = "Unpaid";
+                } else if (pay_lower === "unpaid") {
                     pay_color = "orange";
                 } else {
-                    payment_text = "Partially Paid";
                     pay_color = "yellow";
                     let formatted_out = format_currency(outstanding, doc.currency);
                     outstanding_html = `<span style="font-size: 11px; color: var(--text-muted); font-weight: 500; margin-top: 2px;">Due: ${formatted_out}</span>`;
@@ -494,7 +531,7 @@ function cen_crm_generate_docs_html(docs, doctype_label) {
                     <div style="display: flex; flex-direction: column; gap: 4px;">
                         <h5 style="margin: 0; font-weight: bold; color: var(--primary); font-size: 15px; display: flex; align-items: center; gap: 8px;">
                             ${doc.name}
-                            <button class="btn btn-xs btn-default" style="padding: 2px 6px;" onclick="event.stopPropagation(); event.preventDefault(); window.open('/app/print/${doctype_label === 'quotation' ? 'Quotation' : 'Sales Order'}/${doc.name}', '_blank');" title="Print">
+                            <button class="btn btn-xs btn-default" style="padding: 2px 6px;" onclick="event.stopPropagation(); event.preventDefault(); window.open('/app/print/${doctype_label === 'quotation' ? 'Quotation' : doctype_label === 'sales order' ? 'Sales Order' : 'Sales Invoice'}/${doc.name}', '_blank');" title="Print">
                                 <i class="fa fa-print text-muted"></i>
                             </button>
                         </h5>
@@ -522,14 +559,15 @@ function cen_crm_generate_docs_html(docs, doctype_label) {
     });
     ht += `</div>`;
 
-    // Bottom Section: Payment Details (Only for Sales Orders)
-    if (doctype_label === 'sales order') {
+    // Bottom Section: Payment Details (For Sales Orders and Sales Invoices)
+    if (doctype_label === 'sales order' || doctype_label === 'sales invoice') {
         let all_payments = [];
         docs.forEach(doc => {
             if (doc.payment_entries && doc.payment_entries.length > 0) {
                 doc.payment_entries.forEach(pe => {
-                    pe.so_name = doc.name;
-                    pe.so_currency = doc.currency;
+                    pe.ref_name = doc.name;
+                    pe.ref_doctype = doctype_label === 'sales order' ? 'sales-order' : 'sales-invoice';
+                    pe.ref_currency = doc.currency;
                     all_payments.push(pe);
                 });
             }
@@ -543,7 +581,7 @@ function cen_crm_generate_docs_html(docs, doctype_label) {
                     <div class="row">`;
 
             all_payments.forEach(pe => {
-                let amount_formatted = format_currency(pe.paid_amount, pe.so_currency);
+                let amount_formatted = format_currency(pe.paid_amount, pe.ref_currency);
                 let mode = pe.mode_of_payment || 'Unknown Mode';
 
                 let pe_attachments = '';
@@ -566,9 +604,9 @@ function cen_crm_generate_docs_html(docs, doctype_label) {
                 ht += `<div class="col-md-4 mb-3">
                     <div class="card border" style="padding: 15px; border-radius: 8px; box-shadow: 0 2px 4px rgba(0,0,0,0.03); background: #ffffff;">
                         <div style="display: flex; flex-direction: column; gap: 8px; margin-bottom: 12px;">
-                            <div style="display: flex; justify-content: space-between; align-items: center;">
+                            <div style="display: flex; flex-direction: column; gap: 4px;">
                                 <a href="/app/payment-entry/${pe.name}" style="font-size: 14px; font-weight: bold; color: var(--primary); text-decoration: none;">${pe.name}</a>
-                                <a href="/app/sales-order/${pe.so_name}" style="font-size: 13px; font-weight: 600; color: var(--text-muted); text-decoration: none;">${pe.so_name}</a>
+                                <a href="/app/${pe.ref_doctype}/${pe.ref_name}" style="font-size: 12px; font-weight: 600; color: var(--text-muted); text-decoration: none;">Ref: ${pe.ref_name}</a>
                             </div>
                             <div style="display: flex; flex-direction: column; gap: 4px;">
                                 <span class="badge" style="background-color: var(--blue-100); color: var(--blue-600); font-size: 11px; width: max-content; white-space: normal; text-align: left; line-height: 1.4;">${mode}</span>
