@@ -326,7 +326,12 @@ def sync_opportunity_to_address(doc):
         new_address.insert(ignore_permissions=True)
 
 def item_query(user):
-    # Filter out customized/one-off items from standard searches
+    # Allow System Managers and Item Managers to see all items, including customizations
+    roles = frappe.get_roles(user)
+    if "System Manager" in roles or "Item Manager" in roles:
+        return ""
+        
+    # Filter out customized/one-off items from standard searches for regular users
     if frappe.db.has_column("Item", "custom_is_customized_bundle"):
-        return "`tabItem`.custom_is_customized_bundle = 0 OR `tabItem`.custom_is_customized_bundle IS NULL"
+        return "(`tabItem`.custom_is_customized_bundle = 0 OR `tabItem`.custom_is_customized_bundle IS NULL)"
     return ""
