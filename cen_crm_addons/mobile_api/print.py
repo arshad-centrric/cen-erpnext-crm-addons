@@ -146,17 +146,8 @@ def get_public_share_link(doctype, name):
         "name": name,
         "key": secret_key
     })
-    
     long_url = f"{base_url}?{params}"
-    
-    short_link = frappe.new_doc("Short Link")
-    short_link.url = long_url
-    short_link.insert(ignore_permissions=True)
-    frappe.db.commit() # Ensure it is saved
-    
-    tiny_url = f"/s/{short_link.name}"
-    
-    return {"public_download_url": tiny_url}
+    return {"public_download_url": long_url}
 
 @frappe.whitelist(allow_guest=True)
 def download_public_pdf(doctype, name, key, print_format=None):
