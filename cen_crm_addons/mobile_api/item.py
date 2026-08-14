@@ -17,6 +17,9 @@ def item_list(search_term=None, limit_start=1, limit_page_length=20, selling_pri
         page_length = 20
 
     filters = {"disabled": 0}
+    if frappe.db.has_column("Item", "custom_is_customized_bundle"):
+        filters["custom_is_customized_bundle"] = ["!=", 1]
+        
     or_filters = {}
     
     if search_term:
