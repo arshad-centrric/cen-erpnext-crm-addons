@@ -8,7 +8,7 @@ from frappe.desk.form.linked_with import get_submitted_linked_docs, cancel_all_l
 
 
 @frappe.whitelist()
-def create_quotation(opportunity_id, items=None, submit=0, selling_price_list=None, customer=None):
+def create_quotation(opportunity_id, items=None, submit=0, selling_price_list=None, customer=None, delivery_locations=None):
     """
     Create a Quotation from an Opportunity.
     opportunity_id: The ID of the Opportunity (Required)
@@ -29,10 +29,18 @@ def create_quotation(opportunity_id, items=None, submit=0, selling_price_list=No
         except Exception:
             frappe.throw("Invalid JSON format for items payload")
 
+    if isinstance(delivery_locations, str):
+        try:
+            delivery_locations = json.loads(delivery_locations)
+        except Exception:
+            frappe.throw("Invalid JSON format for delivery_locations payload")
+
     try:
         # Create mapped Quotation document from Opportunity using standard ERPNext method
         quotation_doc = erpnext_make_quotation(opportunity_id)
             
+        _apply_customer_auto_creation(quotation_doc, opportunity_id)
+
         # Apply standard custom mappings (delivery, logistics)
         _apply_opportunity_mapping_to_quotation(quotation_doc, opportunity_id)
         
@@ -74,6 +82,61 @@ def create_quotation(opportunity_id, items=None, submit=0, selling_price_list=No
                 row.discount_percentage = 0.0
                 row.discount_amount = 0.0
                 row.margin_rate_or_amount = 0.0
+
+        # Wipe out any locations automatically mapped from the Opportunity
+        # The mobile app payload is now the single source of truth for Delivery Locations
+        quotation_doc.set("custom_location_details", [])
+
+        if delivery_locations and isinstance(delivery_locations, list):
+            has_courier = False
+            for idx, loc in enumerate(delivery_locations):
+                if not loc.get("delivery_label"):
+                    frappe.throw(f"Row #{idx+1} in delivery_locations: Delivery Reference (delivery_label) is mandatory.")
+                
+                mode = loc.get("custom_mode_of_delivery")
+                if mode == "Courier":
+                    has_courier = True
+                    missing = []
+                    if not loc.get("custom_address_line_1"): missing.append("Address Line 1")
+                    if not loc.get("custom_delivery_city"): missing.append("Delivery City")
+                    if not loc.get("custom_delivery_state"): missing.append("Delivery State")
+                    if not loc.get("custom_pincode"): missing.append("Pincode")
+                    
+                    if missing:
+                        frappe.throw(f"Row #{idx+1} in delivery_locations: For 'Courier' delivery, the following fields are mandatory: {', '.join(missing)}")
+                
+                # Append the new location to the Quotation
+                new_row = quotation_doc.append("custom_location_details", {})
+                for fieldname in [
+                    "delivery_label", "custom_delivery_store", "custom_mode_of_delivery", 
+                    "custom_delivery_partner", "custom_delivery_date", "custom_delivery_time", 
+                    "custom_address_line_1", "custom_address_line_2", "custom_delivery_city", 
+                    "custom_delivery_state", "custom_pincode", "custom_delivery_country",
+                    "custom_delivery_contact"
+                ]:
+                    if fieldname in loc:
+                        new_row.set(fieldname, loc.get(fieldname))
+
+            # Auto-append delivery charge item if a new location uses Courier
+            if has_courier:
+                delivery_item = frappe.db.get_single_value("Cen CRM Settings", "delivery_charge_item")
+                if delivery_item:
+                    existing_items = [d.item_code for d in quotation_doc.get("items", [])]
+                    if delivery_item not in existing_items:
+                        item_details = frappe.db.get_value("Item", delivery_item, ["item_name", "description", "stock_uom"], as_dict=1)
+                        if item_details:
+                            quotation_doc.append("items", {
+                                "item_code": delivery_item,
+                                "item_name": item_details.item_name,
+                                "description": item_details.description,
+                                "qty": 1,
+                                "uom": item_details.stock_uom,
+                                "rate": 0.0,
+                                "price_list_rate": 0.0,
+                                "discount_percentage": 0.0,
+                                "discount_amount": 0.0,
+                                "margin_rate_or_amount": 0.0
+                            })
 
         # Unconditionally recalculate totals to simulate frontend behavior
         quotation_doc.run_method("set_missing_values")

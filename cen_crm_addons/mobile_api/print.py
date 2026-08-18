@@ -136,3 +136,65 @@ def get_print_options(doctype, name):
         })
         
     return options
+
+@frappe.whitelist()
+def get_public_share_link(doctype, name):
+    secret_key = frappe.get_doc(doctype, name).get_signature()
+    base_url = "/api/method/cen_crm_addons.mobile_api.print.download_public_pdf"
+    params = urlencode({
+        "doctype": doctype,
+        "name": name,
+        "key": secret_key
+    })
+    long_url = f"{base_url}?{params}"
+    return {"public_download_url": long_url}
+
+@frappe.whitelist(allow_guest=True)
+def download_public_pdf(doctype, name, key, print_format=None):
+    if not key:
+        raise frappe.PermissionError("Not permitted")
+        
+    parentfield_map = {
+        "Quotation": "quotation_print_formats",
+        "Sales Order": "sales_order_print_formats",
+        "Packing": "packing_print_formats",
+        "Delivery": "delivery_note_print_formats",
+        "Purchase Receipt": "purchase_receipt_print_formats",
+        "Sales Invoice": "sales_invoice_print_formats"
+    }
+    
+    parentfield = parentfield_map.get(doctype)
+    if not parentfield:
+        frappe.throw(f"Mobile printing is not configured for: {doctype}", exc=frappe.ValidationError)
+
+    actual_doctype = doctype
+    if doctype in ["Packing", "Delivery"]:
+        actual_doctype = "Sales Order"
+
+    if not print_format:
+        print_format = frappe.db.get_value(
+            "CRM Mobile Print Config",
+            {"parent": "Cen CRM Settings", "parentfield": parentfield, "is_default": 1},
+            "print_format"
+        )
+        if not print_format:
+            frappe.throw(f"No default mobile print format configured for {doctype} in Cen CRM Settings.", exc=frappe.ValidationError)
+        
+    frappe.flags.ignore_permissions = True
+    doc = frappe.get_doc(actual_doctype, name)
+    
+    if doc.get_signature() != key:
+        raise frappe.PermissionError("Not permitted")
+        
+    original_user = frappe.session.user
+    frappe.session.user = "Administrator"
+    
+    try:
+        html = frappe.get_print(actual_doctype, name, print_format)
+        pdf_content = get_pdf(html)
+        
+        frappe.response.filename = f"{name}.pdf"
+        frappe.response.filecontent = pdf_content
+        frappe.response.type = "download"
+    finally:
+        frappe.session.user = original_user
