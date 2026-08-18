@@ -33,6 +33,8 @@ def create_quotation(opportunity_id, items=None, submit=0, selling_price_list=No
         # Create mapped Quotation document from Opportunity using standard ERPNext method
         quotation_doc = erpnext_make_quotation(opportunity_id)
             
+        _apply_customer_auto_creation(quotation_doc, opportunity_id)
+
         # Apply standard custom mappings (delivery, logistics)
         _apply_opportunity_mapping_to_quotation(quotation_doc, opportunity_id)
         
