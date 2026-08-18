@@ -323,6 +323,7 @@ frappe.ui.form.on("Quotation", {
                             docname: row.name,
                             item_code: row.item_code,
                             item_name: row.item_name,
+                            uom: row.uom,
                             qty: row.qty,
                             rate: row.rate,
                             amount: (row.qty || 0) * (row.rate || 0),
@@ -384,6 +385,43 @@ frappe.ui.form.on("Quotation", {
                                     },
                                     { fieldname: 'item_name', fieldtype: 'Data', in_list_view: 1, label: __('Item Name'), read_only: 1 },
                                     { 
+                                        fieldname: 'uom', 
+                                        fieldtype: 'Link', 
+                                        options: 'UOM', 
+                                        in_list_view: 1, 
+                                        label: __('UOM'),
+                                        change: function() {
+                                            const me = this;
+                                            if (!me.value || !me.doc.item_code) return;
+                                            
+                                            frappe.call({
+                                                method: 'erpnext.stock.get_item_details.get_item_details',
+                                                args: {
+                                                    doc: frm.doc,
+                                                    ctx: {
+                                                        item_code: me.doc.item_code,
+                                                        company: frm.doc.company,
+                                                        price_list: frm.doc.selling_price_list,
+                                                        currency: frm.doc.currency,
+                                                        doctype: frm.doc.doctype,
+                                                        name: frm.doc.name,
+                                                        customer: frm.doc.customer || frm.doc.party_name,
+                                                        qty: me.doc.qty || 1,
+                                                        uom: me.value
+                                                    }
+                                                },
+                                                callback: function(r) {
+                                                    if (r && r.message) {
+                                                        me.doc.rate = flt(r.message.price_list_rate) || flt(r.message.rate) || 0.0;
+                                                        me.doc.amount = flt(me.doc.qty) * flt(me.doc.rate);
+                                                        d.fields_dict.items.grid.refresh();
+                                                        if (typeof calculate_net_total === 'function') calculate_net_total();
+                                                    }
+                                                }
+                                            });
+                                        }
+                                    },
+                                    { 
                                         fieldname: 'qty', 
                                         fieldtype: 'Float', 
                                         in_list_view: 1, 
@@ -417,6 +455,7 @@ frappe.ui.form.on("Quotation", {
                                 return {
                                     docname: u.docname || null,
                                     item_code: u.item_code,
+                                    uom: u.uom,
                                     qty: u.qty,
                                     rate: u.rate
                                 };
@@ -451,6 +490,25 @@ frappe.ui.form.on("Quotation", {
                     });
                     
                     calculate_net_total();
+                    
+                    // Move Net Total to the footer so it remains permanently visible without breaking dropdowns
+                    let net_total_field = d.$wrapper.find('.frappe-control[data-fieldname="net_total"]');
+                    let modal_footer = d.$wrapper.find('.modal-footer');
+                    
+                    modal_footer.css({
+                        'display': 'flex',
+                        'justify-content': 'space-between',
+                        'align-items': 'center'
+                    });
+                    
+                    net_total_field.css({
+                        'margin-bottom': '0',
+                        'min-width': '200px',
+                        'text-align': 'left'
+                    });
+                    
+                    modal_footer.prepend(net_total_field);
+                    
                     d.show();
                 });
             }
