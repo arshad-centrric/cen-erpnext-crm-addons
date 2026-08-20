@@ -4524,7 +4524,7 @@
   "name": "Opportunity-custom_payment_status",
   "no_copy": 0,
   "non_negative": 0,
-  "options": "Awaiting Order\nPending\nPaid",
+  "options": "Awaiting Order\nPending\nPartially Paid\nPaid",
   "permlevel": 0,
   "placeholder": null,
   "precision": "",
