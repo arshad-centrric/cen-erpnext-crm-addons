@@ -7,17 +7,17 @@
  "editable_grid": 1,
  "engine": "InnoDB",
  "field_order": [
-  "parent_warehouse",
+  "branch",
   "box_id_prefix",
   "current_box_id_number"
  ],
  "fields": [
   {
-   "fieldname": "parent_warehouse",
+   "fieldname": "branch",
    "fieldtype": "Link",
    "in_list_view": 1,
-   "label": "Parent Warehouse",
-   "options": "Warehouse",
+   "label": "Branch",
+   "options": "Branch",
    "reqd": 1
   },
   {
