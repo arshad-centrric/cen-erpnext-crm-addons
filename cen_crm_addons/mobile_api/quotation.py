@@ -235,14 +235,10 @@ def update_quotation_items(quotation_id, items):
                 frappe.throw(f"Item Row ID '{update_name}' does not exist in this Quotation. Please check the 'name' field.")
 
         if doc.docstatus == 1:
-            # For submitted quotations, we MUST pass the FULL list of items to update_child_qty_rate,
-            # otherwise it will delete the ones we don't pass.
-            if new_items:
-                frappe.throw("Cannot add new items to a Submitted Quotation. You can only update existing rows by providing their 'name'.")
-                
             trans_items = []
+            
+            # 1. Process Existing Items (Updates & Deletions)
             for existing_row in doc.items:
-                # If the mobile app sent an update for this row, use it. Otherwise, keep existing values.
                 if existing_row.name in updates_by_name:
                     update_data = updates_by_name[existing_row.name]
                     new_rate = flt(update_data.get("rate")) if update_data.get("rate") is not None else flt(existing_row.rate)
@@ -255,20 +251,74 @@ def update_quotation_items(quotation_id, items):
                     })
                     
                     # Fix for ERPNext core quirk: update_child_qty_rate doesn't recalculate discounts for Quotation!
-                    # So we must update price_list_rate in the DB so that calculate_taxes_and_totals respects the new rate
-                    # We also must clear margins to prevent the margin from being added on top of our new rate.
                     frappe.db.sql("""
                         UPDATE `tabQuotation Item`
                         SET price_list_rate = %s, discount_percentage = 0.0, discount_amount = 0.0, margin_type = '', margin_rate_or_amount = 0.0
                         WHERE name = %s
                     """, (new_rate, existing_row.name))
-                else:
-                    trans_items.append({
-                        "docname": existing_row.name,
-                        "item_code": existing_row.item_code,
-                        "qty": flt(existing_row.qty),
-                        "rate": flt(existing_row.rate)
-                    })
+                    
+                    new_uom = update_data.get("uom")
+                    if new_uom and existing_row.uom != new_uom:
+                        frappe.db.set_value("Quotation Item", existing_row.name, "uom", str(new_uom).strip(), update_modified=False)
+                        
+                        # Fetch and update the conversion factor so backend math doesn't break
+                        conv_factor = frappe.db.get_value("UOM Conversion Detail", 
+                                                          {"parent": existing_row.item_code, "uom": new_uom}, 
+                                                          "conversion_factor") or 1.0
+                        frappe.db.set_value("Quotation Item", existing_row.name, "conversion_factor", conv_factor, update_modified=False)
+                # Note: Items missing from updates_by_name are NOT appended to trans_items,
+                # causing update_child_qty_rate to organically delete them.
+
+            # 2. Process New Items (Ghost Insertion)
+            for new_item in new_items:
+                if not new_item.get("item_code") or not new_item.get("qty"):
+                    frappe.throw("Each new item must contain at least an 'item_code' and 'qty'")
+                    
+                item_code = str(new_item.get("item_code")).strip()
+                item_details = frappe.db.get_value("Item", item_code, ["item_name", "description"], as_dict=True) or {}
+                
+                new_rate = flt(new_item.get("rate")) if new_item.get("rate") is not None else 0.0
+                
+                row_data = {
+                    "item_code": item_code,
+                    "qty": flt(new_item.get("qty")),
+                    "rate": new_rate,
+                    "price_list_rate": new_rate,
+                    "discount_percentage": 0.0,
+                    "discount_amount": 0.0,
+                    "margin_type": "",
+                    "margin_rate_or_amount": 0.0,
+                    "docstatus": 1
+                }
+                
+                if new_item.get("uom"):
+                    row_data["uom"] = str(new_item.get("uom")).strip()
+                    
+                # Append to memory
+                new_row = doc.append("items", row_data)
+                
+                # Map mandatory fields to prevent validation errors during insert
+                new_row.item_name = item_details.get("item_name") or item_code
+                new_row.description = item_details.get("description") or item_code
+                new_row.conversion_factor = 1.0
+                
+                # Insert directly to DB to generate the 'name' (ID)
+                new_row.db_insert()
+                
+                # Expose the newly generated row to the controller
+                trans_items.append({
+                    "docname": new_row.name,
+                    "item_code": new_row.item_code,
+                    "qty": new_row.qty,
+                    "rate": new_row.rate
+                })
+                
+                # Reset DB state same as existing items
+                frappe.db.sql("""
+                    UPDATE `tabQuotation Item`
+                    SET price_list_rate = %s, discount_percentage = 0.0, discount_amount = 0.0, margin_type = '', margin_rate_or_amount = 0.0
+                    WHERE name = %s
+                """, (new_rate, new_row.name))
 
             # Clear cache so the parent document registers the DB changes before update_child_qty_rate processes totals
             frappe.clear_document_cache("Quotation", quotation_id)
