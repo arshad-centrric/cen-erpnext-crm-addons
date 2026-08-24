@@ -47,13 +47,13 @@ def create_customized_bundle(parent_item_code, new_items_json):
     # Use the system-generated ID (e.g. ITEM-0004) for subsequent links
     generated_id = new_item.name
     
-    # Inherit standard price via Item Price natively
-    parent_price = frappe.db.get_value("Item Price", {"item_code": parent_item_code, "price_list": "Standard Selling"}, "price_list_rate")
-    if parent_price:
+    # Inherit standard price via Item Price natively - Copy ALL selling price lists
+    parent_prices = frappe.get_all("Item Price", filters={"item_code": parent_item_code, "selling": 1}, fields=["price_list", "price_list_rate"])
+    for p in parent_prices:
         price_doc = frappe.new_doc("Item Price")
         price_doc.item_code = generated_id
-        price_doc.price_list = "Standard Selling"
-        price_doc.price_list_rate = parent_price
+        price_doc.price_list = p["price_list"]
+        price_doc.price_list_rate = p["price_list_rate"]
         price_doc.insert(ignore_permissions=True)
         
     # Create Product Bundle

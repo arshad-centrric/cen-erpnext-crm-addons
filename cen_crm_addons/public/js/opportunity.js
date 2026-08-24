@@ -2,13 +2,14 @@ frappe.ui.form.on('Opportunity Item', {
     item_code: function (frm, cdt, cdn) {
         let row = frappe.get_doc(cdt, cdn);
         if (row.item_code) {
-            // Fetch rate from Item Price automatically based on Standard Selling
-            frappe.db.get_value("Item Price", {
-                item_code: row.item_code,
-                price_list: "Standard Selling"
-            }, "price_list_rate").then(r => {
-                if (r && r.message && r.message.price_list_rate !== undefined) {
-                    frappe.model.set_value(cdt, cdn, "rate", r.message.price_list_rate);
+            // Fetch rate dynamically based on user's default/permitted selling price list
+            frappe.call({
+                method: "cen_crm_addons.api.opportunity_details.get_opportunity_item_price",
+                args: { item_code: row.item_code },
+                callback: function(r) {
+                    if (r.message !== undefined) {
+                        frappe.model.set_value(cdt, cdn, "rate", r.message);
+                    }
                 }
             });
         }
