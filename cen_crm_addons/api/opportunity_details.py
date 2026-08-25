@@ -1,6 +1,19 @@
 import frappe
 
 @frappe.whitelist()
+def get_opportunity_item_price(item_code):
+    # 1. Try User Default
+    user_default_pl = frappe.db.get_default("selling_price_list")
+    if user_default_pl:
+        price = frappe.db.get_value("Item Price", {"item_code": item_code, "price_list": user_default_pl, "selling": 1}, "price_list_rate")
+        if price is not None:
+            return price
+            
+    # 2. Fallback to any permitted selling price list assigned to the user
+    price = frappe.db.get_value("Item Price", {"item_code": item_code, "selling": 1}, "price_list_rate")
+    return price or 0.0
+
+@frappe.whitelist()
 def get_opportunity_for_doc(doctype, docname):
     if doctype == "Quotation":
         return frappe.db.get_value("Quotation", docname, "opportunity")
