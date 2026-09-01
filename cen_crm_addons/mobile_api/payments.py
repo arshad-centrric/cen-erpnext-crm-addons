@@ -28,8 +28,13 @@ def submit_multi_mode_payment(sales_order, payments, write_off_amount=0.0):
         target_doctype = "Sales Order"
         target_docname = sales_order
     
+    target_branch = frappe.db.get_value(target_doctype, target_docname, "branch") or frappe.db.get_value(target_doctype, target_docname, "custom_cen_branch")
+    
     for i, payment in enumerate(payments):
         pe = get_payment_entry(target_doctype, target_docname)
+        
+        if target_branch:
+            pe.branch = target_branch
         
         # Override amounts
         amount = flt(payment.get("amount"))

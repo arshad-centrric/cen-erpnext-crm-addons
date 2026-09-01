@@ -3,7 +3,7 @@ from erpnext.selling.doctype.sales_order.sales_order import make_delivery_note
 from frappe import _
 
 @frappe.whitelist()
-def get_delivery_list(status="Pending", limit_start=1, limit_page_length=20, search_term="", warehouse="", company="", delivery_date=None, mode_of_delivery=None):
+def get_delivery_list(status="Pending", limit_start=1, limit_page_length=20, search_term="", warehouse="", company="", delivery_date=None, mode_of_delivery=None, branch=None):
     # Convert frontend's 1-based index to SQL's 0-based OFFSET
     frontend_start = int(limit_start)
     sql_offset = max(0, frontend_start - 1)
@@ -17,10 +17,16 @@ def get_delivery_list(status="Pending", limit_start=1, limit_page_length=20, sea
         "limit_page_length": limit_page_length
     }
     
+    resolved_branch = branch or frappe.defaults.get_user_default("branch")
+    
     # Warehouse Filter
-    if warehouse:
+    if warehouse and str(warehouse).strip():
         conditions.append("so.set_warehouse = %(warehouse)s")
-        values["warehouse"] = warehouse
+        values["warehouse"] = str(warehouse).strip()
+        
+    if resolved_branch and str(resolved_branch).strip() and resolved_branch != "All Branches":
+        conditions.append("so.branch = %(branch)s")
+        values["branch"] = str(resolved_branch).strip()
         
     # Company Filter
     if company:
@@ -74,6 +80,7 @@ def get_delivery_list(status="Pending", limit_start=1, limit_page_length=20, sea
             so.custom_delivery_time,
             so.custom_delivery_contact,
             so.custom_box_id,
+            so.branch,
             CASE 
                 WHEN so.custom_payment_status = 'Paid' OR so.advance_paid >= so.grand_total THEN 'Paid'
                 WHEN so.advance_paid > 0 AND so.advance_paid < so.grand_total THEN 'Partially Paid'
@@ -107,6 +114,10 @@ def submit_delivery(sales_order):
 
         # 2. Native Mapping: Generate the Delivery Note from the SO
         dn_doc = make_delivery_note(sales_order)
+        
+        fetched_branch = frappe.db.get_value("Sales Order", sales_order, "branch") or frappe.db.get_value("Sales Order", sales_order, "custom_cen_branch")
+        if fetched_branch:
+            dn_doc.branch = fetched_branch
         
         # 3. Save and Submit
         dn_doc.insert(ignore_permissions=True)

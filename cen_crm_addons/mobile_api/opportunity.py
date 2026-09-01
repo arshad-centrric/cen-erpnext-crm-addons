@@ -2,11 +2,13 @@ import frappe
 
 
 @frappe.whitelist()
-def admin_opportunity_list(status=None, search_term=None, limit_start=1, limit_page_length=20, company=None):
+def admin_opportunity_list(status=None, search_term=None, limit_start=1, limit_page_length=20, company=None, branch=None):
     """
     Fetch a paginated list of Opportunities.
     If 'status' is not provided, defaults to showing both 'To be quoted' and 'Revise the Quote'.
     """
+    resolved_branch = branch or frappe.defaults.get_user_default("branch")
+    
     try:
         page = int(limit_start)
         page_length = int(limit_page_length)
@@ -22,6 +24,9 @@ def admin_opportunity_list(status=None, search_term=None, limit_start=1, limit_p
         
     if company:
         filters["company"] = str(company).strip()
+
+    if resolved_branch and str(resolved_branch).strip() and resolved_branch != "All Branches":
+        filters["custom_cen_branch"] = str(resolved_branch).strip()
 
     or_filters = {}
     if search_term:
@@ -46,7 +51,8 @@ def admin_opportunity_list(status=None, search_term=None, limit_start=1, limit_p
             "opportunity_amount",
             "custom_assigned_to",
             "custom_assigned_full_name",
-            "custom_box_id"
+            "custom_box_id",
+            "custom_cen_branch as branch"
         ],
         limit_start=limit_start_idx,
         limit_page_length=page_length,

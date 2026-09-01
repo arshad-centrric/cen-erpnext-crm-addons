@@ -3,7 +3,7 @@ from erpnext.selling.doctype.sales_order.sales_order import make_sales_invoice
 from frappe.utils.file_manager import save_file
 
 @frappe.whitelist()
-def get_packing_orders(status="Pending", limit_start=1, limit_page_length=10, search_term=None, warehouse=None, company=None, delivery_date=None, mode_of_delivery=None):
+def get_packing_orders(status="Pending", limit_start=1, limit_page_length=10, search_term=None, warehouse=None, company=None, delivery_date=None, mode_of_delivery=None, branch=None):
     """
     Fetch a paginated list of Sales Orders based on packing status.
     status: 'Pending' (maps to 'Assigned to Pack') or 'Completed' (maps to 'Packed')
@@ -36,8 +36,13 @@ def get_packing_orders(status="Pending", limit_start=1, limit_page_length=10, se
         "custom_picking_status": picking_status
     }
     
-    if warehouse:
-        filters["set_warehouse"] = warehouse
+    resolved_branch = branch or frappe.defaults.get_user_default("branch")
+    
+    if warehouse and str(warehouse).strip():
+        filters["set_warehouse"] = str(warehouse).strip()
+        
+    if resolved_branch and str(resolved_branch).strip() and resolved_branch != "All Branches":
+        filters["branch"] = str(resolved_branch).strip()
         
     if company:
         filters["company"] = str(company).strip()
@@ -72,7 +77,8 @@ def get_packing_orders(status="Pending", limit_start=1, limit_page_length=10, se
             "status", 
             "grand_total",
             "set_warehouse",
-            "custom_box_id"
+            "custom_box_id",
+            "branch"
         ],
         limit_start=limit_start_idx,
         limit_page_length=page_length,
@@ -113,6 +119,10 @@ def mark_order_as_packed(sales_order, packing_image_url=None, submit=0):
     # Automatically generate the Sales Invoice
     try:
         si_doc = make_sales_invoice(sales_order)
+        
+        fetched_branch = frappe.db.get_value("Sales Order", sales_order, "branch") or frappe.db.get_value("Sales Order", sales_order, "custom_cen_branch")
+        if fetched_branch:
+            si_doc.branch = fetched_branch
         
         # Push the fetched Box ID into the Sales Invoice
         if existing_box_id:
