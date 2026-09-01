@@ -10,6 +10,9 @@ def get_order_info(order_id):
 
     so = frappe.get_doc("Sales Order", order_id)
     
+    if so.custom_picking_status != "Packed":
+        frappe.throw(f"This Sales Order has not been packed yet. Current Status: {so.custom_picking_status or 'Pending'}")
+    
     # Get Customer Details
     customer = frappe.get_doc("Customer", so.customer)
     
