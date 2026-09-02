@@ -140,3 +140,60 @@ def submit_delivery(sales_order):
             "status": "error",
             "message": str(e)
         }
+
+
+@frappe.whitelist()
+def get_delivery_order_details(sales_order):
+    """
+    Fetch full details of a specific Sales Order for the delivery tab,
+    strictly enforcing the physical packing status guard.
+    """
+    if not sales_order:
+        frappe.throw("Sales Order parameter is required")
+        
+    if not frappe.db.exists("Sales Order", sales_order):
+        frappe.throw(f"Sales Order {sales_order} not found", frappe.DoesNotExistError)
+        
+    doc = frappe.get_doc("Sales Order", sales_order)
+    
+    if doc.custom_picking_status != "Packed":
+        frappe.throw(f"This Sales Order has not been packed yet. Current Status: {doc.custom_picking_status or 'Pending'}")
+    
+    # Convert document to dictionary
+    order_details = doc.as_dict()
+    
+    # Dynamic outstanding calculation: check if there is an active Sales Invoice
+    active_si = frappe.db.sql("""
+        SELECT si.name, si.outstanding_amount
+        FROM `tabSales Invoice` si
+        JOIN `tabSales Invoice Item` sii ON sii.parent = si.name
+        WHERE sii.sales_order = %s AND si.docstatus = 1
+        LIMIT 1
+    """, (sales_order,), as_dict=True)
+    
+    if active_si:
+        outstanding = flt(active_si[0].outstanding_amount)
+        has_active_invoice = 1
+        order_details["active_invoice"] = active_si[0].name
+    else:
+        grand_total = flt(order_details.get("grand_total", 0.0))
+        advance_amount = flt(order_details.get("advance_paid", order_details.get("advance_amount", 0.0)))
+        outstanding = grand_total - advance_amount
+        has_active_invoice = 0
+        order_details["active_invoice"] = None
+        
+    order_details["pending_amount"] = outstanding
+    order_details["outstanding_amount"] = outstanding
+    order_details["has_active_invoice"] = has_active_invoice
+    
+    # Fetch all non-cancelled linked Sales Invoices
+    linked_sales_invoices = frappe.db.sql("""
+        SELECT DISTINCT si.name, si.docstatus, si.status
+        FROM `tabSales Invoice` si
+        JOIN `tabSales Invoice Item` sii ON sii.parent = si.name
+        WHERE sii.sales_order = %s AND si.docstatus != 2
+    """, (sales_order,), as_dict=True)
+    
+    order_details["linked_sales_invoices"] = linked_sales_invoices
+    
+    return order_details
