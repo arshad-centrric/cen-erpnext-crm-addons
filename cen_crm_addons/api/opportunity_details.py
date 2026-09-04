@@ -2,15 +2,37 @@ import frappe
 
 @frappe.whitelist()
 def get_opportunity_item_price(item_code):
-    # 1. Try User Default
-    user_default_pl = frappe.db.get_default("selling_price_list")
-    if user_default_pl:
-        price = frappe.db.get_value("Item Price", {"item_code": item_code, "price_list": user_default_pl, "selling": 1}, "price_list_rate")
+    # 1. Fetch all Selling Price Lists the user is actually allowed to see
+    permitted_price_lists = frappe.get_list(
+        "Price List", 
+        filters={"selling": 1}, 
+        pluck="name", 
+        ignore_permissions=False
+    )
+    
+    if not permitted_price_lists:
+        return 0.0
+
+    # 2. Get the global/user default price list
+    default_pl = frappe.db.get_default("selling_price_list")
+    
+    # Prioritize the default price list ONLY if the user has permission to see it
+    if default_pl and default_pl in permitted_price_lists:
+        price = frappe.db.get_value(
+            "Item Price", 
+            {"item_code": item_code, "price_list": default_pl}, 
+            "price_list_rate"
+        )
         if price is not None:
             return price
-            
-    # 2. Fallback to any permitted selling price list assigned to the user
-    price = frappe.db.get_value("Item Price", {"item_code": item_code, "selling": 1}, "price_list_rate")
+
+    # 3. Otherwise, fetch the price from their permitted price lists
+    price = frappe.db.get_value(
+        "Item Price", 
+        {"item_code": item_code, "price_list": ("in", permitted_price_lists)}, 
+        "price_list_rate"
+    )
+    
     return price or 0.0
 
 @frappe.whitelist()
