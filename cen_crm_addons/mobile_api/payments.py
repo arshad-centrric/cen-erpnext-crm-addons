@@ -33,8 +33,8 @@ def submit_multi_mode_payment(sales_order, payments, write_off_amount=0.0):
     for i, payment in enumerate(payments):
         pe = get_payment_entry(target_doctype, target_docname)
         
-        if target_branch:
-            pe.branch = target_branch
+        if target_branch and str(target_branch).strip():
+            pe.branch = str(target_branch).strip()
         
         # Override amounts
         amount = flt(payment.get("amount"))
@@ -229,3 +229,145 @@ def get_payment_attachments(sales_order):
         })
             
     return response
+
+@frappe.whitelist()
+def submit_payment_entry_multi_order(payments, allocations):
+    if isinstance(payments, str):
+        payments = json.loads(payments)
+    if isinstance(allocations, str):
+        allocations = json.loads(allocations)
+        
+    if not payments or not allocations:
+        frappe.throw("Payments and allocations are required")
+        
+    pe_ids = []
+    
+    # 3. Dynamic Routing & Context Extraction
+    processing_queue = []
+    target_customer = None
+    target_branch = None
+    
+    for idx, alloc in enumerate(allocations):
+        sales_order = alloc.get("sales_order")
+        if not sales_order:
+            frappe.throw(f"Row {idx+1}: Sales Order is missing in allocation")
+            
+        active_si = frappe.db.sql("""
+            SELECT si.name 
+            FROM `tabSales Invoice` si 
+            JOIN `tabSales Invoice Item` sii ON sii.parent = si.name 
+            WHERE sii.sales_order = %s AND si.docstatus = 1 
+            LIMIT 1
+        """, (sales_order,))
+        
+        if active_si:
+            target_doctype = "Sales Invoice"
+            target_docname = active_si[0][0]
+        else:
+            target_doctype = "Sales Order"
+            target_docname = sales_order
+            
+        # Context Fetch on first row
+        if idx == 0:
+            target_customer = frappe.db.get_value(target_doctype, target_docname, "customer")
+            target_branch = frappe.db.get_value(target_doctype, target_docname, "branch") or frappe.db.get_value(target_doctype, target_docname, "custom_cen_branch")
+            
+        processing_queue.append({
+            "sales_order": sales_order,
+            "doctype": target_doctype,
+            "name": target_docname,
+            "pending_receive": flt(alloc.get("allocated_amount", alloc.get("amount"))),
+            "write_off": flt(alloc.get("write_off_amount", 0.0))
+        })
+        
+    if not target_customer:
+        frappe.throw("Could not determine customer from the allocations")
+
+    # 4. Waterfall Logic (FIFO)
+    for payment in payments:
+        amount = flt(payment.get("amount"))
+        if amount <= 0:
+            continue
+            
+        # Initialize Payment Entry using the first document to auto-fetch correct company/accounts
+        pe = get_payment_entry(processing_queue[0]["doctype"], processing_queue[0]["name"])
+        pe.set("references", [])
+        pe.set("deductions", [])
+        
+        if target_branch and str(target_branch).strip():
+            pe.branch = str(target_branch).strip()
+            
+        pe.paid_amount = amount
+        pe.received_amount = amount
+        pe.base_paid_amount = amount
+        pe.base_received_amount = amount
+        
+        if payment.get("mode_of_payment"):
+            pe.mode_of_payment = payment.get("mode_of_payment")
+            
+        # Bank mandatory fields
+        mop_type = frappe.db.get_value("Mode of Payment", pe.mode_of_payment, "type")
+        if mop_type == "Bank":
+            pe.reference_no = payment.get("reference_no") or frappe.generate_hash()[:8]
+            pe.reference_date = payment.get("reference_date") or frappe.utils.today()
+            
+        if payment.get("attachment"):
+            pe.custom_payment_screenshot = payment.get("attachment")
+            
+        payment_remaining = amount
+        
+        for alloc in processing_queue:
+            if payment_remaining <= 0:
+                break
+                
+            if alloc["pending_receive"] <= 0:
+                continue
+                
+            allocate_val = min(payment_remaining, alloc["pending_receive"])
+            
+            # Append reference
+            ref_row = pe.append("references", {
+                "reference_doctype": alloc["doctype"],
+                "reference_name": alloc["name"],
+                "allocated_amount": allocate_val
+            })
+            
+            payment_remaining -= allocate_val
+            alloc["pending_receive"] -= allocate_val
+            
+            # 5. Write-Off Injection
+            if alloc["pending_receive"] <= 0 and alloc["write_off"] > 0:
+                write_off_account = frappe.db.get_value("Company", pe.company, "write_off_account")
+                if not write_off_account:
+                    frappe.throw("Write-off account not found for company")
+                
+                cost_center = pe.cost_center
+                if not cost_center and alloc["doctype"] == "Sales Invoice":
+                    cost_center = frappe.db.get_value("Sales Invoice Item", {"parent": alloc["name"]}, "cost_center")
+                if not cost_center:
+                    cost_center = frappe.db.get_value("Sales Order Item", {"parent": alloc["sales_order"]}, "cost_center")
+                if not cost_center:
+                    cost_center = frappe.db.get_value("Company", pe.company, "cost_center")
+                    
+                pe.append("deductions", {
+                    "account": write_off_account,
+                    "cost_center": cost_center,
+                    "amount": alloc["write_off"]
+                })
+                
+                ref_row.allocated_amount += alloc["write_off"]
+                # Write-off logic consumed
+                alloc["write_off"] = 0.0
+
+        # 6. Finalize
+        if len(pe.references) > 0:
+            pe.save(ignore_permissions=True)
+            pe.submit()
+            pe_ids.append(pe.name)
+        
+    for alloc in allocations:
+        sales_order = alloc.get("sales_order")
+        if sales_order:
+            sync_payment_status(sales_order)
+            
+    return pe_ids
