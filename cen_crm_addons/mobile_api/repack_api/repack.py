@@ -5,7 +5,7 @@ from frappe.utils import flt
 @frappe.whitelist(allow_guest=False)
 def get_stock_entry_list(search_term="", limit_start=1, limit_page_length=20):
     limit = int(limit_page_length)
-    offset = (int(limit_start) - 1) * limit
+    offset = max(0, int(limit_start) - 1)
     
     filters = {"stock_entry_type": "Repack"}
     if search_term:
@@ -56,7 +56,7 @@ def get_item_boms(item_code, search_term="", limit_start=1, limit_page_length=20
         frappe.throw("item_code is required")
         
     limit = int(limit_page_length)
-    offset = (int(limit_start) - 1) * limit
+    offset = max(0, int(limit_start) - 1)
     
     filters = {
         "item": item_code,
