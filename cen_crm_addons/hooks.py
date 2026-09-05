@@ -283,7 +283,10 @@ doc_events = {
         ]
     },
     "Sales Invoice": {
-        "on_submit": "cen_crm_addons.api.payment_logic.trigger_so_payment_status_update",
+        "on_submit": [
+            "cen_crm_addons.api.payment_logic.trigger_so_payment_status_update",
+            "cen_crm_addons.api.inter_company_transfer.inter_company_automation.auto_create_purchase_invoice"
+        ],
         "on_cancel": "cen_crm_addons.api.payment_logic.trigger_so_payment_status_update"
     },
     "Payment Entry": {
