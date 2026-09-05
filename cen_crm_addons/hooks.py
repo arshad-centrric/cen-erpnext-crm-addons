@@ -138,6 +138,7 @@ app_include_js = [
 
 doctype_js = {
     "Opportunity": "public/js/opportunity.js",
+    "Customer": "public/js/customer_inter_company.js",
     "Item": "public/js/item.js",
     "Payment Entry": "public/js/payment_entry.js",
     "Quotation": "public/js/quotation_form.js",
@@ -217,7 +218,8 @@ after_migrate = [
     "cen_crm_addons.api.docperm_setup.setup_custom_permissions",
     "cen_crm_addons.api.module_profile_setup.setup_module_profiles",
     "cen_crm_addons.api.picking_setup_utils.setup_picking_profile",
-    "cen_crm_addons.api.opportunity_setup.setup_opportunity_statuses"
+    "cen_crm_addons.api.opportunity_setup.setup_opportunity_statuses",
+    "cen_crm_addons.setup.inter_company_transfer.setup_fields.create_inter_company_custom_fields"
 ]
 
 # Desk Notifications
