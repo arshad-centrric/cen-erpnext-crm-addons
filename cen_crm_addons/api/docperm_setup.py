@@ -107,10 +107,15 @@ def setup_custom_permissions():
     
     # 6. Delivery Note
     set_permission("Delivery Note", "Supervisor", {
-        "read": 1, "write": 1, "create": 1, "submit": 1, "print": 1
+        "read": 1, "write": 1, "create": 1, "submit": 1, "print": 1, "cancel": 1
     })
     set_permission("Delivery Note", "Picking User", {
         "read": 1, "write": 1, "create": 1, "submit": 1, "print": 1
+    })
+
+    # 7. Sales Invoice
+    set_permission("Sales Invoice", "Supervisor", {
+        "read": 1, "write": 1, "create": 1, "submit": 1, "print": 1, "cancel": 1
     })
     
     # 7. Page (Required for Workspaces/UI navigation)
