@@ -61,6 +61,7 @@ def cancel_sales_order(sales_order_id):
     Cancel one or multiple Submitted Sales Orders.
     `sales_order_id` can be a single string OR a JSON-encoded array of strings.
     Automatically fetches and cancels any downstream linked documents first.
+    Auto-reopens "Closed" Sales Orders to allow cancellation.
     """
     import json
     if not sales_order_id:
@@ -96,6 +97,14 @@ def cancel_sales_order(sales_order_id):
                 results.append({"sales_order": so_id, "status": "success", "message": "Already cancelled"})
                 continue
             
+            # --- NEW LOGIC: Handle "Closed" Sales Orders ---
+            # ERPNext explicitly blocks cancelling a Sales Order if its status is "Closed".
+            # We silently lift the lock by reverting the status before proceeding.
+            if getattr(doc, "status", None) == "Closed":
+                doc.db_set("status", "Draft")
+                doc.reload()
+            # -----------------------------------------------
+
             # Use ERPNext native logic to find and cancel all downstream documents automatically
             linked_docs_info = get_submitted_linked_docs("Sales Order", so_id)
             linked_docs = linked_docs_info.get("docs", [])
