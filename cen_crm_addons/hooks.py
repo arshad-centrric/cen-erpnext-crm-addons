@@ -220,7 +220,8 @@ after_migrate = [
     "cen_crm_addons.api.opportunity_setup.setup_opportunity_statuses",
     "cen_crm_addons.api.roles.pos_user.setup_pos_operator_role",
     "cen_crm_addons.api.roles.pack_user.setup_pack_user_role",
-    "cen_crm_addons.api.roles.delivery_user.setup_delivery_user_role"
+    "cen_crm_addons.api.roles.delivery_user.setup_delivery_user_role",
+    "cen_crm_addons.api.roles.purchase_user.setup_purchase_user_role"
 ]
 
 # Desk Notifications

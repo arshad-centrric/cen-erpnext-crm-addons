@@ -149,10 +149,14 @@ def create_bom(finished_product_code, production_qty, ingredients):
         bom.is_active = 1
         
         for ing in ingredients:
-            bom.append("items", {
+            row = {
                 "item_code": ing.get("item_code"),
                 "qty": flt(ing.get("qty"))
-            })
+            }
+            if ing.get("uom"):
+                row["uom"] = str(ing.get("uom")).strip()
+                
+            bom.append("items", row)
             
         bom.insert(ignore_permissions=True)
         bom.submit()

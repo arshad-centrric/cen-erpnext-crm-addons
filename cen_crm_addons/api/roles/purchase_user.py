@@ -1,7 +1,7 @@
 import frappe
 
-def setup_pos_operator_role():
-    role_name = "AGT - POS User"
+def setup_purchase_user_role():
+    role_name = "AGT - Purchase User"
 
     # 1. Create the Role
     if not frappe.db.exists("Role", role_name):
@@ -21,57 +21,65 @@ def setup_pos_operator_role():
     # 3. Define the exact permission map
     permissions_map = {
         # Transactions
-        "POS Invoice": {"read": 1, "write": 1, "create": 1, "submit": 1, "cancel": 1},
-        "Sales Invoice": {"read": 1, "write": 1, "create": 1, "submit": 1, "cancel": 1},
-        "POS Opening Entry": {"read": 1, "write": 1, "create": 1, "submit": 1, "cancel": 1},
-        "POS Closing Entry": {"read": 1, "write": 1, "create": 1, "submit": 1, "cancel": 1},
-        "Payment Entry": {"read": 1, "write": 1, "create": 1, "submit": 1, "cancel": 1},
-        "POS Invoice Merge Log": {"read": 1, "write": 1, "create": 1, "submit": 1, "cancel": 1},
+        "Purchase Receipt": {"read": 1, "write": 1, "create": 1, "submit": 1, "cancel": 1, "report": 1},
+        "Purchase Order": {"read": 1, "write": 1, "create": 1, "submit": 1, "cancel": 1, "report": 1},
+        "Purchase Invoice": {"read": 1, "write": 1, "create": 1, "submit": 1, "cancel": 1, "report": 1},
+        "Payment Entry": {"read": 1, "write": 1, "create": 1, "submit": 1, "cancel": 1, "report": 1},
 
-        # Quick Entry (Customers)
-        "Customer": {"read": 1, "write": 1, "create": 1},
+        # Core CRM / Master
+        "Supplier": {"read": 1, "write": 1, "create": 1},
+        "Supplier Group": {"read": 1},
         "Address": {"read": 1, "write": 1, "create": 1},
         "Contact": {"read": 1, "write": 1, "create": 1},
 
-        # Global Settings (The ones that caused the popup errors)
-        "POS Settings": {"read": 1},
+        # Settings
         "Stock Settings": {"read": 1},
-        "Selling Settings": {"read": 1},
+        "Buying Settings": {"read": 1},
         "Accounts Settings": {"read": 1},
 
-        # Master Data
-        "POS Profile": {"read": 1},
-        "Weigh Scale Settings": {"read": 1},
+        # Master Data for Billing, Delivery & Items
+        "Company": {"read": 1},
+        "Branch": {"read": 1},
         "Workspace": {"read": 1},
         "User": {"read": 1},
-        "Company": {"read": 1},
         "Currency": {"read": 1},
-        "Item": {"read": 1},
-        "Item Price": {"read": 1},
+        "Item": {"read": 1, "write": 1, "create": 1},
+        "Item Price": {"read": 1, "write": 1, "create": 1},
         "Item Group": {"read": 1},
-        "Item Barcode": {"read": 1},
+        "Item Barcode": {"read": 1, "write": 1, "create": 1},
         "Item Tax Template": {"read": 1},
         "Brand": {"read": 1},
         "UOM": {"read": 1},
         "UOM Conversion Factor": {"read": 1},
         "Price List": {"read": 1},
         "Pricing Rule": {"read": 1},
-        "Sales Taxes and Charges Template": {"read": 1},
+        "Purchase Taxes and Charges Template": {"read": 1},
         "Tax Rule": {"read": 1},
         "Warehouse": {"read": 1},
         "Bin": {"read": 1},
         "Mode of Payment": {"read": 1},
         "Account": {"read": 1},
-        "Customer Group": {"read": 1},
         "Territory": {"read": 1},
         "Tax Category": {"read": 1},
         "Cost Center": {"read": 1},
-        "Sales Person": {"read": 1},
         "Terms and Conditions": {"read": 1},
-        "Loyalty Program": {"read": 1},
-        "Serial No": {"read": 1, "write": 1},
-        "Batch": {"read": 1},
-        "Serial and Batch Bundle": {"read": 1, "write": 1, "create": 1}
+        "Payment Terms Template": {"read": 1},
+        
+        # Logistics / Transporter Info
+        "Shipping Rule": {"read": 1},
+        "Incoterm": {"read": 1},
+        "Driver": {"read": 1},
+        "Vehicle": {"read": 1},
+        "Transporter": {"read": 1},
+        
+        # Serial and Batch
+        "Serial No": {"read": 1, "write": 1, "create": 1},
+        "Batch": {"read": 1, "write": 1, "create": 1},
+        "Serial and Batch Bundle": {"read": 1, "write": 1, "create": 1},
+
+        # Custom App Specific
+        "Mobile User Profile": {"read": 1},
+        "Mobile Allowed Warehouse": {"read": 1},
     }
 
     # 4. Loop through and apply permissions safely
@@ -93,19 +101,8 @@ def setup_pos_operator_role():
         except Exception as e:
             print(f"Failed on {doctype}: {str(e)}")
 
-    # 5. Grant UI Page Access for Point of Sale
-    page_name = "point-of-sale"
-    if frappe.db.exists("Page", page_name):
-        page_doc = frappe.get_doc("Page", page_name)
-        
-        has_role = any(row.role == role_name for row in page_doc.roles)
-        
-        if not has_role:
-            page_doc.append("roles", {"role": role_name})
-            page_doc.save(ignore_permissions=True)
-            print(f"Granted UI Page access to: {page_name}")
-
-    # 6. Save to database and force cache clear
+    # 5. Save to database and force cache clear
     frappe.db.commit()
     frappe.clear_cache()
     print("\nSUCCESS: All roles and permissions have been committed to the database.")
+

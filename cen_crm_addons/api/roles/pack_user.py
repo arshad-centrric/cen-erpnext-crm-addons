@@ -1,7 +1,7 @@
 import frappe
 
 def setup_pack_user_role():
-    role_name = "Pack User"
+    role_name = "AGT - Packing User"
 
     # 1. Create the Role
     if not frappe.db.exists("Role", role_name):

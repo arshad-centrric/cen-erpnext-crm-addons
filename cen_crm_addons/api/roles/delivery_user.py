@@ -1,7 +1,7 @@
 import frappe
 
 def setup_delivery_user_role():
-    role_name = "Delivery User (Cen)"
+    role_name = "AGT - Delivery User"
 
     # 1. Create the Role
     if not frappe.db.exists("Role", role_name):
