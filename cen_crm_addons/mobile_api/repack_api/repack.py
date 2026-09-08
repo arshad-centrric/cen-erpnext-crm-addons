@@ -12,16 +12,22 @@ def get_stock_entry_list(search_term="", limit_start=1, limit_page_length=20, br
     if search_term:
         filters["name"] = ("like", f"%{search_term}%")
         
-    if branch and str(branch).strip().lower() not in ("", "all branches", "all"):
+    has_branch = frappe.db.has_column("Stock Entry", "branch")
+    
+    if branch and has_branch and str(branch).strip().lower() not in ("", "all branches", "all"):
         filters["branch"] = branch
         
     if company and str(company).strip().lower() not in ("", "all companies", "all"):
         filters["company"] = company
         
+    fields = ["name", "posting_date", "docstatus", "bom_no", "fg_completed_qty", "company"]
+    if has_branch:
+        fields.append("branch")
+        
     stock_entries = frappe.get_all(
         "Stock Entry",
         filters=filters,
-        fields=["name", "posting_date", "docstatus", "bom_no", "fg_completed_qty", "branch", "company"],
+        fields=fields,
         order_by="creation desc",
         limit_start=offset,
         limit_page_length=limit
@@ -41,7 +47,7 @@ def get_stock_entry_list(search_term="", limit_start=1, limit_page_length=20, br
             "posting_date": se.posting_date,
             "docstatus": se.docstatus,
             "bom_no": se.bom_no,
-            "branch": se.branch,
+            "branch": se.get("branch"),
             "company": se.company,
             "fg_completed_qty": se.fg_completed_qty,
             "fg_item_code": bom_details[se.bom_no].item if se.bom_no and se.bom_no in bom_details else None,
@@ -190,10 +196,10 @@ def create_stock_entry(selected_bom, production_qty, source_warehouse, target_wa
         se.from_warehouse = source_warehouse
         se.to_warehouse = target_warehouse
         
-        if branch:
+        if branch and se.meta.has_field("branch"):
             se.branch = branch
             
-        if company:
+        if company and se.meta.has_field("company"):
             se.company = company
         
         # Build consumption and generation grid based on the BOM
