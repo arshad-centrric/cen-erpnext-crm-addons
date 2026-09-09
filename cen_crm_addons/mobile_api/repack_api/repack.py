@@ -8,9 +8,28 @@ def get_stock_entry_list(search_term="", limit_start=1, limit_page_length=20, br
     offset = max(0, int(limit_start) - 1)
     
     filters = {"stock_entry_type": "Repack"}
+    or_filters = {}
     
     if search_term:
-        filters["name"] = ("like", f"%{search_term}%")
+        search_like = f"%{search_term}%"
+        
+        matching_boms = frappe.get_all("BOM", 
+            or_filters={
+                "item": ("like", search_like),
+                "item_name": ("like", search_like)
+            }, 
+            pluck="name"
+        )
+        
+        if matching_boms:
+            or_filters = {
+                "name": ("like", search_like),
+                "bom_no": ("in", matching_boms)
+            }
+        else:
+            or_filters = {
+                "name": ("like", search_like)
+            }
         
     has_branch = frappe.db.has_column("Stock Entry", "branch")
     
@@ -27,6 +46,7 @@ def get_stock_entry_list(search_term="", limit_start=1, limit_page_length=20, br
     stock_entries = frappe.get_all(
         "Stock Entry",
         filters=filters,
+        or_filters=or_filters,
         fields=fields,
         order_by="creation desc",
         limit_start=offset,
