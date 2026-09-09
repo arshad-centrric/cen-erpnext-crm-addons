@@ -97,6 +97,26 @@ def setup_purchase_user_role():
                 "role": role_name,
                 **perms
             }).insert(ignore_permissions=True)
+            # Safely set up custom permissions to retain standard roles
+            from frappe.permissions import setup_custom_perms
+            setup_custom_perms(doctype)
+            
+            # Check if this role already has a Custom DocPerm for this doctype
+            name = frappe.db.get_value("Custom DocPerm", {"parent": doctype, "role": role_name, "permlevel": 0})
+            if name:
+                doc = frappe.get_doc("Custom DocPerm", name)
+                doc.update(perms)
+                doc.save(ignore_permissions=True)
+            else:
+                frappe.get_doc({
+                    "doctype": "Custom DocPerm",
+                    "parent": doctype,
+                    "parenttype": "DocType",
+                    "parentfield": "permissions",
+                    "role": role_name,
+                    "permlevel": 0,
+                    **perms
+                }).insert(ignore_permissions=True)
             print(f"Mapped: {doctype}")
         except Exception as e:
             print(f"Failed on {doctype}: {str(e)}")
