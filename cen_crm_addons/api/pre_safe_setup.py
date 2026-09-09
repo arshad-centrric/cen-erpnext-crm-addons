@@ -1,13 +1,13 @@
 import frappe
-from cen_crm_addons.api.roles.pos_user import setup_pos_operator_role
-from cen_crm_addons.api.roles.pack_user import setup_pack_user_role
-from cen_crm_addons.api.roles.delivery_user import setup_delivery_user_role
-from cen_crm_addons.api.roles.purchase_user import setup_purchase_user_role
-from cen_crm_addons.api.docperm_setup import setup_custom_permissions
 
-def fix_permissions():
-    # List of core doctypes that got corrupted by the old scripts
-    doctypes_to_clean = [
+def enforce_standard_permissions_first():
+    """
+    Runs before any custom permission scripts during migration to ensure 
+    Frappe's default standard permissions are safely copied into Custom DocPerm 
+    before they get accidentally overwritten by blind custom role insertions.
+    """
+    # Doctypes touched by any of our scripts or docperm_setup.py
+    doctypes_to_protect = [
         "Weigh Scale Settings", "Driver", "Customer", "Cen CRM Settings", "Price List", "Terms and Conditions",
         "Delivery Info Detail", "UOM Conversion Factor", "Box ID Configuration Item", "Tax Rule", "POS Closing Entry", "Loyalty Program",
         "Cost Center", "UOM", "Supplier Group", "Delivery Note", "Bin", "Bank Account",
@@ -22,26 +22,19 @@ def fix_permissions():
         "Supplier", "POS Profile", "Currency", "POS Settings", "POS Invoice", "Customer Group"
     ]
     
-    print("Deleting all Custom DocPerm records for affected Doctypes to enforce a hard reset...")
-    for dt in doctypes_to_clean:
-        if frappe.db.exists("DocType", dt):
-            frappe.db.delete("Custom DocPerm", {"parent": dt})
+    for dt in doctypes_to_protect:
+        if frappe.db.exists("DocType", dt) and not frappe.db.exists("Custom DocPerm", {"parent": dt}):
+            try:
+                # Force Frappe to fetch fresh JSON metadata bypassing corrupted cache
+                meta = frappe.get_meta(dt, cached=False)
+                for perm in meta.permissions:
+                    custom_perm = frappe.new_doc("Custom DocPerm")
+                    custom_perm.update(perm.as_dict())
+                    custom_perm.parent = dt
+                    custom_perm.parenttype = "DocType"
+                    custom_perm.parentfield = "permissions"
+                    custom_perm.name = None
+                    custom_perm.insert(ignore_permissions=True)
+            except Exception:
+                pass
     frappe.db.commit()
-    frappe.clear_cache()
-
-    print("Re-applying POS permissions safely...")
-    setup_pos_operator_role()
-    
-    print("Re-applying Pack permissions safely...")
-    setup_pack_user_role()
-    
-    print("Re-applying Delivery permissions safely...")
-    setup_delivery_user_role()
-    
-    print("Re-applying Purchase permissions safely...")
-    setup_purchase_user_role()
-    
-    print("Re-applying teammate CRM permissions safely...")
-    setup_custom_permissions()
-    
-    print("Permissions have been fully restored and safely applied!")
