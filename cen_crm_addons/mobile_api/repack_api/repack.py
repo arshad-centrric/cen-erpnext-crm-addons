@@ -134,7 +134,36 @@ def get_item_boms(item_code, search_term="", limit_start=1, limit_page_length=20
     return boms
 
 @frappe.whitelist(allow_guest=False)
-def get_bom_details(bom_name, production_qty=1):
+def get_bom_details(bom_name):
+    if not bom_name:
+        frappe.throw("bom_name is required")
+        
+    bom = frappe.get_doc("BOM", bom_name)
+    
+    details = {
+        "bom_name": bom.name,
+        "item_code": bom.item,
+        "item_name": bom.item_name,
+        "quantity": bom.quantity,
+        "uom": bom.uom,
+        "company": bom.company,
+        "items": []
+    }
+    
+    for item in bom.items:
+        details["items"].append({
+            "item_code": item.item_code,
+            "item_name": item.item_name,
+            "qty": item.qty,
+            "uom": item.uom,
+            "rate": getattr(item, 'rate', 0.0),
+            "amount": getattr(item, 'amount', 0.0)
+        })
+        
+    return details
+
+@frappe.whitelist(allow_guest=False)
+def get_bom_required_items(bom_name, production_qty=1):
     if not bom_name:
         frappe.throw("bom_name is required")
         
