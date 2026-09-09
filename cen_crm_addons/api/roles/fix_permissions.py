@@ -22,26 +22,20 @@ def fix_permissions():
         "Supplier", "POS Profile", "Currency", "POS Settings", "POS Invoice", "Customer Group"
     ]
     
-    print("Deleting all Custom DocPerm records for affected Doctypes to enforce a hard reset...")
     for dt in doctypes_to_clean:
         if frappe.db.exists("DocType", dt):
             frappe.db.delete("Custom DocPerm", {"parent": dt})
     frappe.db.commit()
     frappe.clear_cache()
 
-    print("Re-applying POS permissions safely...")
     setup_pos_operator_role()
     
-    print("Re-applying Pack permissions safely...")
     setup_pack_user_role()
     
-    print("Re-applying Delivery permissions safely...")
     setup_delivery_user_role()
     
-    print("Re-applying Purchase permissions safely...")
     setup_purchase_user_role()
     
-    print("Re-applying teammate CRM permissions safely...")
     setup_custom_permissions()
     
-    print("Permissions have been fully restored and safely applied!")
+    print("Successfully restored all roles and permissions.")

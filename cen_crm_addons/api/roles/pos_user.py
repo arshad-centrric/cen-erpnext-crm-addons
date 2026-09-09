@@ -10,13 +10,10 @@ def setup_pos_operator_role():
             "role_name": role_name,
             "desk_access": 1
         }).insert(ignore_permissions=True)
-        print(f"Created new role: {role_name}")
     else:
-        print(f"Role '{role_name}' already exists.")
 
     # 2. Clear existing custom permissions to ensure a clean slate
     frappe.db.delete("Custom DocPerm", {"role": role_name})
-    print("Cleared old permissions.")
 
     # 3. Define the exact permission map
     permissions_map = {
@@ -77,7 +74,6 @@ def setup_pos_operator_role():
     # 4. Loop through and apply permissions safely
     for doctype, perms in permissions_map.items():
         if not frappe.db.exists("DocType", doctype):
-            print(f"Skipped: {doctype} (DocType not found in this site)")
             continue
         
         try:
@@ -110,9 +106,7 @@ def setup_pos_operator_role():
                     "permlevel": 0,
                     **perms
                 }).insert(ignore_permissions=True)
-            print(f"Mapped: {doctype}")
         except Exception as e:
-            print(f"Failed on {doctype}: {str(e)}")
 
     # 5. Grant UI Page Access for Point of Sale
     page_name = "point-of-sale"
@@ -124,9 +118,7 @@ def setup_pos_operator_role():
         if not has_role:
             page_doc.append("roles", {"role": role_name})
             page_doc.save(ignore_permissions=True)
-            print(f"Granted UI Page access to: {page_name}")
 
     # 6. Save to database and force cache clear
     frappe.db.commit()
     frappe.clear_cache()
-    print("\nSUCCESS: All roles and permissions have been committed to the database.")
