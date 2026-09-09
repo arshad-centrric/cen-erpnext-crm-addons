@@ -213,6 +213,7 @@ doctype_list_js = {
 # after_app_uninstall = "cen_crm_addons.utils.after_app_uninstall"
 
 after_migrate = [
+    "cen_crm_addons.api.pre_safe_setup.enforce_standard_permissions_first",
     "cen_crm_addons.api.naming_series_setup.setup_customer_naming",
     "cen_crm_addons.api.docperm_setup.setup_custom_permissions",
     "cen_crm_addons.api.module_profile_setup.setup_module_profiles",
