@@ -84,11 +84,13 @@ def validate_payment_screenshot(doc, method):
     if doc.payment_type != "Receive":
         return
 
-    if doc.mode_of_payment != "Cash" and not doc.custom_payment_screenshot:
-        frappe.throw(
-            msg="Payment screenshot is mandatory for non-cash transactions.",
-            title="Attachment Required"
-        )
+    if doc.mode_of_payment:
+        mop_type = frappe.db.get_value("Mode of Payment", doc.mode_of_payment, "type")
+        if mop_type != "Cash" and not doc.custom_payment_screenshot:
+            frappe.throw(
+                msg="Payment screenshot is mandatory for non-cash transactions.",
+                title="Attachment Required"
+            )
 
 def sync_screenshot_to_sales_order(doc):
     """Attaches the Payment Entry screenshot to the linked Sales Order."""
