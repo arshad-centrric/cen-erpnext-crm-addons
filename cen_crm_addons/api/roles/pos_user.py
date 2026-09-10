@@ -12,6 +12,7 @@ def setup_pos_operator_role():
         }).insert(ignore_permissions=True)
     else:
 
+        pass
     # 2. Clear existing custom permissions to ensure a clean slate
     frappe.db.delete("Custom DocPerm", {"role": role_name})
 
@@ -108,6 +109,7 @@ def setup_pos_operator_role():
                 }).insert(ignore_permissions=True)
         except Exception as e:
 
+            pass
     # 5. Grant UI Page Access for Point of Sale
     page_name = "point-of-sale"
     if frappe.db.exists("Page", page_name):

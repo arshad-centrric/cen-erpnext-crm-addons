@@ -12,6 +12,7 @@ def setup_pack_user_role():
         }).insert(ignore_permissions=True)
     else:
 
+        pass
     # 2. Clear existing custom permissions to ensure a clean slate
     frappe.db.delete("Custom DocPerm", {"role": role_name})
 
@@ -115,6 +116,7 @@ def setup_pack_user_role():
                 }).insert(ignore_permissions=True)
         except Exception as e:
 
+            pass
     # 5. Save to database and force cache clear
     frappe.db.commit()
     frappe.clear_cache()
