@@ -102,8 +102,15 @@ frappe.ui.form.on('Payment Entry', {
 
 function set_screenshot_mandatory(frm) {
     if (frm.doc.payment_type === "Receive") {
-        // Mandatory if not Cash
-        let is_mandatory = (frm.doc.mode_of_payment && frm.doc.mode_of_payment !== "Cash") ? 1 : 0;
-        frm.toggle_reqd('custom_payment_screenshot', is_mandatory);
+        if (frm.doc.mode_of_payment) {
+            frappe.db.get_value('Mode of Payment', frm.doc.mode_of_payment, 'type')
+            .then(r => {
+                let mop_type = r.message.type;
+                let is_mandatory = (mop_type !== 'Cash') ? 1 : 0;
+                frm.toggle_reqd('custom_payment_screenshot', is_mandatory);
+            });
+        } else {
+            frm.toggle_reqd('custom_payment_screenshot', 0);
+        }
     }
 }
