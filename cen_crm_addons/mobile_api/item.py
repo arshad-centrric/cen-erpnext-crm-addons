@@ -3,7 +3,7 @@ from frappe.utils import flt
 
 
 @frappe.whitelist()
-def item_list(search_term=None, limit_start=1, limit_page_length=20, selling_price_list=None, buying_price_list=None):
+def item_list(search_term=None, limit_start=1, limit_page_length=20, selling_price_list=None, buying_price_list=None, exact_item_code=None):
     """
     Fetch a detailed, paginated list of active Items.
     Returns: item_code, item_name, default_uom, hsn_code, selling_rate, buying_rate, multiple UOMs, barcodes
@@ -19,6 +19,9 @@ def item_list(search_term=None, limit_start=1, limit_page_length=20, selling_pri
     filters = {"disabled": 0}
     if frappe.db.has_column("Item", "custom_is_customized_bundle"):
         filters["custom_is_customized_bundle"] = ["!=", 1]
+        
+    if exact_item_code:
+        filters["item_code"] = exact_item_code
         
     or_filters = {}
     
@@ -310,3 +313,26 @@ def create_item(**kwargs):
         frappe.log_error(title="Mobile Item Creation Failed", message=frappe.get_traceback())
         frappe.local.response['http_status_code'] = 400
         return {"status": "error", "message": str(e)}
+
+@frappe.whitelist()
+def get_delivery_charge_item(selling_price_list=None):
+    delivery_item = frappe.db.get_single_value("Cen CRM Settings", "delivery_charge_item")
+    if not delivery_item:
+        return []
+        
+    items = item_list(
+        limit_start=1,
+        limit_page_length=1,
+        selling_price_list=selling_price_list,
+        exact_item_code=delivery_item
+    )
+    
+    # Remove buying_rate and barcodes from the result
+    for item in items:
+        item.pop("buying_rate", None)
+        item.pop("barcodes", None)
+        for uom in item.get("uom_details", []):
+            if "buying_rate" in uom:
+                del uom["buying_rate"]
+                
+    return items
