@@ -116,6 +116,7 @@ def get_item_boms(item_code, search_term="", limit_start=1, limit_page_length=20
     filters = {
         "item": item_code,
         "is_active": 1,
+        "is_default": 1,
         "docstatus": 1
     }
     
@@ -131,7 +132,13 @@ def get_item_boms(item_code, search_term="", limit_start=1, limit_page_length=20
         limit_page_length=limit
     )
     
-    return boms
+    # Check if ANY active BOM exists for the item (independent of search filters or is_default)
+    has_bom = 1 if frappe.db.exists("BOM", {"item": item_code, "is_active": 1, "docstatus": 1}) else 0
+    
+    return {
+        "has_bom": has_bom,
+        "boms": boms
+    }
 
 @frappe.whitelist(allow_guest=False)
 def get_bom_details(bom_name):
@@ -185,9 +192,14 @@ def get_bom_required_items(bom_name, production_qty=1):
     return items
 
 @frappe.whitelist(allow_guest=False)
-def create_bom(finished_product_code, production_qty, ingredients):
+def create_bom(finished_product_code, production_qty, ingredients, company=None):
     import json
     try:
+        # Check if an active BOM already exists for this item
+        existing_bom = frappe.db.exists("BOM", {"item": finished_product_code, "is_active": 1, "docstatus": 1})
+        if existing_bom:
+            frappe.throw(f"An active BOM ({existing_bom}) already exists for Item {finished_product_code}. Multiple BOMs are not permitted.")
+            
         if isinstance(ingredients, str):
             ingredients = frappe.parse_json(ingredients)
             
@@ -201,6 +213,8 @@ def create_bom(finished_product_code, production_qty, ingredients):
         bom = frappe.new_doc("BOM")
         bom.item = finished_product_code
         bom.quantity = production_qty
+        if company:
+            bom.company = company
         bom.is_active = 1
         
         for ing in ingredients:
