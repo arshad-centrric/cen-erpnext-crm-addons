@@ -283,7 +283,8 @@ doc_events = {
         ],
         "on_update_after_submit": [
             "cen_crm_addons.api.opportunity_automation.on_sales_order_update"
-        ]
+        ],
+        "on_cancel": "cen_crm_addons.api.payment_logic.set_payment_status_cancelled"
     },
     "Sales Invoice": {
         "on_submit": "cen_crm_addons.api.payment_logic.trigger_so_payment_status_update",
