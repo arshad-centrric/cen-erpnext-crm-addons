@@ -1,4 +1,8 @@
 import frappe
+from frappe.custom.doctype.property_setter.property_setter import make_property_setter
+
+def apply_item_warehouse_permission_fix():
+    make_property_setter("Item Default", "default_warehouse", "ignore_user_permissions", "1", "Check")
 
 def after_install():
     # 1. Add "To Be Quoted" Sales Stage

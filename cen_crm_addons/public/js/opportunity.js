@@ -481,6 +481,8 @@ function cen_crm_generate_docs_html(docs, doctype_label) {
                     pay_color = "green";
                 } else if (pay_lower === "unpaid") {
                     pay_color = "orange";
+                } else if (pay_lower === "cancelled") {
+                    pay_color = "gray";
                 } else {
                     pay_color = "yellow";
                     let formatted_out = format_currency(outstanding, doc.currency);

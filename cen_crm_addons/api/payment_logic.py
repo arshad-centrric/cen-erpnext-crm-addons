@@ -136,3 +136,7 @@ def on_delivery_note_update(doc, method):
     for item in doc.items:
         if getattr(item, "against_sales_order", None):
             sync_payment_status(item.against_sales_order)
+
+def set_payment_status_cancelled(doc, method):
+    """Ensure custom_payment_status is strictly set to Cancelled upon doc cancellation."""
+    doc.db_set('custom_payment_status', 'Cancelled')

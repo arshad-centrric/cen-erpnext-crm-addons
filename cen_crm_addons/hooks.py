@@ -222,7 +222,12 @@ after_migrate = [
     "cen_crm_addons.api.roles.pos_user.setup_pos_operator_role",
     "cen_crm_addons.api.roles.pack_user.setup_pack_user_role",
     "cen_crm_addons.api.roles.delivery_user.setup_delivery_user_role",
-    "cen_crm_addons.api.roles.purchase_user.setup_purchase_user_role"
+    "cen_crm_addons.api.roles.purchase_user.setup_purchase_user_role",
+    "cen_crm_addons.app_setup.apply_item_warehouse_permission_fix"
+]
+
+after_install = [
+    "cen_crm_addons.app_setup.apply_item_warehouse_permission_fix"
 ]
 
 # Desk Notifications
@@ -283,7 +288,8 @@ doc_events = {
         ],
         "on_update_after_submit": [
             "cen_crm_addons.api.opportunity_automation.on_sales_order_update"
-        ]
+        ],
+        "on_cancel": "cen_crm_addons.api.payment_logic.set_payment_status_cancelled"
     },
     "Sales Invoice": {
         "on_submit": "cen_crm_addons.api.payment_logic.trigger_so_payment_status_update",
