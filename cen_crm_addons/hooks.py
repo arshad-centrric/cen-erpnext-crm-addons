@@ -223,11 +223,11 @@ after_migrate = [
     "cen_crm_addons.api.roles.pack_user.setup_pack_user_role",
     "cen_crm_addons.api.roles.delivery_user.setup_delivery_user_role",
     "cen_crm_addons.api.roles.purchase_user.setup_purchase_user_role",
-    "cen_crm_addons.setup.apply_item_warehouse_permission_fix"
+    "cen_crm_addons.app_setup.apply_item_warehouse_permission_fix"
 ]
 
 after_install = [
-    "cen_crm_addons.setup.apply_item_warehouse_permission_fix"
+    "cen_crm_addons.app_setup.apply_item_warehouse_permission_fix"
 ]
 
 # Desk Notifications
