@@ -77,6 +77,7 @@ def get_delivery_list(status="Pending", limit_start=1, limit_page_length=20, sea
             so.custom_box_id,
             CASE 
                 WHEN so.custom_payment_status = 'Paid' OR so.advance_paid >= so.grand_total THEN 'Paid'
+                WHEN so.custom_payment_status = 'Cancelled' THEN 'Cancelled'
                 WHEN so.advance_paid > 0 AND so.advance_paid < so.grand_total THEN 'Partially Paid'
                 ELSE 'Unpaid'
             END as payment_status,

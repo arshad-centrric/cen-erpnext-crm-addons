@@ -5173,7 +5173,7 @@
   "name": "Sales Order-custom_payment_status",
   "no_copy": 0,
   "non_negative": 0,
-  "options": "Unpaid\nPartially Paid\nPaid",
+  "options": "Unpaid\nPartially Paid\nPaid\nCancelled",
   "permlevel": 0,
   "placeholder": null,
   "precision": "",
