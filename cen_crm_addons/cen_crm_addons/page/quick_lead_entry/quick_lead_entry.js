@@ -223,6 +223,9 @@ frappe.pages['quick-lead-entry'].on_page_load = function (wrapper) {
         let assign_to = assign_field.get_value();
         let notes = $('#notes').val();
 
+        let active_branch = frappe.defaults.get_user_default("branch");
+        let branch_company = frappe.defaults.get_user_default("cen_branch_company");
+
         if (!first_name || !mobile || !assign_to) {
             frappe.msgprint(__("Name, Mobile Number, and Assigned To are mandatory."));
             return;
@@ -238,20 +241,24 @@ frappe.pages['quick-lead-entry'].on_page_load = function (wrapper) {
 
         if (existing_customer_id) {
             // SCENARIO B: Existing Customer -> Direct to Opportunity
+            let opp_doc = {
+                doctype: "Opportunity",
+                opportunity_from: "Customer",
+                party_name: existing_customer_id,
+                contact_mobile: mobile,
+                custom_assigned_to: assign_to,
+                custom_wa_chat_link: wa_link,
+                custom_remarks: notes,
+                notes: [{ note: notes }]
+            };
+            
+            if (active_branch && active_branch !== "All Branches" && branch_company) {
+                opp_doc.company = branch_company;
+            }
+
             frappe.call({
                 method: "frappe.client.insert",
-                args: {
-                    doc: {
-                        doctype: "Opportunity",
-                        opportunity_from: "Customer",
-                        party_name: existing_customer_id,
-                        contact_mobile: mobile,
-                        custom_assigned_to: assign_to,
-                        custom_wa_chat_link: wa_link,
-                        custom_remarks: notes,
-                        notes: [{ note: notes }]
-                    }
-                },
+                args: { doc: opp_doc },
                 callback: function (res) {
                     btn.prop('disabled', false).text(__('Add New'));
                     if (res.message) {
@@ -266,19 +273,23 @@ frappe.pages['quick-lead-entry'].on_page_load = function (wrapper) {
             });
         } else {
             // SCENARIO A: New Target -> Lead then Opportunity
+            let lead_doc = {
+                doctype: "Lead",
+                first_name: first_name,
+                mobile_no: mobile,
+                status: "Open",
+                custom_assigned_to: assign_to,
+                custom_wa_chat_link: wa_link,
+                notes: [{ note: notes }]
+            };
+            
+            if (active_branch && active_branch !== "All Branches" && branch_company) {
+                lead_doc.company = branch_company;
+            }
+
             frappe.call({
                 method: "frappe.client.insert",
-                args: {
-                    doc: {
-                        doctype: "Lead",
-                        first_name: first_name,
-                        mobile_no: mobile,
-                        status: "Open",
-                        custom_assigned_to: assign_to,
-                        custom_wa_chat_link: wa_link,
-                        notes: [{ note: notes }]
-                    }
-                },
+                args: { doc: lead_doc },
                 callback: function (r) {
                     if (r.message) {
                         let lead_name = r.message.name;
@@ -308,6 +319,10 @@ frappe.pages['quick-lead-entry'].on_page_load = function (wrapper) {
                                     opportunity_doc.custom_wa_chat_link = wa_link;
                                     opportunity_doc.custom_remarks = notes;
                                     opportunity_doc.notes = [{ note: notes }];
+
+                                    if (active_branch && active_branch !== "All Branches" && branch_company) {
+                                        opportunity_doc.company = branch_company;
+                                    }
 
                                     frappe.call({
                                         method: "frappe.client.insert",

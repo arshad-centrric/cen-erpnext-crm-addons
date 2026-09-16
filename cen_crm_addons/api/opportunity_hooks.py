@@ -5,35 +5,29 @@ def generate_box_id(doc, method):
     if doc.get("custom_box_id"):
         return
 
-    # Phase 2: Relational Store-Wise logic
-    user = frappe.session.user
+    # Phase 2: Branch-dependent logic
+    branch_name = doc.get("custom_cen_branch")
     
-    # 1. Query User Permission to find the strictly allowed Warehouse
-    permitted_warehouses = frappe.get_all(
-        "User Permission",
-        filters={"user": user, "allow": "Warehouse"},
-        fields=["for_value"]
-    )
-    
-    if not permitted_warehouses:
-        frappe.throw(f"Cannot generate Box ID: No Warehouse permission found for user {user}.")
-    elif len(permitted_warehouses) > 1:
-        frappe.throw(f"Cannot generate Box ID: Multiple Warehouse permissions found for user {user}. Please restrict to a single store.")
+    if not branch_name:
+        default_branch = frappe.db.get_value("Branch User", {"user": frappe.session.user, "is_default": 1}, "parent")
+        if default_branch:
+            doc.custom_cen_branch = default_branch
+            branch_name = default_branch
+        else:
+            frappe.throw("Please select a Branch, or ask an Administrator to assign a Default Branch to your user account.")
         
-    user_warehouse = permitted_warehouses[0].for_value
-    
     # 2. Fetch the singleton document Cen CRM Settings
     settings_doc = frappe.get_doc("Cen CRM Settings")
     
     # 3. Find matching row
     matching_row = None
     for row in settings_doc.get("store_box_id_configurations", []):
-        if row.parent_warehouse == user_warehouse:
+        if row.branch == branch_name:
             matching_row = row
             break
             
     if not matching_row:
-        frappe.throw(f"Cannot generate Box ID: No Box ID configuration found in Cen CRM Settings for warehouse '{user_warehouse}'.")
+        frappe.throw(f"No Box ID configuration found for branch {branch_name} in Cen CRM Settings.")
         
     # 4. Calculate new Box ID
     prefix = matching_row.box_id_prefix or "B"

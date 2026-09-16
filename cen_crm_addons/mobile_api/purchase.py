@@ -3,7 +3,7 @@ import json
 from frappe.utils import cint, flt
 
 @frappe.whitelist()
-def get_goods_receipt_notes(status="Draft", search_term=None, limit_start=1, limit_page_length=10, warehouse=None, company=None, date=None):
+def get_goods_receipt_notes(status="Draft", search_term=None, limit_start=1, limit_page_length=10, warehouse=None, company=None, date=None, branch=None):
     """
     Fetch a paginated list of Goods Receipt Notes (Purchase Receipts) with an optional search.
     status: 'Draft' (docstatus 0), 'Submitted' (docstatus 1), or 'Cancelled' (docstatus 2)
@@ -12,6 +12,8 @@ def get_goods_receipt_notes(status="Draft", search_term=None, limit_start=1, lim
     limit_page_length: Number of items per page, defaults to 10
     warehouse: Optional string to filter by accepted warehouse
     """
+    resolved_branch = branch or frappe.defaults.get_user_default("branch")
+    
     try:
         page = int(limit_start)
         page_length = int(limit_page_length)
@@ -36,7 +38,7 @@ def get_goods_receipt_notes(status="Draft", search_term=None, limit_start=1, lim
         "docstatus": docstatus
     }
     
-    if warehouse:
+    if warehouse and str(warehouse).strip():
         filters["set_warehouse"] = str(warehouse).strip()
         
     if company:
@@ -44,6 +46,9 @@ def get_goods_receipt_notes(status="Draft", search_term=None, limit_start=1, lim
     
     if date:
         filters["posting_date"] = date
+        
+    if resolved_branch and str(resolved_branch).strip() and resolved_branch != "All Branches":
+        filters["branch"] = str(resolved_branch).strip()
     
     # Optional search filters (OR conditions)
     or_filters = {}
@@ -68,7 +73,8 @@ def get_goods_receipt_notes(status="Draft", search_term=None, limit_start=1, lim
             "company", 
             "status", 
             "grand_total",
-            "set_warehouse"
+            "set_warehouse",
+            "branch"
         ],
         limit_start=limit_start_idx,
         limit_page_length=page_length,
@@ -224,7 +230,7 @@ def get_purchase_receipt_details(receipt_id):
         frappe.throw(f"Failed to fetch details: {str(e)}")
 
 @frappe.whitelist()
-def create_purchase_receipt(supplier=None, company=None, items=None, accepted_warehouse=None, supplier_delivery_note=None, submit=0):
+def create_purchase_receipt(supplier=None, company=None, items=None, accepted_warehouse=None, supplier_delivery_note=None, submit=0, branch=None, buying_price_list=None):
     """
     Create a new Purchase Receipt.
     supplier: Exact name of the Supplier (Required)
@@ -233,6 +239,8 @@ def create_purchase_receipt(supplier=None, company=None, items=None, accepted_wa
     items: JSON string or list of dicts containing item_code, qty, rate, uom (Required)
     supplier_delivery_note: Delivery note number provided by the supplier (Optional)
     submit: 1 to submit immediately, 0 to leave as Draft
+    branch: Optional branch name to isolate the document
+    buying_price_list: Optional price list for buying
     """
     if not supplier or not accepted_warehouse or not items:
         frappe.throw("Supplier, Accepted Warehouse, and Items are required parameters")
@@ -291,6 +299,12 @@ def create_purchase_receipt(supplier=None, company=None, items=None, accepted_wa
                 row_data["uom"] = str(item.get("uom")).strip()
                 
             pr_doc.append("items", row_data)
+
+        if branch and str(branch).strip():
+            pr_doc.branch = str(branch).strip()
+            
+        if buying_price_list and str(buying_price_list).strip():
+            pr_doc.buying_price_list = str(buying_price_list).strip()
 
         # Insert the document (creates it as Draft)
         pr_doc.flags.ignore_permissions = True

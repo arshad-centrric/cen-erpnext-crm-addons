@@ -38,6 +38,10 @@ def create_quotation(opportunity_id, items=None, submit=0, selling_price_list=No
     try:
         # Create mapped Quotation document from Opportunity using standard ERPNext method
         quotation_doc = erpnext_make_quotation(opportunity_id)
+        
+        opp_branch = frappe.db.get_value("Opportunity", opportunity_id, "custom_cen_branch")
+        if opp_branch:
+            quotation_doc.custom_cen_branch = opp_branch
             
         _apply_customer_auto_creation(quotation_doc, opportunity_id)
 
@@ -73,6 +77,10 @@ def create_quotation(opportunity_id, items=None, submit=0, selling_price_list=No
                 
                 if item.get("uom"):
                     row_data["uom"] = str(item.get("uom")).strip()
+                    
+                item_warehouse = item.get("warehouse")
+                if item_warehouse and str(item_warehouse).strip():
+                    row_data["warehouse"] = str(item_warehouse).strip()
                     
                 quotation_doc.append("items", row_data)
         else:

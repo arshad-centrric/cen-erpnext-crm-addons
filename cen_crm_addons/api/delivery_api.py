@@ -56,6 +56,7 @@ def get_order_info(order_id):
         "delivery_status": so.delivery_status
     }
 
+
 @frappe.whitelist()
 def confirm_delivery(order_id):
     """Creates and submits a Delivery Note from the Sales Order."""
