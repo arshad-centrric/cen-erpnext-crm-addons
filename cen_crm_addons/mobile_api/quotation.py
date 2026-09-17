@@ -148,6 +148,16 @@ def create_quotation(opportunity_id, items=None, submit=0, selling_price_list=No
 
         # Unconditionally recalculate totals to simulate frontend behavior
         quotation_doc.run_method("set_missing_values")
+        
+        # Restore the custom warehouse that set_missing_values overwrote
+        if items and isinstance(items, list):
+            for idx, row in enumerate(quotation_doc.items):
+                # Ensure we only restore if the index matches the original payload
+                if idx < len(items):
+                    payload_warehouse = items[idx].get("warehouse")
+                    if payload_warehouse and str(payload_warehouse).strip():
+                        row.warehouse = str(payload_warehouse).strip()
+
         quotation_doc.run_method("calculate_taxes_and_totals")
         
         # Defensive fallback: If items had 0 rate, calculations might skip and leave totals as None
