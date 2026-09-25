@@ -46,5 +46,6 @@ def create_or_update_profile(profile_name, blocked_modules):
             "module": m
         })
     
+    doc.unlock()
     doc.save(ignore_permissions=True)
     frappe.db.commit()
