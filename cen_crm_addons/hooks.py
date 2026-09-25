@@ -24,6 +24,7 @@ app_license = "mit"
 fixtures = [
     {"dt": "Role Profile", "filters": [["name", "in", ("CRM Sales Person", "CRM Picking User", "CRM Supervisor")]]},
     {"dt": "Role", "filters": [["name", "in", ("Sales Person", "Supervisor", "Picking User")]]},
+    {"dt": "Module Profile", "filters": [["name", "in", ("Sales Staff Profile", "Sales Supervisor Profile")]]},
     "Custom DocPerm",
     {"dt": "Property Setter", "filters": [["doc_type", "in", ("Opportunity", "Lead", "Opportunity Item", "Item", "Payment Entry", "Sales Order", "Quotation", "Sales Order Item", "Quotation Item", "Opportunity Item")]]},
     {"dt": "Custom Field", "filters": [["fieldname", "in", (
@@ -227,8 +228,7 @@ after_migrate = [
 ]
 
 after_install = [
-    "cen_crm_addons.app_setup.apply_item_warehouse_permission_fix",
-    "cen_crm_addons.setup.inter_company_transfer.setup_fields.create_inter_company_custom_fields"
+    "cen_crm_addons.app_setup.apply_item_warehouse_permission_fix"
 ]
 
 # Desk Notifications
@@ -294,8 +294,7 @@ doc_events = {
     },
     "Sales Invoice": {
         "on_submit": [
-            "cen_crm_addons.api.payment_logic.trigger_so_payment_status_update",
-            "cen_crm_addons.api.inter_company_transfer.inter_company_automation.auto_create_purchase_invoice"
+            "cen_crm_addons.api.payment_logic.trigger_so_payment_status_update"
         ],
         "on_cancel": "cen_crm_addons.api.payment_logic.trigger_so_payment_status_update"
     },
