@@ -55,6 +55,10 @@ fixtures = [
         "custom_view_bundle",
         "custom_is_bundle",
 
+        # Delivery Charge flags (Opportunity and Opportunity Item)
+        "custom_has_delivery_charge",
+        "custom_is_delivery_charge",
+
         #Item 
         "custom_crm_details_tab",
         "custom_is_product_bundle",
@@ -272,6 +276,7 @@ doc_events = {
     },
     "Opportunity": {
         "before_insert": "cen_crm_addons.api.opportunity_hooks.generate_box_id",
+        "validate": "cen_crm_addons.api.delivery_charge.set_delivery_charge_flags",
         "on_update": "cen_crm_addons.api.crm_permissions.sync_opportunity_list_fields",
         "after_insert": "cen_crm_addons.api.opportunity_automation.ensure_opportunity_assignment"
     },
