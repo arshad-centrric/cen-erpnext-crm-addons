@@ -1,8 +1,28 @@
 import frappe
 import json
 from erpnext.accounts.doctype.payment_entry.payment_entry import get_payment_entry
+from erpnext.accounts.utils import get_account_currency
 from frappe.utils import flt
 from cen_crm_addons.api.payment_logic import sync_payment_status
+
+def set_account_from_mode_of_payment(pe):
+    """Server-side equivalent of the Payment Entry form's mode_of_payment event."""
+    account = frappe.db.get_value(
+        "Mode of Payment Account",
+        {"parent": pe.mode_of_payment, "company": pe.company},
+        "default_account"
+    )
+    if not account:
+        frappe.throw(
+            f"Mode of Payment {pe.mode_of_payment} has no account set for company {pe.company}",
+            title="Missing Account"
+        )
+
+    # Receive books to paid_to, Pay books from paid_from
+    field = "paid_to" if pe.payment_type == "Receive" else "paid_from"
+    pe.set(field, account)
+    pe.set(f"{field}_account_currency", get_account_currency(account))
+    pe.set(f"{field}_account_type", frappe.get_cached_value("Account", account, "account_type"))
 
 @frappe.whitelist()
 def submit_multi_mode_payment(sales_order, payments, write_off_amount=0.0):
@@ -40,7 +60,8 @@ def submit_multi_mode_payment(sales_order, payments, write_off_amount=0.0):
         
         if payment.get("mode_of_payment"):
             pe.mode_of_payment = payment.get("mode_of_payment")
-            
+            set_account_from_mode_of_payment(pe)
+
         if pe.references:
             pe.references[0].reference_doctype = target_doctype
             pe.references[0].reference_name = target_docname
