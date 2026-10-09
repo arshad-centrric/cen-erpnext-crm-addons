@@ -31,6 +31,27 @@ def get_delivery_partners(page=1, limit=20, search=""):
 
 
 @frappe.whitelist()
+def get_company_addresses(company=None):
+    """
+    Fetch the active Addresses linked to a Company, for selecting the Company Address of a Quotation.
+    company: Exact name of the Company (Optional, defaults to the user's default Company)
+    """
+    from cen_crm_addons.api.company_address import get_company_address_list
+
+    company = str(company).strip() if company else None
+    if not company:
+        company = frappe.defaults.get_user_default("Company") or frappe.db.get_single_value("Global Defaults", "default_company")
+
+    if not company:
+        frappe.throw("Company is a required parameter")
+
+    if not frappe.db.exists("Company", company):
+        frappe.throw(f"Company {company} not found")
+
+    return get_company_address_list(company)
+
+
+@frappe.whitelist()
 def get_mobile_user_profile():
     user = frappe.session.user
     
