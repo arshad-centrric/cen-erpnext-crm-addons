@@ -31,14 +31,25 @@ def get_delivery_partners(page=1, limit=20, search=""):
 
 
 @frappe.whitelist()
-def get_company_addresses(company=None):
+def get_company_addresses(company=None, branch=None):
     """
     Fetch the active Addresses linked to a Company, for selecting the Company Address of a Quotation.
-    company: Exact name of the Company (Optional, defaults to the user's default Company)
+    company: Exact name of the Company (Optional, defaults to the Branch's Company, then the user's default Company)
+    branch: Branch to list the addresses of (Optional, defaults to the user's active Branch. "All Branches" lists every address of the Company)
     """
     from cen_crm_addons.api.company_address import get_company_address_list
 
+    resolved_branch = branch or frappe.defaults.get_user_default("branch")
+    resolved_branch = str(resolved_branch).strip() if resolved_branch else None
+    if resolved_branch == "All Branches":
+        resolved_branch = None
+
+    if resolved_branch and not frappe.db.exists("Branch", resolved_branch):
+        frappe.throw(f"Branch {resolved_branch} not found")
+
     company = str(company).strip() if company else None
+    if not company and resolved_branch:
+        company = frappe.db.get_value("Branch", resolved_branch, "custom_cen_default_company")
     if not company:
         company = frappe.defaults.get_user_default("Company") or frappe.db.get_single_value("Global Defaults", "default_company")
 
@@ -48,7 +59,7 @@ def get_company_addresses(company=None):
     if not frappe.db.exists("Company", company):
         frappe.throw(f"Company {company} not found")
 
-    return get_company_address_list(company)
+    return get_company_address_list(company, resolved_branch)
 
 
 @frappe.whitelist()

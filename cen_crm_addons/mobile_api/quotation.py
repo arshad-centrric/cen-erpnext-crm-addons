@@ -3,7 +3,7 @@ import json
 from frappe.utils import cint, flt
 from erpnext.crm.doctype.opportunity.opportunity import make_quotation as erpnext_make_quotation
 from cen_crm_addons.api.sales_order_hooks import _apply_customer_auto_creation, _apply_opportunity_mapping_to_quotation
-from cen_crm_addons.api.company_address import validate_company_address
+from cen_crm_addons.api.company_address import validate_company_address, get_branch_default_address
 from erpnext.controllers.accounts_controller import update_child_qty_rate
 from frappe.desk.form.linked_with import get_submitted_linked_docs, cancel_all_linked_docs
 
@@ -17,7 +17,7 @@ def create_quotation(opportunity_id, items=None, submit=0, selling_price_list=No
     submit: 1 to submit immediately, 0 to leave as Draft
     selling_price_list: The Price List to use for the Quotation (Optional)
     customer: The exact ID of a Customer. Useful when the Opportunity was from a Lead. (Optional)
-    company_address: The exact ID of an Address linked to the Quotation's Company (Optional, defaults to the Company's default Address)
+    company_address: The exact ID of an Address linked to the Quotation's Company (Optional, defaults to the Branch Address, then the Company's default Address)
     """
     if not opportunity_id:
         frappe.throw("Opportunity ID is a required parameter")
@@ -59,7 +59,11 @@ def create_quotation(opportunity_id, items=None, submit=0, selling_price_list=No
 
         # Set before set_missing_values so the Company's default Address does not replace it
         if company_address and str(company_address).strip():
-            quotation_doc.company_address = validate_company_address(company_address, quotation_doc.company)
+            quotation_doc.company_address = validate_company_address(company_address, quotation_doc.company, opp_branch)
+        else:
+            branch_address = get_branch_default_address(opp_branch, quotation_doc.company)
+            if branch_address:
+                quotation_doc.company_address = branch_address
         
         # If the mobile app provides specific items/prices, replace the default ones
         if items and isinstance(items, list):
