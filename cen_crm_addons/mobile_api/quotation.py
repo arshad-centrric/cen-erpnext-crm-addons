@@ -4,12 +4,13 @@ from frappe.utils import cint, flt
 from erpnext.crm.doctype.opportunity.opportunity import make_quotation as erpnext_make_quotation
 from cen_crm_addons.api.sales_order_hooks import _apply_customer_auto_creation, _apply_opportunity_mapping_to_quotation
 from cen_crm_addons.api.company_address import validate_company_address, get_branch_default_address
+from cen_crm_addons.api.quotation_amendment import get_quotation_to_amend, get_amendment_defaults
 from erpnext.controllers.accounts_controller import update_child_qty_rate
 from frappe.desk.form.linked_with import get_submitted_linked_docs, cancel_all_linked_docs
 
 
 @frappe.whitelist()
-def create_quotation(opportunity_id, items=None, submit=0, selling_price_list=None, customer=None, delivery_locations=None, company_address=None):
+def create_quotation(opportunity_id, items=None, submit=0, selling_price_list=None, customer=None, delivery_locations=None, company_address=None, packing_instructions=None, amended_from=None):
     """
     Create a Quotation from an Opportunity.
     opportunity_id: The ID of the Opportunity (Required)
@@ -18,6 +19,8 @@ def create_quotation(opportunity_id, items=None, submit=0, selling_price_list=No
     selling_price_list: The Price List to use for the Quotation (Optional)
     customer: The exact ID of a Customer. Useful when the Opportunity was from a Lead. (Optional)
     company_address: The exact ID of an Address linked to the Quotation's Company (Optional, defaults to the Branch Address, then the Company's default Address)
+    packing_instructions: Packing Instructions text, carried to the Sales Order created from this Quotation (Optional)
+    amended_from: The ID of a cancelled Quotation of this Opportunity to amend. Anything left out of the payload is taken from it. (Optional)
     """
     if not opportunity_id:
         frappe.throw("Opportunity ID is a required parameter")
@@ -36,6 +39,29 @@ def create_quotation(opportunity_id, items=None, submit=0, selling_price_list=No
             delivery_locations = json.loads(delivery_locations)
         except Exception:
             frappe.throw("Invalid JSON format for delivery_locations payload")
+
+    amended_quotation = None
+    if amended_from and str(amended_from).strip():
+        amended_quotation = get_quotation_to_amend(amended_from, opportunity_id)
+        defaults = get_amendment_defaults(amended_quotation)
+
+        if not items:
+            items = defaults.get("items")
+        if delivery_locations is None:
+            delivery_locations = defaults.delivery_locations
+        if not selling_price_list:
+            selling_price_list = defaults.selling_price_list
+        if not customer:
+            customer = defaults.customer
+        if packing_instructions is None:
+            packing_instructions = defaults.packing_instructions
+        if not (company_address and str(company_address).strip()) and defaults.company_address:
+            # Keep the previous Company Address only while it is still a valid choice
+            try:
+                validate_company_address(defaults.company_address, amended_quotation.company)
+                company_address = defaults.company_address
+            except Exception:
+                company_address = None
 
     try:
         # Create mapped Quotation document from Opportunity using standard ERPNext method
@@ -175,6 +201,12 @@ def create_quotation(opportunity_id, items=None, submit=0, selling_price_list=No
             if getattr(quotation_doc, field, None) is None:
                 setattr(quotation_doc, field, 0.0)
 
+        if packing_instructions is not None:
+            quotation_doc.custom_packing_instructions = str(packing_instructions).strip()
+
+        if amended_quotation:
+            quotation_doc.amended_from = amended_quotation.name
+
         # Insert the document (creates it as a Draft)
         quotation_doc.insert()
 
@@ -190,7 +222,8 @@ def create_quotation(opportunity_id, items=None, submit=0, selling_price_list=No
                 "docstatus": quotation_doc.docstatus,
                 "grand_total": quotation_doc.grand_total,
                 "status": quotation_doc.status,
-                "company_address": quotation_doc.company_address
+                "company_address": quotation_doc.company_address,
+                "amended_from": quotation_doc.get("amended_from")
             }
         }
     except Exception as e:
