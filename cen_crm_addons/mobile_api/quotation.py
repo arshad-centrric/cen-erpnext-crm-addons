@@ -58,7 +58,8 @@ def create_quotation(opportunity_id, items=None, submit=0, selling_price_list=No
         if not (company_address and str(company_address).strip()) and defaults.company_address:
             # Keep the previous Company Address only while it is still a valid choice
             try:
-                validate_company_address(defaults.company_address, amended_quotation.company)
+                opportunity_branch = frappe.db.get_value("Opportunity", opportunity_id, "custom_cen_branch")
+                validate_company_address(defaults.company_address, amended_quotation.company, opportunity_branch)
                 company_address = defaults.company_address
             except Exception:
                 company_address = None
