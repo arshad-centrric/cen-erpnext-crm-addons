@@ -286,6 +286,7 @@ doc_events = {
         "on_update": "cen_crm_addons.api.crm_bundle.sync_parent_is_bundle"
     },
     "Sales Order": {
+        "before_insert": "cen_crm_addons.api.packing_instructions.set_packing_instructions_from_quotation",
         "on_update": [
             "cen_crm_addons.api.payment_logic.on_sales_order_update",
             "cen_crm_addons.api.opportunity_automation.on_sales_order_update"
