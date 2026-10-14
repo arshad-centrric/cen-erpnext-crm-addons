@@ -142,3 +142,137 @@ def get_sales_invoice_details(sales_invoice_id):
         
     doc = frappe.get_doc("Sales Invoice", sales_invoice_id)
     return doc.as_dict()
+
+@frappe.whitelist()
+def update_sales_order_items(sales_order_id, items):
+    """
+    Update the items of a submitted Sales Order, like the "Update Items" button in ERPNext.
+    items: JSON string or list of dicts with the FULL final list of items.
+           Existing rows must include 'name' (child row ID). Rows without 'name' are added.
+           Existing rows left out of the list are deleted.
+           Keys per row: item_code, qty, rate, uom, conversion_factor, delivery_date, description
+    """
+    import json
+    from erpnext.controllers.accounts_controller import update_child_qty_rate
+    from cen_crm_addons.api.payment_logic import sync_payment_status
+
+    if not sales_order_id or not items:
+        frappe.throw("Sales Order ID and Items are required")
+
+    if isinstance(items, str):
+        try:
+            items = json.loads(items)
+        except Exception:
+            frappe.throw("Invalid JSON format for items payload")
+
+    if not isinstance(items, list):
+        frappe.throw("Items must be a list")
+
+    if not frappe.db.exists("Sales Order", sales_order_id):
+        frappe.throw(f"Sales Order {sales_order_id} not found", frappe.DoesNotExistError)
+
+    try:
+        doc = frappe.get_doc("Sales Order", sales_order_id)
+
+        # Same conditions under which ERPNext shows the "Update Items" button
+        if doc.docstatus != 1:
+            frappe.throw(f"Sales Order {sales_order_id} must be submitted to update items")
+        if doc.status in ("Closed", "Completed"):
+            frappe.throw(f"Cannot update items of a {doc.status} Sales Order")
+        if flt(doc.per_delivered) >= 100 or flt(doc.per_billed) >= 100:
+            frappe.throw("Cannot update items of a fully delivered or fully billed Sales Order")
+
+        if doc.get("custom_picking_status") == "Packed":
+            frappe.throw("Cannot update items of a Sales Order that is already Packed")
+
+        existing_rows = {row.name: row for row in doc.items}
+        trans_items = []
+
+        for idx, item in enumerate(items, start=1):
+            row_name = str(item.get("name")).strip() if item.get("name") else None
+
+            if row_name:
+                row = existing_rows.get(row_name)
+                if not row:
+                    frappe.throw(f"Row #{idx}: Item Row ID '{row_name}' does not exist in this Sales Order. Please check the 'name' field.")
+
+                if item.get("item_code") and str(item.get("item_code")).strip() != row.item_code:
+                    frappe.throw(f"Row #{idx}: Item Code of an existing row cannot be changed. Remove the row and add {item.get('item_code')} as a new row.")
+
+                # Keys left out keep their current values; ERPNext would otherwise blank them
+                trans_items.append({
+                    "idx": idx,
+                    "docname": row.name,
+                    "item_code": row.item_code,
+                    "qty": flt(item.get("qty")) if item.get("qty") is not None else flt(row.qty),
+                    "rate": flt(item.get("rate")) if item.get("rate") is not None else flt(row.rate),
+                    "uom": str(item.get("uom")).strip() if item.get("uom") else row.uom,
+                    "conversion_factor": flt(item.get("conversion_factor")) if item.get("conversion_factor") else flt(row.conversion_factor),
+                    "delivery_date": item.get("delivery_date") or row.delivery_date,
+                    "description": item.get("description") if item.get("description") is not None else row.description
+                })
+            else:
+                if not item.get("item_code") or not item.get("qty"):
+                    frappe.throw(f"Row #{idx}: Each new item must contain at least an 'item_code' and 'qty'")
+
+                item_code = str(item.get("item_code")).strip()
+                description = item.get("description") or frappe.db.get_value("Item", item_code, "description") or item_code
+
+                new_row = {
+                    "idx": idx,
+                    "item_code": item_code,
+                    "qty": flt(item.get("qty")),
+                    "rate": flt(item.get("rate")) if item.get("rate") is not None else 0.0,
+                    "description": description
+                }
+                if item.get("uom"):
+                    new_row["uom"] = str(item.get("uom")).strip()
+                if item.get("conversion_factor"):
+                    new_row["conversion_factor"] = flt(item.get("conversion_factor"))
+                if item.get("delivery_date"):
+                    new_row["delivery_date"] = item.get("delivery_date")
+
+                trans_items.append(new_row)
+
+        if not trans_items:
+            frappe.throw("A Sales Order must have at least one item")
+
+        update_child_qty_rate(
+            parent_doctype="Sales Order",
+            trans_items=json.dumps(trans_items, default=str),
+            parent_doctype_name=sales_order_id,
+            child_docname="items"
+        )
+
+        # The app's Payment Status is not recalculated on updates after submit
+        sync_payment_status(sales_order_id)
+
+        doc.reload()
+
+        return {
+            "status": "success",
+            "message": f"Sales Order {sales_order_id} items updated successfully.",
+            "data": {
+                "name": doc.name,
+                "grand_total": doc.grand_total,
+                "net_total": doc.net_total,
+                "total_taxes_and_charges": doc.total_taxes_and_charges,
+                "custom_payment_status": doc.get("custom_payment_status"),
+                "items": [
+                    {
+                        "name": row.name,
+                        "item_code": row.item_code,
+                        "qty": row.qty,
+                        "rate": row.rate,
+                        "amount": row.amount,
+                        "uom": row.uom,
+                        "delivery_date": row.delivery_date
+                    }
+                    for row in doc.items
+                ]
+            }
+        }
+
+    except Exception as e:
+        frappe.log_error(title="Update Sales Order Items API Error", message=frappe.get_traceback())
+        frappe.throw(f"Failed to update sales order items: {e!s}")
