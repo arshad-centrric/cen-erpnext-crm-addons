@@ -5,12 +5,13 @@ from erpnext.crm.doctype.opportunity.opportunity import make_quotation as erpnex
 from cen_crm_addons.api.sales_order_hooks import _apply_customer_auto_creation, _apply_opportunity_mapping_to_quotation
 from cen_crm_addons.api.company_address import validate_company_address
 from cen_crm_addons.api.quotation_amendment import get_quotation_to_amend, get_amendment_defaults
+from cen_crm_addons.api.quotation_taxes import apply_quotation_taxes, validate_company_template, validate_applied_item_tax_templates
 from erpnext.controllers.accounts_controller import update_child_qty_rate
 from frappe.desk.form.linked_with import get_submitted_linked_docs, cancel_all_linked_docs
 
 
 @frappe.whitelist()
-def create_quotation(opportunity_id, items=None, submit=0, selling_price_list=None, customer=None, delivery_locations=None, company_address=None, packing_instructions=None, amended_from=None):
+def create_quotation(opportunity_id, items=None, submit=0, selling_price_list=None, customer=None, delivery_locations=None, company_address=None, packing_instructions=None, amended_from=None, tax_category=None, taxes_and_charges=None):
     """
     Create a Quotation from an Opportunity.
     opportunity_id: The ID of the Opportunity (Required)
@@ -21,6 +22,9 @@ def create_quotation(opportunity_id, items=None, submit=0, selling_price_list=No
     company_address: The exact ID of an Address linked to the Quotation's Company (Optional, defaults to the Company's default Address)
     packing_instructions: Packing Instructions text, carried to the Sales Order created from this Quotation (Optional)
     amended_from: The ID of a cancelled Quotation of this Opportunity to amend. Anything left out of the payload is taken from it. (Optional)
+    tax_category: Tax Category such as In-State or Out-State (Optional)
+    taxes_and_charges: Sales Taxes and Charges Template of the Quotation's Company (Optional, defaults to the template of the Tax Category)
+    items[].item_tax_template: Item Tax Template of the Quotation's Company for that item (Optional)
     """
     if not opportunity_id:
         frappe.throw("Opportunity ID is a required parameter")
@@ -55,6 +59,9 @@ def create_quotation(opportunity_id, items=None, submit=0, selling_price_list=No
             customer = defaults.customer
         if packing_instructions is None:
             packing_instructions = defaults.packing_instructions
+        if not tax_category and not taxes_and_charges:
+            tax_category = defaults.tax_category
+            taxes_and_charges = defaults.taxes_and_charges
         if not (company_address and str(company_address).strip()) and defaults.company_address:
             # Keep the previous Company Address only while it is still a valid choice
             try:
@@ -82,6 +89,16 @@ def create_quotation(opportunity_id, items=None, submit=0, selling_price_list=No
         # Set before set_missing_values so the Company's default Address does not replace it
         if company_address and str(company_address).strip():
             quotation_doc.company_address = validate_company_address(company_address, quotation_doc.company)
+
+        # Tax Category and Sales Taxes and Charges Template, when the mobile app sends them
+        if (tax_category and str(tax_category).strip()) or (taxes_and_charges and str(taxes_and_charges).strip()):
+            apply_quotation_taxes(
+                quotation_doc,
+                str(tax_category).strip() if tax_category else None,
+                str(taxes_and_charges).strip() if taxes_and_charges else None
+            )
+
+        requested_item_tax_templates = {}
         
         # If the mobile app provides specific items/prices, replace the default ones
         if items and isinstance(items, list):
@@ -105,6 +122,12 @@ def create_quotation(opportunity_id, items=None, submit=0, selling_price_list=No
                 
                 if item.get("uom"):
                     row_data["uom"] = str(item.get("uom")).strip()
+
+                if item.get("item_tax_template") and str(item.get("item_tax_template")).strip():
+                    row_data["item_tax_template"] = validate_company_template(
+                        "Item Tax Template", item.get("item_tax_template"), quotation_doc.company
+                    )
+                    requested_item_tax_templates[len(quotation_doc.get("items")) + 1] = row_data["item_tax_template"]
                     
                 quotation_doc.append("items", row_data)
         else:
@@ -172,6 +195,7 @@ def create_quotation(opportunity_id, items=None, submit=0, selling_price_list=No
 
         # Unconditionally recalculate totals to simulate frontend behavior
         quotation_doc.run_method("set_missing_values")
+        validate_applied_item_tax_templates(quotation_doc, requested_item_tax_templates)
         quotation_doc.run_method("calculate_taxes_and_totals")
         
         # Defensive fallback: If items had 0 rate, calculations might skip and leave totals as None
@@ -201,7 +225,10 @@ def create_quotation(opportunity_id, items=None, submit=0, selling_price_list=No
                 "grand_total": quotation_doc.grand_total,
                 "status": quotation_doc.status,
                 "company_address": quotation_doc.company_address,
-                "amended_from": quotation_doc.get("amended_from")
+                "amended_from": quotation_doc.get("amended_from"),
+                "tax_category": quotation_doc.get("tax_category"),
+                "taxes_and_charges": quotation_doc.get("taxes_and_charges"),
+                "total_taxes_and_charges": quotation_doc.get("total_taxes_and_charges")
             }
         }
     except Exception as e:

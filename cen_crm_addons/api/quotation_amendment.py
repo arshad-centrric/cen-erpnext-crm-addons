@@ -40,7 +40,8 @@ def get_amendment_defaults(source):
                 "qty": row.qty,
                 "rate": row.rate,
                 "uom": row.uom,
-                "warehouse": row.warehouse
+                "warehouse": row.warehouse,
+                "item_tax_template": row.get("item_tax_template")
             }
             for row in source.get("items", [])
         ],
@@ -51,5 +52,7 @@ def get_amendment_defaults(source):
         selling_price_list=source.selling_price_list,
         customer=source.party_name if source.quotation_to == "Customer" else None,
         company_address=source.company_address,
-        packing_instructions=source.get("custom_packing_instructions")
+        packing_instructions=source.get("custom_packing_instructions"),
+        tax_category=source.get("tax_category"),
+        taxes_and_charges=source.get("taxes_and_charges")
     )
