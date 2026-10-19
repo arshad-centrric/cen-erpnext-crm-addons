@@ -15,6 +15,7 @@ class TestMobileProfileBranchAccess(IntegrationTestCase):
         cls.parent = utils.make_warehouse(cls.company, is_group=1)
         cls.a = utils.make_warehouse(cls.company, parent=cls.parent)
         cls.b = utils.make_warehouse(cls.company, parent=cls.parent)
+        cls.c = utils.make_warehouse(cls.company, parent=cls.parent)
 
     def tearDown(self):
         frappe.set_user("Administrator")
@@ -24,12 +25,13 @@ class TestMobileProfileBranchAccess(IntegrationTestCase):
         frappe.get_doc({"doctype": "Mobile User Profile", "user": user}).insert(ignore_permissions=True)
         return user
 
-    def branch(self, users, company=None, restrictions=()):
+    def branch(self, users, company=None, restrictions=(), default_warehouse=None):
         company = company or self.company
         fields = {}
         if company == self.company:
             fields = {
                 "custom_cen_warehouse_parent": self.parent,
+                "custom_cen_default_warehouse": default_warehouse,
                 "custom_cen_user_warehouses": [{"user": u, "warehouse": w} for u, w in restrictions],
             }
         return utils.make_branch(company, users=users, **fields)
@@ -40,18 +42,65 @@ class TestMobileProfileBranchAccess(IntegrationTestCase):
         frappe.set_user("Administrator")
         return out
 
-    def warehouses(self, profile, branch):
+    def branch_row(self, profile, branch):
         for company in profile["companies"]:
             for row in company["branches"]:
                 if row["branch_name"] == branch.name:
-                    return sorted(row["warehouses"])
+                    return row
         return None
+
+    def warehouses(self, profile, branch):
+        row = self.branch_row(profile, branch)
+        return sorted(row["warehouses"]) if row else None
+
+    def flags(self, profile, branch):
+        row = self.branch_row(profile, branch)
+        return row["default_warehouse"], {d["warehouse"]: d["is_default"] for d in row["warehouse_details"]}
+
+    # Default warehouse flag
+
+    def test_branch_default_warehouse_is_flagged(self):
+        user = self.mobile_user()
+        branch = self.branch([user], default_warehouse=self.b)
+
+        default, flags = self.flags(self.profile(user), branch)
+
+        self.assertEqual(default, self.b)
+        self.assertEqual(flags, {self.a: 0, self.b: 1, self.c: 0})
+
+    def test_restricted_user_away_from_the_default_gets_their_first_warehouse_flagged(self):
+        user = self.mobile_user()
+        branch = self.branch([user], default_warehouse=self.a, restrictions=[(user, self.c), (user, self.b)])
+
+        default, flags = self.flags(self.profile(user), branch)
+
+        self.assertEqual(default, sorted([self.b, self.c])[0])
+        self.assertEqual(sum(flags.values()), 1)
+        self.assertEqual(set(flags), {self.b, self.c})
+
+    def test_branch_without_a_default_flags_nothing(self):
+        user = self.mobile_user()
+        branch = self.branch([user])
+
+        default, flags = self.flags(self.profile(user), branch)
+
+        self.assertIsNone(default)
+        self.assertEqual(set(flags.values()), {0})
+
+    def test_plain_warehouse_list_is_unchanged(self):
+        user = self.mobile_user()
+        branch = self.branch([user], default_warehouse=self.a)
+
+        row = self.branch_row(self.profile(user), branch)
+
+        self.assertTrue(all(isinstance(name, str) for name in row["warehouses"]))
+        self.assertEqual([d["warehouse"] for d in row["warehouse_details"]], row["warehouses"])
 
     def test_unrestricted_user_sees_all_branch_warehouses(self):
         user = self.mobile_user()
         branch = self.branch([user])
 
-        self.assertEqual(self.warehouses(self.profile(user), branch), sorted([self.a, self.b]))
+        self.assertEqual(self.warehouses(self.profile(user), branch), sorted([self.a, self.b, self.c]))
 
     def test_restricted_user_sees_only_their_warehouse(self):
         # A permission on a single, non-group warehouse used to come back empty.

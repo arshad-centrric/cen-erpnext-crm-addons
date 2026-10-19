@@ -80,7 +80,7 @@ def get_mobile_user_profile():
     # Branch logic lives in cen_branch_management; imported here so this
     # module still loads on sites that don't have that app.
     from cen_branch_management.api.switcher import resolve_login_branch
-    from cen_branch_management.api.warehouse_access import get_user_branch_warehouses
+    from cen_branch_management.api.warehouse_access import get_user_branch_warehouses, get_user_default_warehouse
 
     fallback_company = frappe.defaults.get_user_default("company") or frappe.db.get_single_value("Global Defaults", "default_company")
 
@@ -109,6 +109,14 @@ def get_mobile_user_profile():
         if permitted_warehouses is not None:
             branch_warehouses = [w for w in branch_warehouses if w in permitted_warehouses]
 
+        # The warehouse new documents should start with on this branch, for
+        # this user: the branch's Default Warehouse, or for a user restricted
+        # away from it, their first allowed one. Only ever one of the listed
+        # warehouses; None means the branch has no default for this user.
+        default_warehouse = get_user_default_warehouse(branch_doc, user, branch_warehouses)
+        if default_warehouse not in branch_warehouses:
+            default_warehouse = None
+
         # Branch-Specific Price Lists
         selling_pls = [row.price_list for row in branch_doc.get("custom_cen_allowed_selling_price_lists") or [] if row.price_list]
         if branch_doc.custom_cen_default_selling_price_list and branch_doc.custom_cen_default_selling_price_list not in selling_pls:
@@ -120,7 +128,13 @@ def get_mobile_user_profile():
 
         companies_map.setdefault(company, []).append({
             "branch_name": b.name,
+            # Plain list of names, kept as is for existing app versions.
             "warehouses": branch_warehouses,
+            "default_warehouse": default_warehouse,
+            "warehouse_details": [
+                {"warehouse": warehouse, "is_default": 1 if warehouse == default_warehouse else 0}
+                for warehouse in branch_warehouses
+            ],
             "selling_price_lists": selling_pls,
             "buying_price_lists": buying_pls
         })
