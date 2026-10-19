@@ -76,94 +76,69 @@ def get_mobile_user_profile():
         }
         
     doc = frappe.get_doc("Mobile User Profile", user)
-    
-    # 1. Active Context
-    active_branch = frappe.defaults.get_user_default("branch")
-    active_company = frappe.defaults.get_user_default("company") or frappe.defaults.get_user_default("cen_branch_company") or frappe.db.get_single_value("Global Defaults", "default_company")
-    
-    # 2. Build the Hierarchy (Companies -> Branches)
-    user_branches = frappe.get_all("Branch User", filters={"user": user}, fields=["parent"])
-    branch_names = [b.parent for b in user_branches]
-    
+
+    # Branch logic lives in cen_branch_management; imported here so this
+    # module still loads on sites that don't have that app.
+    from cen_branch_management.api.switcher import resolve_login_branch
+    from cen_branch_management.api.warehouse_access import get_user_branch_warehouses
+
+    fallback_company = frappe.defaults.get_user_default("company") or frappe.db.get_single_value("Global Defaults", "default_company")
+
+    # 1. The user's branches, ordered by company then branch, so "the first
+    # branch in the list" below is stable.
+    branch_names = frappe.get_all("Branch User", filters={"user": user, "parenttype": "Branch"}, pluck="parent")
     branch_docs = frappe.get_all(
-        "Branch", 
-        filters={"name": ["in", branch_names]}, 
-        fields=["name", "custom_cen_default_company"]
+        "Branch",
+        filters={"name": ["in", branch_names]},
+        fields=["name", "custom_cen_default_company"],
+        order_by="custom_cen_default_company asc, name asc",
     ) if branch_names else []
+
+    # 2. Warehouses per branch: what the branch allows this user (their
+    # Restricted Warehouses on that branch, else everything under its
+    # Warehouse Parent), kept to what their Warehouse user permissions allow
+    # so the app never offers a warehouse the server would refuse.
+    permitted_warehouses = _get_permitted_warehouses(user)
 
     companies_map = {}
     for b in branch_docs:
-        company = b.custom_cen_default_company or active_company
-        if company not in companies_map:
-            companies_map[company] = []
-        companies_map[company].append(b.name)
-        
-    # 3. Dynamic Child Warehouses (Mapped by Company)
-    # 3. User Permitted Warehouses (Intersection Base)
-    permitted_warehouses = frappe.get_all(
-        "User Permission", 
-        filters={"user": user, "allow": "Warehouse"}, 
-        pluck="for_value"
-    )
-    
-    permitted_child_warehouses = []
-    for pw in permitted_warehouses:
-        wh_details = frappe.db.get_value("Warehouse", pw, ["lft", "rgt"], as_dict=True)
-        if wh_details:
-            children = frappe.db.sql(
-                "SELECT name FROM tabWarehouse WHERE lft > %s AND rgt < %s AND is_group = 0", 
-                (wh_details.lft, wh_details.rgt), 
-                as_dict=True
-            )
-            permitted_child_warehouses.extend([c.name for c in children])
-            
-    permitted_child_warehouses = set(permitted_child_warehouses)
-            
-    companies_hierarchy = []
-    for company, branches in companies_map.items():
-        branch_list = []
-        for br in branches:
-            branch_doc = frappe.get_doc("Branch", br)
-            
-            # 4. Branch-Specific Warehouses
-            branch_warehouses = []
-            if branch_doc.custom_cen_warehouse_parent:
-                br_wh_details = frappe.db.get_value("Warehouse", branch_doc.custom_cen_warehouse_parent, ["lft", "rgt"], as_dict=True)
-                if br_wh_details:
-                    br_children = frappe.db.sql(
-                        "SELECT name FROM tabWarehouse WHERE lft > %s AND rgt < %s AND is_group = 0", 
-                        (br_wh_details.lft, br_wh_details.rgt), 
-                        as_dict=True
-                    )
-                    br_child_names = set([c.name for c in br_children])
-                    
-                    # Intersect branch children with user's permitted children
-                    branch_warehouses = list(br_child_names.intersection(permitted_child_warehouses))
-            
-            # 5. Branch-Specific Price Lists
-            selling_pls = []
-            if hasattr(branch_doc, "custom_cen_allowed_selling_price_lists"):
-                selling_pls = [row.price_list for row in branch_doc.custom_cen_allowed_selling_price_lists if row.price_list]
-            if branch_doc.custom_cen_default_selling_price_list and branch_doc.custom_cen_default_selling_price_list not in selling_pls:
-                selling_pls.append(branch_doc.custom_cen_default_selling_price_list)
-                
-            buying_pls = []
-            if hasattr(branch_doc, "custom_cen_allowed_buying_price_lists"):
-                buying_pls = [row.price_list for row in branch_doc.custom_cen_allowed_buying_price_lists if row.price_list]
-            if branch_doc.custom_cen_default_buying_price_list and branch_doc.custom_cen_default_buying_price_list not in buying_pls:
-                buying_pls.append(branch_doc.custom_cen_default_buying_price_list)
-                
-            branch_list.append({
-                "branch_name": br,
-                "warehouses": branch_warehouses,
-                "selling_price_lists": selling_pls,
-                "buying_price_lists": buying_pls
-            })
-            
-        companies_hierarchy.append({
-            "company_name": company,
-            "branches": branch_list
+        company = b.custom_cen_default_company or fallback_company
+        branch_doc = frappe.get_doc("Branch", b.name)
+
+        branch_warehouses = get_user_branch_warehouses(branch_doc, user)
+        if permitted_warehouses is not None:
+            branch_warehouses = [w for w in branch_warehouses if w in permitted_warehouses]
+
+        # Branch-Specific Price Lists
+        selling_pls = [row.price_list for row in branch_doc.get("custom_cen_allowed_selling_price_lists") or [] if row.price_list]
+        if branch_doc.custom_cen_default_selling_price_list and branch_doc.custom_cen_default_selling_price_list not in selling_pls:
+            selling_pls.append(branch_doc.custom_cen_default_selling_price_list)
+
+        buying_pls = [row.price_list for row in branch_doc.get("custom_cen_allowed_buying_price_lists") or [] if row.price_list]
+        if branch_doc.custom_cen_default_buying_price_list and branch_doc.custom_cen_default_buying_price_list not in buying_pls:
+            buying_pls.append(branch_doc.custom_cen_default_buying_price_list)
+
+        companies_map.setdefault(company, []).append({
+            "branch_name": b.name,
+            "warehouses": branch_warehouses,
+            "selling_price_lists": selling_pls,
+            "buying_price_lists": buying_pls
         })
+
+    companies_hierarchy = [
+        {"company_name": company, "branches": branches} for company, branches in companies_map.items()
+    ]
+
+    # 3. Active branch and company: the user's Default Branch from the User
+    # master (when it still exists and they are still assigned to it), else
+    # the first branch in the list above. The company is that branch's.
+    active_branch = resolve_login_branch(user)
+    if not active_branch and companies_hierarchy:
+        active_branch = companies_hierarchy[0]["branches"][0]["branch_name"]
+
+    active_company = (
+        frappe.db.get_value("Branch", active_branch, "custom_cen_default_company") if active_branch else None
+    ) or fallback_company
 
     # 5. Output Format
     return {
@@ -186,3 +161,15 @@ def get_mobile_user_profile():
         }
     }
 
+
+def _get_permitted_warehouses(user):
+    """Warehouses the user's Warehouse user permissions allow (each permitted
+    warehouse and everything under it), or None when they have none -- which
+    in Frappe means no warehouse restriction at all."""
+    from frappe.core.doctype.user_permission.user_permission import get_user_permissions
+
+    permissions = get_user_permissions(user).get("Warehouse")
+    if not permissions:
+        return None
+
+    return {permission.doc for permission in permissions}
