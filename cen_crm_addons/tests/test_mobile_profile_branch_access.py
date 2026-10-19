@@ -51,11 +51,14 @@ class TestMobileProfileBranchAccess(IntegrationTestCase):
 
     def warehouses(self, profile, branch):
         row = self.branch_row(profile, branch)
-        return sorted(row["warehouses"]) if row else None
+        return sorted(d["warehouse"] for d in row["warehouses"]) if row else None
 
     def flags(self, profile, branch):
+        """(the warehouse flagged as default or None, {warehouse: is_default})"""
         row = self.branch_row(profile, branch)
-        return row["default_warehouse"], {d["warehouse"]: d["is_default"] for d in row["warehouse_details"]}
+        flags = {d["warehouse"]: d["is_default"] for d in row["warehouses"]}
+        defaults = [name for name, flag in flags.items() if flag]
+        return (defaults[0] if defaults else None), flags
 
     # Default warehouse flag
 
@@ -87,14 +90,15 @@ class TestMobileProfileBranchAccess(IntegrationTestCase):
         self.assertIsNone(default)
         self.assertEqual(set(flags.values()), {0})
 
-    def test_plain_warehouse_list_is_unchanged(self):
+    def test_each_warehouse_carries_only_its_name_and_flag(self):
         user = self.mobile_user()
         branch = self.branch([user], default_warehouse=self.a)
 
         row = self.branch_row(self.profile(user), branch)
 
-        self.assertTrue(all(isinstance(name, str) for name in row["warehouses"]))
-        self.assertEqual([d["warehouse"] for d in row["warehouse_details"]], row["warehouses"])
+        self.assertTrue(all(set(d) == {"warehouse", "is_default"} for d in row["warehouses"]))
+        self.assertNotIn("default_warehouse", row)
+        self.assertNotIn("warehouse_details", row)
 
     def test_unrestricted_user_sees_all_branch_warehouses(self):
         user = self.mobile_user()

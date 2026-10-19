@@ -128,10 +128,7 @@ def get_mobile_user_profile():
 
         companies_map.setdefault(company, []).append({
             "branch_name": b.name,
-            # Plain list of names, kept as is for existing app versions.
-            "warehouses": branch_warehouses,
-            "default_warehouse": default_warehouse,
-            "warehouse_details": [
+            "warehouses": [
                 {"warehouse": warehouse, "is_default": 1 if warehouse == default_warehouse else 0}
                 for warehouse in branch_warehouses
             ],
