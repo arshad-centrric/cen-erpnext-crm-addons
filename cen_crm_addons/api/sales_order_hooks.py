@@ -257,6 +257,7 @@ def make_split_sales_order(source_name, payload=None):
 def get_consolidated_payment_entry_data(source_name, target_doc=None):
     from frappe.utils import flt
     from erpnext.accounts.doctype.payment_entry.payment_entry import get_payment_entry
+    from cen_crm_addons.api.payable_amount import get_pending_amount
     
     # 1. Fetch Quotations linked to the Opportunity
     quotations = frappe.get_all("Quotation", filters={"opportunity": source_name}, pluck="name")
@@ -277,12 +278,12 @@ def get_consolidated_payment_entry_data(source_name, target_doc=None):
     sales_orders = frappe.get_all(
         "Sales Order",
         filters={"name": ("in", so_names), "docstatus": 1},
-        fields=["name", "grand_total", "advance_paid", "customer"]
+        fields=["name", "grand_total", "rounded_total", "advance_paid", "customer"]
     )
     
     valid_sos = []
     for so in sales_orders:
-        outstanding = flt(so.grand_total) - flt(so.advance_paid)
+        outstanding = get_pending_amount(so, so.advance_paid)
         if outstanding > 0:
             valid_sos.append({"name": so.name, "outstanding": outstanding, "customer": so.customer})
             
