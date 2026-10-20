@@ -1,16 +1,17 @@
 import frappe
 from frappe.utils import flt
+from cen_crm_addons.api.payable_amount import get_payable_amount, get_settled_amount, get_pending_amount, get_invoice_pending_amount
 
 def update_so_payment_status(sales_order_name):
     """
     Dynamically recalculate and update custom_payment_status on a Sales Order.
     """
-    so_data = frappe.db.get_value("Sales Order", sales_order_name, ["grand_total", "advance_paid"], as_dict=True)
+    so_data = frappe.db.get_value("Sales Order", sales_order_name, ["grand_total", "rounded_total", "advance_paid"], as_dict=True)
     if not so_data:
         return
 
     active_si = frappe.db.sql("""
-        SELECT si.grand_total, si.outstanding_amount
+        SELECT si.grand_total, si.rounded_total, si.outstanding_amount
         FROM `tabSales Invoice` si
         JOIN `tabSales Invoice Item` sii ON sii.parent = si.name
         WHERE sii.sales_order = %s AND si.docstatus = 1
@@ -18,11 +19,11 @@ def update_so_payment_status(sales_order_name):
     """, (sales_order_name,), as_dict=True)
 
     if active_si:
-        total_amount = flt(active_si[0].grand_total)
-        pending_amount = flt(active_si[0].outstanding_amount)
+        total_amount = get_payable_amount(active_si[0])
+        pending_amount = get_invoice_pending_amount(active_si[0])
     else:
-        total_amount = flt(so_data.grand_total)
-        pending_amount = total_amount - flt(so_data.advance_paid)
+        total_amount = get_payable_amount(so_data)
+        pending_amount = get_pending_amount(so_data, so_data.advance_paid)
 
     if pending_amount <= 0.01:
         new_status = "Paid"
@@ -41,7 +42,8 @@ def sync_payment_status(so_name):
 
     # Auto-Close Logic (Bypassing "To Bill" trap)
     so = frappe.get_doc("Sales Order", so_name)
-    if so.grand_total > 0 and so.advance_paid >= so.grand_total and so.per_delivered >= 100:
+    settled_amount = get_settled_amount(so)
+    if settled_amount > 0 and so.advance_paid >= settled_amount and so.per_delivered >= 100:
         if so.status not in ("Closed", "Cancelled"):
             so.db_set("status", "Closed", update_modified=True)
             so.add_comment("Info", "Automatically closed: Fully paid and delivered.")

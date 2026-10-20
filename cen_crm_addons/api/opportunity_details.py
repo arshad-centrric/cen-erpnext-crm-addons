@@ -1,4 +1,5 @@
 import frappe
+from cen_crm_addons.api.payable_amount import get_pending_amount, get_invoice_pending_amount
 
 @frappe.whitelist()
 def get_opportunity_item_price(item_code):
@@ -121,7 +122,8 @@ def get_linked_documents(opportunity_name):
                 "Sales Order",
                 filters={"name": ("in", so_names)},
                 fields=["name", "status", "transaction_date", "grand_total", "currency", 
-                        "custom_picking_status", "custom_payment_status", "delivery_status", "custom_packing_image", "advance_paid"]
+                        "custom_picking_status", "custom_payment_status", "delivery_status", "custom_packing_image", "advance_paid",
+                        "rounded_total"]
             )
             
             # For each Sales Order, calculate due amount and check for attached files
@@ -129,16 +131,16 @@ def get_linked_documents(opportunity_name):
                 from frappe.utils import flt
                 # Calculate Due Amount factoring in Sales Invoices
                 linked_invoices = frappe.db.sql("""
-                    SELECT DISTINCT si.name, si.outstanding_amount
+                    SELECT DISTINCT si.name, si.grand_total, si.rounded_total, si.outstanding_amount
                     FROM `tabSales Invoice` si
                     JOIN `tabSales Invoice Item` sii ON sii.parent = si.name
                     WHERE sii.sales_order = %s AND si.docstatus = 1
                 """, (so["name"],), as_dict=True)
 
                 if linked_invoices:
-                    so["due_amount"] = sum(flt(inv.outstanding_amount) for inv in linked_invoices)
+                    so["due_amount"] = sum(get_invoice_pending_amount(inv) for inv in linked_invoices)
                 else:
-                    so["due_amount"] = flt(so.get("grand_total")) - flt(so.get("advance_paid"))
+                    so["due_amount"] = get_pending_amount(so, so.get("advance_paid"))
 
                 so["payment_entries"] = []
                 
