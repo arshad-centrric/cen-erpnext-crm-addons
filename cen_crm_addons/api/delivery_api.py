@@ -1,5 +1,6 @@
 import frappe
 from frappe import _
+from cen_crm_addons.api.payable_amount import get_payable_amount, get_pending_amount, get_invoice_pending_amount
 from erpnext.selling.doctype.sales_order.sales_order import make_delivery_note
 
 @frappe.whitelist()
@@ -22,23 +23,20 @@ def get_order_info(order_id):
     
     # Check for linked active Sales Invoices
     linked_invoices = frappe.db.sql("""
-        SELECT SUM(si.grand_total) as total_amount, SUM(si.outstanding_amount) as outstanding_amount
-        FROM (
-            SELECT DISTINCT si.name, si.grand_total, si.outstanding_amount
-            FROM `tabSales Invoice` si
-            JOIN `tabSales Invoice Item` sii ON sii.parent = si.name
-            WHERE sii.sales_order = %s AND si.docstatus = 1
-        ) si
+        SELECT DISTINCT si.name, si.grand_total, si.rounded_total, si.outstanding_amount
+        FROM `tabSales Invoice` si
+        JOIN `tabSales Invoice Item` sii ON sii.parent = si.name
+        WHERE sii.sales_order = %s AND si.docstatus = 1
     """, (order_id,), as_dict=True)
     
-    if linked_invoices and linked_invoices[0].total_amount is not None:
-        total_amount = linked_invoices[0].total_amount
-        outstanding_amount = linked_invoices[0].outstanding_amount
+    if linked_invoices:
+        total_amount = sum(get_payable_amount(inv) for inv in linked_invoices)
+        outstanding_amount = sum(get_invoice_pending_amount(inv) for inv in linked_invoices)
         paid_amount = total_amount - outstanding_amount
     else:
-        total_amount = so.grand_total
+        total_amount = get_payable_amount(so)
         paid_amount = so.advance_paid
-        outstanding_amount = total_amount - paid_amount
+        outstanding_amount = get_pending_amount(so, paid_amount)
         
     return {
         "name": so.name,
@@ -66,7 +64,7 @@ def confirm_delivery(order_id):
     so = frappe.get_doc("Sales Order", order_id)
 
     # 1. Double check payment status (Safety Check)
-    outstanding = so.grand_total - so.advance_paid
+    outstanding = get_pending_amount(so, so.advance_paid)
     if outstanding > 0:
         frappe.throw(_("Cannot complete delivery. This order still has an outstanding balance of {0} {1}.").format(
             outstanding, so.currency

@@ -2,6 +2,7 @@ import frappe
 from frappe.utils import flt
 from erpnext.selling.doctype.sales_order.sales_order import make_delivery_note
 from frappe import _
+from cen_crm_addons.api.payable_amount import get_pending_amount, get_invoice_pending_amount, sql_payable_amount, sql_settled_amount
 
 @frappe.whitelist()
 def get_delivery_list(status="Pending", limit_start=1, limit_page_length=20, search_term="", warehouse="", company="", delivery_date=None, mode_of_delivery=None, branch=None):
@@ -68,6 +69,9 @@ def get_delivery_list(status="Pending", limit_start=1, limit_page_length=20, sea
 
     where_clause = " AND ".join(conditions)
 
+    payable = sql_payable_amount("so")
+    settled = sql_settled_amount("so")
+
     query = f"""
         SELECT 
             so.name as sales_order_id,
@@ -83,13 +87,13 @@ def get_delivery_list(status="Pending", limit_start=1, limit_page_length=20, sea
             so.custom_box_id,
             so.branch,
             CASE 
-                WHEN so.custom_payment_status = 'Paid' OR so.advance_paid >= so.grand_total THEN 'Paid'
+                WHEN so.custom_payment_status = 'Paid' OR so.advance_paid >= {settled} THEN 'Paid'
                 WHEN so.custom_payment_status = 'Cancelled' THEN 'Cancelled'
-                WHEN so.advance_paid > 0 AND so.advance_paid < so.grand_total THEN 'Partially Paid'
+                WHEN so.advance_paid > 0 AND so.advance_paid < {settled} THEN 'Partially Paid'
                 ELSE 'Unpaid'
             END as payment_status,
             so.grand_total,
-            (so.grand_total - so.advance_paid) as pending_amount
+            (CASE WHEN so.advance_paid >= {settled} THEN 0 ELSE {payable} - so.advance_paid END) as pending_amount
         FROM `tabSales Order` so
         WHERE {where_clause}
         ORDER BY {order_by}
@@ -166,7 +170,7 @@ def get_delivery_order_details(sales_order):
     
     # Dynamic outstanding calculation: check if there is an active Sales Invoice
     active_si = frappe.db.sql("""
-        SELECT si.name, si.outstanding_amount
+        SELECT si.name, si.grand_total, si.rounded_total, si.outstanding_amount
         FROM `tabSales Invoice` si
         JOIN `tabSales Invoice Item` sii ON sii.parent = si.name
         WHERE sii.sales_order = %s AND si.docstatus = 1
@@ -174,13 +178,12 @@ def get_delivery_order_details(sales_order):
     """, (sales_order,), as_dict=True)
     
     if active_si:
-        outstanding = flt(active_si[0].outstanding_amount)
+        outstanding = get_invoice_pending_amount(active_si[0])
         has_active_invoice = 1
         order_details["active_invoice"] = active_si[0].name
     else:
-        grand_total = flt(order_details.get("grand_total", 0.0))
         advance_amount = flt(order_details.get("advance_paid", order_details.get("advance_amount", 0.0)))
-        outstanding = grand_total - advance_amount
+        outstanding = get_pending_amount(order_details, advance_amount)
         has_active_invoice = 0
         order_details["active_invoice"] = None
         
