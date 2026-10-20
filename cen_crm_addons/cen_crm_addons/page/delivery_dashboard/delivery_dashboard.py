@@ -1,5 +1,6 @@
 import frappe
 from frappe import _
+from cen_crm_addons.api.payable_amount import get_pending_amount
 from erpnext.selling.doctype.sales_order.sales_order import make_delivery_note
 
 @frappe.whitelist()
@@ -39,7 +40,7 @@ def confirm_delivery(order_id):
     so = frappe.get_doc("Sales Order", order_id)
 
     # 1. Double check payment status (Safety Check)
-    outstanding = so.grand_total - so.advance_paid
+    outstanding = get_pending_amount(so, so.advance_paid)
     if outstanding > 0:
         frappe.throw(_("Cannot complete delivery. This order still has an outstanding balance of {0} {1}.").format(
             outstanding, so.currency
