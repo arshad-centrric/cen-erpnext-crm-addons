@@ -1,7 +1,7 @@
 import frappe
 
 @frappe.whitelist()
-def get_delivery_partners(page=1, limit=20, search=""):
+def get_delivery_partners(page=1, limit=20, search="", disabled=0):
     """
     Fetch a paginated list of Delivery Partners.
     """
@@ -9,6 +9,9 @@ def get_delivery_partners(page=1, limit=20, search=""):
     limit_page_length = int(limit)
     
     filters = {}
+    if disabled is not None and str(disabled).strip() != "":
+        filters["disabled"] = int(disabled)
+        
     or_filters = {}
     
     if search:
@@ -21,10 +24,10 @@ def get_delivery_partners(page=1, limit=20, search=""):
         "Delivery Partner",
         filters=filters,
         or_filters=or_filters,
-        fields=["name", "partner_name"],
+        fields=["name", "partner_name", "description"],
         limit_start=limit_start,
         limit_page_length=limit_page_length,
-        order_by="creation desc"
+        order_by="partner_name asc"
     )
     
     return partners
