@@ -276,3 +276,75 @@ def update_sales_order_items(sales_order_id, items):
     except Exception as e:
         frappe.log_error(title="Update Sales Order Items API Error", message=frappe.get_traceback())
         frappe.throw(f"Failed to update sales order items: {e!s}")
+
+
+@frappe.whitelist()
+def update_sales_order_delivery_date(sales_order_id, delivery_date, delivery_time=None):
+    """
+    Change the delivery date (and optionally the delivery time) of a submitted Sales Order
+    that is not delivered yet, without cancelling it.
+    delivery_date: New date (YYYY-MM-DD), applied to the order and all its items
+    delivery_time: New time (HH:MM:SS) (Optional; missing, null or "" keeps the current time)
+    """
+    from datetime import datetime
+    from frappe.utils import getdate
+
+    if not sales_order_id or not delivery_date:
+        frappe.throw("Sales Order ID and Delivery Date are required")
+
+    if not frappe.db.exists("Sales Order", sales_order_id):
+        frappe.throw(f"Sales Order {sales_order_id} not found", frappe.DoesNotExistError)
+
+    try:
+        new_date = getdate(str(delivery_date).strip())
+    except Exception:
+        frappe.throw("Invalid Delivery Date. Use the format YYYY-MM-DD")
+
+    new_time = None
+    if delivery_time is not None and str(delivery_time).strip():
+        # Strict parsing: frappe's get_time turns an invalid value like 25:99 into a different time
+        for time_format in ("%H:%M:%S", "%H:%M"):
+            try:
+                new_time = datetime.strptime(str(delivery_time).strip(), time_format).time()
+                break
+            except ValueError:
+                continue
+        if new_time is None:
+            frappe.throw("Invalid Delivery Time. Use the format HH:MM:SS")
+
+    try:
+        doc = frappe.get_doc("Sales Order", sales_order_id)
+
+        if doc.docstatus != 1:
+            frappe.throw(f"Sales Order {sales_order_id} must be submitted to change its delivery date")
+        if doc.status in ("Closed", "Completed"):
+            frappe.throw(f"Cannot change the delivery date of a {doc.status} Sales Order")
+        if flt(doc.per_delivered) >= 100:
+            frappe.throw("Cannot change the delivery date of a fully delivered Sales Order")
+
+        # ERPNext takes the order's Delivery Date from its items, so every item gets the new date
+        for row in doc.items:
+            row.delivery_date = new_date
+        doc.delivery_date = new_date
+
+        if new_time is not None:
+            doc.custom_delivery_time = new_time
+
+        # Normal update after submit: ERPNext still rejects a date before the order date
+        doc.save()
+
+        return {
+            "status": "success",
+            "message": f"Delivery date of Sales Order {sales_order_id} updated successfully.",
+            "data": {
+                "name": doc.name,
+                "delivery_date": str(doc.delivery_date),
+                "delivery_time": str(doc.custom_delivery_time) if doc.get("custom_delivery_time") else None,
+                "status": doc.status,
+                "custom_picking_status": doc.get("custom_picking_status")
+            }
+        }
+
+    except Exception as e:
+        frappe.log_error(title="Update Sales Order Delivery Date API Error", message=frappe.get_traceback())
+        frappe.throw(f"Failed to update delivery date: {e!s}")
