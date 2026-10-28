@@ -202,3 +202,86 @@ def get_delivery_order_details(sales_order):
     order_details["linked_sales_invoices"] = linked_sales_invoices
     
     return order_details
+
+
+@frappe.whitelist()
+def update_delivery_partner(sales_order=None, delivery_partner=None):
+    """
+    Update the Delivery Partner on a Sales Order.
+    Can be called on both Draft and Submitted Sales Orders (allow_on_submit = 1).
+    Accepts:
+      - sales_order: e.g. "SO-26-00934"
+      - delivery_partner: ID (e.g. "DP-01") or partner_name (e.g. "DTDC")
+    """
+    if not sales_order:
+        frappe.throw(_("Sales Order is required"), frappe.MandatoryError)
+
+    if not frappe.db.exists("Sales Order", sales_order):
+        frappe.throw(_("Sales Order {0} not found").format(sales_order), frappe.DoesNotExistError)
+
+    so_data = frappe.db.get_value(
+        "Sales Order",
+        sales_order,
+        ["docstatus", "custom_mode_of_delivery", "delivery_status"],
+        as_dict=True,
+    )
+
+    if so_data.docstatus == 2:
+        frappe.throw(_("Cannot update delivery partner for a cancelled Sales Order."))
+
+    if so_data.custom_mode_of_delivery != "Courier":
+        frappe.throw(
+            _("Delivery partner can only be updated when Mode of Delivery is Courier (Current Mode: {0}).").format(
+                so_data.custom_mode_of_delivery or "None"
+            )
+        )
+
+    partner_name = None
+    if delivery_partner:
+        # Check if passed by ID
+        if not frappe.db.exists("Delivery Partner", delivery_partner):
+            # Check if passed by partner_name
+            partner_record = frappe.db.get_value(
+                "Delivery Partner",
+                {"partner_name": delivery_partner},
+                ["name", "partner_name", "disabled"],
+                as_dict=True,
+            )
+            if partner_record:
+                delivery_partner = partner_record.name
+                partner_name = partner_record.partner_name
+                if partner_record.disabled:
+                    frappe.throw(_("Delivery Partner {0} is disabled.").format(delivery_partner))
+            else:
+                frappe.throw(_("Delivery Partner {0} not found.").format(delivery_partner), frappe.DoesNotExistError)
+        else:
+            partner_record = frappe.db.get_value(
+                "Delivery Partner",
+                delivery_partner,
+                ["name", "partner_name", "disabled"],
+                as_dict=True,
+            )
+            partner_name = partner_record.partner_name
+            if partner_record.disabled:
+                frappe.throw(_("Delivery Partner {0} is disabled.").format(delivery_partner))
+
+    # Update database record (works on both Draft and Submitted since allow_on_submit is enabled)
+    frappe.db.set_value("Sales Order", sales_order, "custom_delivery_partner", delivery_partner)
+
+    # Add audit comment to Sales Order timeline
+    comment_text = (
+        _("Delivery Partner updated to {0} ({1}) via Mobile App").format(
+            partner_name or delivery_partner, delivery_partner
+        )
+        if delivery_partner
+        else _("Delivery Partner cleared via Mobile App")
+    )
+    frappe.get_doc("Sales Order", sales_order).add_comment("Comment", text=comment_text)
+
+    return {
+        "status": "success",
+        "message": _("Delivery partner updated successfully."),
+        "sales_order": sales_order,
+        "delivery_partner": delivery_partner,
+        "delivery_partner_name": partner_name,
+    }
