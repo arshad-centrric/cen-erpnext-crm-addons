@@ -3,10 +3,10 @@ from frappe.utils import flt
 
 
 @frappe.whitelist()
-def item_list(search_term=None, limit_start=1, limit_page_length=20, selling_price_list=None, buying_price_list=None, exact_item_code=None):
+def item_list(search_term=None, limit_start=1, limit_page_length=20, selling_price_list=None, buying_price_list=None, exact_item_code=None, company=None):
     """
     Fetch a detailed, paginated list of active Items.
-    Returns: item_code, item_name, default_uom, hsn_code, selling_rate, buying_rate, multiple UOMs, barcodes
+    Returns: item_code, item_name, default_uom, hsn_code, selling_rate, buying_rate, multiple UOMs, barcodes, item_tax_templates
     """
     try:
         page = int(limit_start)
@@ -181,7 +181,39 @@ def item_list(search_term=None, limit_start=1, limit_page_length=20, selling_pri
             "uom": b.uom
         })
 
-    # 6. Assemble final response
+    # 6. Bulk fetch Item Tax Templates
+    tax_conditions = ["it.parent IN %(item_codes)s", "itt.disabled = 0"]
+    tax_values = {"item_codes": item_codes}
+
+    target_company = str(company).strip() if company and str(company).strip() else None
+    if target_company:
+        tax_conditions.append("itt.company = %(company)s")
+        tax_values["company"] = target_company
+
+    tax_query = f"""
+        SELECT 
+            it.parent AS item_code,
+            it.item_tax_template,
+            it.tax_category,
+            itt.company,
+            itt.gst_rate AS rate
+        FROM `tabItem Tax` it
+        JOIN `tabItem Tax Template` itt ON itt.name = it.item_tax_template
+        WHERE {" AND ".join(tax_conditions)}
+        ORDER BY it.idx ASC
+    """
+    item_taxes = frappe.db.sql(tax_query, tax_values, as_dict=True)
+
+    tax_map = {}
+    for t in item_taxes:
+        tax_map.setdefault(t.item_code, []).append({
+            "item_tax_template": t.item_tax_template,
+            "company": t.company,
+            "tax_category": t.tax_category,
+            "rate": flt(t.rate)
+        })
+
+    # 7. Assemble final response
     for item in items:
         code = item.item_code
         default_uom = item.default_uom
@@ -235,11 +267,14 @@ def item_list(search_term=None, limit_start=1, limit_page_length=20, selling_pri
         
         # Attach Barcodes (from child table)
         item.barcodes = barcode_map.get(code, [])
+
+        # Attach Item Tax Templates
+        item.item_tax_templates = tax_map.get(code, [])
         
         # Clean up temporary DB fields
         item.pop("name", None)
 
-    # 7. Final safeguard: ensure uom_details strictly matches the criteria
+    # 8. Final safeguard: ensure uom_details strictly matches the criteria
     if not exact_item_code and (target_sell or target_buy):
         final_items = []
         for item in items:
