@@ -11,34 +11,10 @@ def item_list(search_term=None, limit_start=1, limit_page_length=20, selling_pri
     try:
         page = int(limit_start)
         page_length = int(limit_page_length)
-        limit_start_idx = (page - 1) * page_length
+        limit_start_idx = max(0, (page - 1) * page_length)
     except (ValueError, TypeError):
         limit_start_idx = 0
         page_length = 20
-
-    filters = {"disabled": 0}
-    if frappe.db.has_column("Item", "custom_is_customized_bundle"):
-        filters["custom_is_customized_bundle"] = ["!=", 1]
-        
-    if exact_item_code:
-        filters["item_code"] = exact_item_code
-        
-    or_filters = {}
-    
-    if search_term:
-        search_string = f"%{str(search_term).strip()}%"
-        or_filters = {
-            "item_code": ["like", search_string],
-            "item_name": ["like", search_string]
-        }
-        
-        matching_barcodes = frappe.get_all(
-            "Item Barcode",
-            filters={"barcode": ["like", search_string]},
-            pluck="parent"
-        )
-        if matching_barcodes:
-            or_filters["name"] = ["in", matching_barcodes]
 
     # 1. Dynamically find the correct HSN Field based on installed apps
     meta = frappe.get_meta("Item")
@@ -49,32 +25,112 @@ def item_list(search_term=None, limit_start=1, limit_page_length=20, selling_pri
     else:
         hsn_field = "customs_tariff_number"
 
-    # 2. Fetch core items
-    items = frappe.get_all(
-        "Item",
-        filters=filters,
-        or_filters=or_filters,
-        fields=[
-            "name",
-            "item_code",
-            "item_name",
-            "item_group",
-            "stock_uom as default_uom",
-            f"{hsn_field} as hsn_code",
-            "standard_rate as selling_rate",
-            "valuation_rate as buying_rate"
-        ],
-        limit_start=limit_start_idx,
-        limit_page_length=page_length,
-        order_by="item_name ASC"
-    )
+    # Base query conditions
+    conditions = ["item.disabled = 0"]
+    values = {
+        "limit_start": limit_start_idx,
+        "limit_page_length": page_length,
+    }
+
+    if frappe.db.has_column("Item", "custom_is_customized_bundle"):
+        conditions.append("COALESCE(item.custom_is_customized_bundle, 0) != 1")
+
+    if exact_item_code:
+        conditions.append("item.item_code = %(exact_item_code)s")
+        values["exact_item_code"] = exact_item_code
+
+    if search_term:
+        search_string = f"%{str(search_term).strip()}%"
+        values["search_string"] = search_string
+        conditions.append("""(
+            item.item_code LIKE %(search_string)s 
+            OR item.item_name LIKE %(search_string)s 
+            OR EXISTS (
+                SELECT 1 FROM `tabItem Barcode` ib 
+                WHERE ib.parent = item.name AND ib.barcode LIKE %(search_string)s
+            )
+        )""")
+
+    # Filter at query level: only items having price_list_rate > 0 in the requested price list for a valid UOM
+    target_sell = str(selling_price_list).strip() if selling_price_list and str(selling_price_list).strip() else None
+    target_buy = str(buying_price_list).strip() if buying_price_list and str(buying_price_list).strip() else None
+
+    if not exact_item_code and (target_sell or target_buy):
+        uom_valid_sql = """(
+            ip.uom = item.stock_uom 
+            OR ip.uom IS NULL 
+            OR ip.uom = '' 
+            OR EXISTS (
+                SELECT 1 FROM `tabUOM Conversion Detail` ucd 
+                WHERE ucd.parent = item.name AND ucd.uom = ip.uom
+            )
+        )"""
+
+        if target_sell and target_buy:
+            conditions.append(f"""(
+                EXISTS (
+                    SELECT 1 FROM `tabItem Price` ip 
+                    WHERE ip.item_code = item.name 
+                      AND ip.price_list = %(selling_price_list)s 
+                      AND ip.price_list_rate > 0
+                      AND {uom_valid_sql}
+                )
+                OR
+                EXISTS (
+                    SELECT 1 FROM `tabItem Price` ip 
+                    WHERE ip.item_code = item.name 
+                      AND ip.price_list = %(buying_price_list)s 
+                      AND ip.price_list_rate > 0
+                      AND {uom_valid_sql}
+                )
+            )""")
+            values["selling_price_list"] = target_sell
+            values["buying_price_list"] = target_buy
+        elif target_sell:
+            conditions.append(f"""EXISTS (
+                SELECT 1 FROM `tabItem Price` ip 
+                WHERE ip.item_code = item.name 
+                  AND ip.price_list = %(selling_price_list)s 
+                  AND ip.price_list_rate > 0
+                  AND {uom_valid_sql}
+            )""")
+            values["selling_price_list"] = target_sell
+        elif target_buy:
+            conditions.append(f"""EXISTS (
+                SELECT 1 FROM `tabItem Price` ip 
+                WHERE ip.item_code = item.name 
+                  AND ip.price_list = %(buying_price_list)s 
+                  AND ip.price_list_rate > 0
+                  AND {uom_valid_sql}
+            )""")
+            values["buying_price_list"] = target_buy
+
+    where_clause = " AND ".join(conditions)
+
+    # 2. Fetch core items with pagination applied to the filtered result
+    query = f"""
+        SELECT 
+            item.name,
+            item.item_code,
+            item.item_name,
+            item.item_group,
+            item.stock_uom AS default_uom,
+            item.{hsn_field} AS hsn_code,
+            item.standard_rate AS selling_rate,
+            item.valuation_rate AS buying_rate
+        FROM `tabItem` item
+        WHERE {where_clause}
+        ORDER BY item.item_name ASC
+        LIMIT %(limit_page_length)s OFFSET %(limit_start)s
+    """
+    items = frappe.db.sql(query, values, as_dict=True)
 
     if not items:
         return []
 
     item_codes = [d.item_code for d in items]
 
-    # 2. Bulk fetch Item Prices to override base rates
+    # 3. Bulk fetch Item Prices to override base rates
     item_prices = frappe.get_all(
         "Item Price",
         filters={"item_code": ["in", item_codes]},
@@ -82,23 +138,22 @@ def item_list(search_term=None, limit_start=1, limit_page_length=20, selling_pri
     )
     
     prices_map = {}
+    target_sell_lower = target_sell.lower() if target_sell else None
+    target_buy_lower = target_buy.lower() if target_buy else None
+
     for ip in item_prices:
         if ip.item_code not in prices_map:
             prices_map[ip.item_code] = {"selling": {}, "buying": {}}
             
-        # Prepare lowercase comparison variables safely
-        target_sell = str(selling_price_list).strip().lower() if selling_price_list else None
-        target_buy = str(buying_price_list).strip().lower() if buying_price_list else None
-        
         # Match selling price list (case-insensitive)
-        if target_sell and str(ip.price_list).lower() == target_sell:
+        if target_sell_lower and str(ip.price_list).lower() == target_sell_lower:
             prices_map[ip.item_code]["selling"][ip.uom] = ip.price_list_rate
             
         # Match buying price list (case-insensitive)
-        if target_buy and str(ip.price_list).lower() == target_buy:
+        if target_buy_lower and str(ip.price_list).lower() == target_buy_lower:
             prices_map[ip.item_code]["buying"][ip.uom] = ip.price_list_rate
 
-    # 3. Bulk fetch Multiple UOMs
+    # 4. Bulk fetch Multiple UOMs
     uoms = frappe.get_all(
         "UOM Conversion Detail",
         filters={"parent": ["in", item_codes]},
@@ -112,7 +167,7 @@ def item_list(search_term=None, limit_start=1, limit_page_length=20, selling_pri
             "conversion_factor": u.conversion_factor
         })
 
-    # 4. Bulk fetch Barcodes
+    # 5. Bulk fetch Barcodes
     barcodes = frappe.get_all(
         "Item Barcode",
         filters={"parent": ["in", item_codes]},
@@ -126,7 +181,7 @@ def item_list(search_term=None, limit_start=1, limit_page_length=20, selling_pri
             "uom": b.uom
         })
 
-    # 5. Assemble final response
+    # 6. Assemble final response
     for item in items:
         code = item.item_code
         default_uom = item.default_uom
@@ -183,6 +238,28 @@ def item_list(search_term=None, limit_start=1, limit_page_length=20, selling_pri
         
         # Clean up temporary DB fields
         item.pop("name", None)
+
+    # 7. Final safeguard: ensure uom_details strictly matches the criteria
+    if not exact_item_code and (target_sell or target_buy):
+        final_items = []
+        for item in items:
+            uom_list = item.get("uom_details", [])
+            has_selling = any(flt(u.get("selling_rate", 0)) > 0 for u in uom_list)
+            has_buying = any(flt(u.get("buying_rate", 0)) > 0 for u in uom_list)
+
+            if target_sell and target_buy:
+                if not (has_selling or has_buying):
+                    continue
+            elif target_sell:
+                if not has_selling:
+                    continue
+            elif target_buy:
+                if not has_buying:
+                    continue
+
+            final_items.append(item)
+
+        return final_items
 
     return items
 
