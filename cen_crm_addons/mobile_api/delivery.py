@@ -87,6 +87,7 @@ def get_delivery_list(status="Pending", limit_start=1, limit_page_length=20, sea
             so.set_warehouse as source_warehouse,
             so.custom_mode_of_delivery,
             so.custom_delivery_partner,
+            (SELECT dp.partner_name FROM `tabDelivery Partner` dp WHERE dp.name = so.custom_delivery_partner) as delivery_partner_name,
             so.delivery_date,
             so.custom_delivery_time,
             so.custom_delivery_contact,
@@ -173,6 +174,10 @@ def get_delivery_order_details(sales_order):
     
     # Convert document to dictionary
     order_details = doc.as_dict()
+    order_details["delivery_partner_name"] = (
+        frappe.db.get_value("Delivery Partner", doc.custom_delivery_partner, "partner_name")
+        if doc.get("custom_delivery_partner") else None
+    )
     
     # Dynamic outstanding calculation: check if there is an active Sales Invoice
     active_si = frappe.db.sql("""
