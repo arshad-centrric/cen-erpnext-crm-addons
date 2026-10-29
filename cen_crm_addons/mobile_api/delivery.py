@@ -5,7 +5,7 @@ from frappe import _
 from cen_crm_addons.api.payable_amount import get_pending_amount, get_invoice_pending_amount, sql_payable_amount, sql_settled_amount
 
 @frappe.whitelist()
-def get_delivery_list(status="Pending", limit_start=1, limit_page_length=20, search_term="", warehouse="", company="", delivery_date=None, mode_of_delivery=None, branch=None):
+def get_delivery_list(status="Pending", limit_start=1, limit_page_length=20, search_term="", warehouse="", company="", delivery_date=None, mode_of_delivery=None, branch=None, delivery_partner=None):
     # Convert frontend's 1-based index to SQL's 0-based OFFSET
     frontend_start = int(limit_start)
     sql_offset = max(0, frontend_start - 1)
@@ -42,6 +42,11 @@ def get_delivery_list(status="Pending", limit_start=1, limit_page_length=20, sea
     if mode_of_delivery:
         conditions.append("so.custom_mode_of_delivery = %(mode_of_delivery)s")
         values["mode_of_delivery"] = mode_of_delivery
+
+    # Delivery Partner Filter (partner ID; only Courier orders have a partner)
+    if delivery_partner and str(delivery_partner).strip():
+        conditions.append("so.custom_delivery_partner = %(delivery_partner)s")
+        values["delivery_partner"] = str(delivery_partner).strip()
 
     # Tab-specific logic
     if status == "Pending":
@@ -81,6 +86,7 @@ def get_delivery_list(status="Pending", limit_start=1, limit_page_length=20, sea
             so.delivery_status,
             so.set_warehouse as source_warehouse,
             so.custom_mode_of_delivery,
+            so.custom_delivery_partner,
             so.delivery_date,
             so.custom_delivery_time,
             so.custom_delivery_contact,
