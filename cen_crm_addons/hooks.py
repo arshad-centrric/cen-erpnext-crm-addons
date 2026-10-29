@@ -144,7 +144,12 @@ doctype_js = {
     "Item": "public/js/item.js",
     "Payment Entry": "public/js/payment_entry.js",
     "Quotation": ["public/js/quotation_form.js", "public/js/tax_routing.js"],
-    "Sales Order": "public/js/sales_order_form.js"
+    "Sales Order": ["public/js/sales_order_form.js", "public/js/tax_routing.js"],
+    "Sales Invoice": "public/js/tax_routing.js",
+    "Supplier Quotation": "public/js/purchase_tax_routing.js",
+    "Purchase Order": "public/js/purchase_tax_routing.js",
+    "Purchase Receipt": "public/js/purchase_tax_routing.js",
+    "Purchase Invoice": "public/js/purchase_tax_routing.js"
 }
 doctype_list_js = {
 	"Lead": "public/js/crm_list_formatters.js",
@@ -224,10 +229,15 @@ after_migrate = [
     "cen_crm_addons.api.opportunity_setup.setup_opportunity_statuses",
     "cen_crm_addons.api.roles.pos_user.setup_pos_operator_role",
     "cen_crm_addons.api.roles.pack_user.setup_pack_user_role",
+    "cen_crm_addons.api.roles.godown_user.setup_godown_user_role",
+    "cen_crm_addons.api.godown_desk_setup.setup_godown_desk",
     "cen_crm_addons.api.roles.delivery_user.setup_delivery_user_role",
     "cen_crm_addons.api.roles.purchase_user.setup_purchase_user_role",
     "cen_crm_addons.app_setup.apply_item_warehouse_permission_fix"
 ]
+
+# Desk launcher filtering for restricted roles
+extend_bootinfo = "cen_crm_addons.boot.extend_bootinfo"
 
 after_install = [
     "cen_crm_addons.app_setup.apply_item_warehouse_permission_fix"
@@ -286,6 +296,18 @@ doc_events = {
         "on_update": "cen_crm_addons.api.crm_bundle.sync_parent_is_bundle"
     },
     "Quotation": {
+        "before_validate": "cen_crm_addons.api.tax_routing.apply_company_tax_routing"
+    },
+    "Supplier Quotation": {
+        "before_validate": "cen_crm_addons.api.tax_routing.apply_company_tax_routing"
+    },
+    "Purchase Order": {
+        "before_validate": "cen_crm_addons.api.tax_routing.apply_company_tax_routing"
+    },
+    "Purchase Receipt": {
+        "before_validate": "cen_crm_addons.api.tax_routing.apply_company_tax_routing"
+    },
+    "Purchase Invoice": {
         "before_validate": "cen_crm_addons.api.tax_routing.apply_company_tax_routing"
     },
     "Sales Order": {
