@@ -43,6 +43,41 @@ def set_permission(doctype, role, perm_dict):
     
     doc.save(ignore_permissions=True)
 
+def grant_permission(doctype, role, perms):
+    """
+    Adds permissions to a role without touching what it already has.
+    set_permission() rewrites the whole row, this only switches the given bits on.
+    """
+    perm_name = frappe.db.get_value("Custom DocPerm", {"parent": doctype, "role": role, "permlevel": 0}, "name")
+
+    if perm_name:
+        doc = frappe.get_doc("Custom DocPerm", perm_name)
+    else:
+        doc = frappe.new_doc("Custom DocPerm")
+        doc.parent = doctype
+        doc.role = role
+
+    for field, value in perms.items():
+        doc.set(field, value)
+
+    doc.save(ignore_permissions=True)
+
+
+# Every role of the CRM permission matrix below
+CRM_ROLES = ["Sales Person", "Sales User", "Sales Manager", "Supervisor", "Picking User"]
+
+
+def setup_sales_invoice_cancel_permission():
+    """
+    All CRM users can cancel a Sales Invoice. Frappe cancels by saving the document first, so
+    cancel only works together with read and write; roles that had no access to the invoice
+    (Sales Manager, Picking User) get all three.
+    """
+    for role in CRM_ROLES:
+        ensure_role(role)
+        grant_permission("Sales Invoice", role, {"read": 1, "write": 1, "cancel": 1})
+
+
 def setup_custom_permissions():
     """
     Enforces the CRM permission matrix for custom roles programmatically.
@@ -117,6 +152,7 @@ def setup_custom_permissions():
     set_permission("Sales Invoice", "Supervisor", {
         "read": 1, "write": 1, "create": 1, "submit": 1, "print": 1, "cancel": 1
     })
+    setup_sales_invoice_cancel_permission()
     
     # 7. Page (Required for Workspaces/UI navigation)
     set_permission("Page", "Sales Person", {"read": 1})
