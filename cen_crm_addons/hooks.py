@@ -297,6 +297,7 @@ doc_events = {
         "on_cancel": "cen_crm_addons.api.payment_logic.set_payment_status_cancelled"
     },
     "Sales Invoice": {
+        "before_validate": "cen_crm_addons.api.customer_warehouse.sync_packed_item_target_warehouse",
         "on_submit": [
             "cen_crm_addons.api.payment_logic.trigger_so_payment_status_update"
         ],
@@ -311,6 +312,7 @@ doc_events = {
         "on_cancel": "cen_crm_addons.api.payment_logic.trigger_so_payment_status_update"
     },
     "Delivery Note": {
+        "before_validate": "cen_crm_addons.api.customer_warehouse.sync_packed_item_target_warehouse",
         "on_submit": [
             "cen_crm_addons.api.payment_logic.on_delivery_note_update",
             "cen_crm_addons.api.opportunity_automation.on_delivery_note_submit"
