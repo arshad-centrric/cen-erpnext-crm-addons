@@ -7,3 +7,4 @@
 cen_crm_addons.patches.unhide_accounting_dimensions
 cen_crm_addons.patches.set_opportunity_delivery_charge_flags
 cen_crm_addons.patches.recalculate_rounded_payment_status
+cen_crm_addons.patches.unhide_sales_tax_sections
