@@ -307,6 +307,9 @@ doc_events = {
         ],
         "on_cancel": "cen_crm_addons.api.payment_logic.trigger_so_payment_status_update"
     },
+    "Purchase Receipt": {
+        "before_validate": "cen_crm_addons.api.rejected_warehouse.clear_default_rejected_warehouse"
+    },
     "Delivery Note": {
         "before_validate": "cen_crm_addons.api.customer_warehouse.sync_packed_item_target_warehouse",
         "on_submit": [
