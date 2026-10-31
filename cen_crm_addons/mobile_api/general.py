@@ -140,7 +140,15 @@ def get_mobile_user_profile():
         })
 
     companies_hierarchy = [
-        {"company_name": company, "branches": branches} for company, branches in companies_map.items()
+        {
+            "company_name": company,
+            "branches": branches,
+            "tax_templates": {
+                "sales": _get_default_tax_template("Sales Taxes and Charges Template", company),
+                "purchase": _get_default_tax_template("Purchase Taxes and Charges Template", company),
+            },
+        }
+        for company, branches in companies_map.items()
     ]
 
     # 3. Active branch and company: the user's Default Branch from the User
@@ -174,6 +182,17 @@ def get_mobile_user_profile():
             "packing": doc.module_packing
         }
     }
+
+
+def _get_default_tax_template(template_doctype, company):
+    """The company's default (and enabled) tax template of the given type, with
+    its tax category, or None when the company has no default."""
+    return frappe.db.get_value(
+        template_doctype,
+        {"company": company, "is_default": 1, "disabled": 0},
+        ["name", "title", "tax_category"],
+        as_dict=True,
+    )
 
 
 def _get_permitted_warehouses(user):
