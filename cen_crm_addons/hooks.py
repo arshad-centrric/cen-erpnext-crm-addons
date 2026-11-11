@@ -97,7 +97,10 @@ fixtures = [
         #Quotation Item and Sales Order Item
         "custom_cen_crm_fields",
         "custom_is_customized_bundle",
-        "custom_original_bundle_item"
+        "custom_original_bundle_item",
+
+        # Purchase Receipt -> Purchase Order link
+        "custom_purchase_order"
     )]]}
 ]
 
@@ -310,6 +313,9 @@ doc_events = {
             "cen_crm_addons.api.opportunity_automation.on_payment_entry_submit"
         ],
         "on_cancel": "cen_crm_addons.api.payment_logic.trigger_so_payment_status_update"
+    },
+    "Purchase Receipt": {
+        "validate": "cen_crm_addons.api.purchase_receipt_hooks.validate_purchase_order_link"
     },
     "Delivery Note": {
         "before_validate": "cen_crm_addons.api.customer_warehouse.sync_packed_item_target_warehouse",
