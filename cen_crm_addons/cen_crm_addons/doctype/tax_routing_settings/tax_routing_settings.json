@@ -1,0 +1,52 @@
+{
+ "actions": [],
+ "allow_rename": 1,
+ "creation": "2026-10-14 12:00:00.000000",
+ "description": "Taxes and Charges Template and Tax Category applied to documents of each company, unless one is already selected. Sales: Quotations, Sales Orders and Sales Invoices. Purchase: Supplier Quotations, Purchase Orders, Purchase Receipts and Purchase Invoices. A company with no row uses its default Sales / Purchase Taxes and Charges Template.",
+ "doctype": "DocType",
+ "editable_grid": 1,
+ "engine": "InnoDB",
+ "field_order": [
+  "mappings",
+  "purchase_mappings"
+ ],
+ "fields": [
+  {
+   "fieldname": "mappings",
+   "fieldtype": "Table",
+   "label": "Sales Company Tax Mappings",
+   "options": "Company Tax Mapping"
+  },
+  {
+   "fieldname": "purchase_mappings",
+   "fieldtype": "Table",
+   "label": "Purchase Company Tax Mappings",
+   "options": "Purchase Company Tax Mapping"
+  }
+ ],
+ "grid_page_length": 50,
+ "index_web_pages_for_search": 1,
+ "issingle": 1,
+ "links": [],
+ "modified": "2026-10-28 10:00:00.000000",
+ "modified_by": "Administrator",
+ "module": "Cen Crm Addons",
+ "name": "Tax Routing Settings",
+ "owner": "Administrator",
+ "permissions": [
+  {
+   "create": 1,
+   "delete": 1,
+   "email": 1,
+   "print": 1,
+   "read": 1,
+   "role": "System Manager",
+   "share": 1,
+   "write": 1
+  }
+ ],
+ "row_format": "Dynamic",
+ "sort_field": "creation",
+ "sort_order": "DESC",
+ "states": []
+}

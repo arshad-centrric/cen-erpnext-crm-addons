@@ -1,6 +1,7 @@
 import frappe
 from cen_crm_addons.api.roles.pos_user import setup_pos_operator_role
 from cen_crm_addons.api.roles.pack_user import setup_pack_user_role
+from cen_crm_addons.api.roles.godown_user import setup_godown_user_role
 from cen_crm_addons.api.roles.delivery_user import setup_delivery_user_role
 from cen_crm_addons.api.roles.purchase_user import setup_purchase_user_role
 from cen_crm_addons.api.docperm_setup import setup_custom_permissions
@@ -31,6 +32,8 @@ def fix_permissions():
     setup_pos_operator_role()
     
     setup_pack_user_role()
+    
+    setup_godown_user_role()
     
     setup_delivery_user_role()
     
