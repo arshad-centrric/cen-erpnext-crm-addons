@@ -139,6 +139,62 @@ def on_delivery_note_update(doc, method):
         if getattr(item, "against_sales_order", None):
             sync_payment_status(item.against_sales_order)
 
+def cancel_linked_payment_entries(doc, method=None):
+    """
+    Cancel the submitted Payment Entries received against a Sales Order when it is cancelled.
+
+    Runs on before_cancel, while the Payment Entry still references the Sales Order. ERPNext's
+    own cancel step only unlinks the reference and leaves the payment submitted as an advance.
+    A Payment Entry that also settles other live documents (another Sales Order, an invoice)
+    is left to ERPNext's default unlink, so the other documents keep their payment.
+    """
+    payment_entries = frappe.db.sql("""
+        SELECT DISTINCT pe.name
+        FROM `tabPayment Entry` pe
+        JOIN `tabPayment Entry Reference` per ON per.parent = pe.name
+        WHERE per.reference_doctype = 'Sales Order' AND per.reference_name = %s
+            AND pe.docstatus = 1 AND pe.payment_type = 'Receive'
+    """, (doc.name,), pluck=True)
+
+    cancelled, skipped = [], []
+    for pe_name in payment_entries:
+        pe = frappe.get_doc("Payment Entry", pe_name)
+
+        if _is_shared_with_live_documents(pe, doc.name):
+            skipped.append(pe_name)
+            continue
+
+        pe.flags.ignore_permissions = True
+        pe.cancel()
+        cancelled.append(pe_name)
+
+    if cancelled:
+        # The Payment Entry cancel already reduced advance_paid in the database; keep the document in step
+        # so cancelling the Sales Order does not write the old value back.
+        doc.advance_paid = frappe.db.get_value("Sales Order", doc.name, "advance_paid")
+        doc.add_comment("Info", "Payment Entry cancelled along with this Sales Order: " + ", ".join(cancelled))
+        frappe.msgprint(
+            frappe._("Payment Entries cancelled: {0}").format(", ".join(cancelled)), alert=True
+        )
+    if skipped:
+        frappe.msgprint(
+            frappe._("Payment Entries {0} also pay other documents, so they were only unlinked and not cancelled.").format(
+                ", ".join(skipped)
+            ),
+            indicator="orange",
+        )
+
+def _is_shared_with_live_documents(payment_entry, sales_order_name):
+    """True if the Payment Entry allocates to anything other than this Sales Order and cancelled Sales Orders."""
+    for ref in payment_entry.references:
+        if ref.reference_doctype == "Sales Order":
+            if ref.reference_name == sales_order_name:
+                continue
+            if frappe.db.get_value("Sales Order", ref.reference_name, "docstatus") == 2:
+                continue
+        return True
+    return False
+
 def set_payment_status_cancelled(doc, method):
     """Ensure custom_payment_status is strictly set to Cancelled upon doc cancellation."""
     doc.db_set('custom_payment_status', 'Cancelled')

@@ -1,3 +1,12 @@
+// The Sales Person list follows the company and branch, so a person picked earlier may no longer be in it
+function clear_sales_person_and_refresh(report) {
+	if (report.get_filter_value("sales_person")) {
+		report.set_filter_value("sales_person", "");
+	} else {
+		report.refresh(true);
+	}
+}
+
 frappe.query_reports["CRM Performance"] = {
 	"filters": [
 		{
@@ -19,7 +28,28 @@ frappe.query_reports["CRM Performance"] = {
 			"label": __("Company"),
 			"fieldtype": "Link",
 			"options": "Company",
-			"default": frappe.defaults.get_user_default("Company")
+			"default": frappe.defaults.get_user_default("Company"),
+			"on_change": function(report) {
+				// A branch belongs to one company, so a branch picked for another company no longer applies
+				if (report.get_filter_value("branch")) {
+					report.set_filter_value("branch", "");
+				} else {
+					clear_sales_person_and_refresh(report);
+				}
+			}
+		},
+		{
+			"fieldname": "branch",
+			"label": __("Branch"),
+			"fieldtype": "Link",
+			"options": "Branch",
+			"get_query": function() {
+				const company = frappe.query_report.get_filter_value("company");
+				return company ? { filters: { custom_cen_default_company: company } } : {};
+			},
+			"on_change": function(report) {
+				clear_sales_person_and_refresh(report);
+			}
 		},
 		{
 			"fieldname": "sales_person",
@@ -28,7 +58,11 @@ frappe.query_reports["CRM Performance"] = {
 			"options": "User",
 			"get_query": function() {
 				return {
-					query: "cen_crm_addons.cen_crm_addons.report.crm_performance.crm_performance.get_sales_users"
+					query: "cen_crm_addons.cen_crm_addons.report.crm_performance.crm_performance.get_sales_users",
+					filters: {
+						company: frappe.query_report.get_filter_value("company"),
+						branch: frappe.query_report.get_filter_value("branch")
+					}
 				};
 			}
 		}

@@ -320,6 +320,7 @@ doc_events = {
         "on_update_after_submit": [
             "cen_crm_addons.api.opportunity_automation.on_sales_order_update"
         ],
+        "before_cancel": "cen_crm_addons.api.payment_logic.cancel_linked_payment_entries",
         "on_cancel": "cen_crm_addons.api.payment_logic.set_payment_status_cancelled"
     },
     "Sales Invoice": {
