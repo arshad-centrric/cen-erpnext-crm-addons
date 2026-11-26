@@ -298,7 +298,11 @@ def create_purchase_receipt(supplier=None, company=None, items=None, accepted_wa
             if item.get("uom"):
                 row_data["uom"] = str(item.get("uom")).strip()
                 
-            pr_doc.append("items", row_data)
+            row = pr_doc.append("items", row_data)
+            # On insert, Frappe fills fields that are None from the user's default Warehouse
+            # User Permission. This API has no rejected qty, so Rejected Warehouse must stay
+            # empty (empty string, not None), otherwise it can equal the accepted warehouse.
+            row.rejected_warehouse = ""
 
         if branch and str(branch).strip():
             pr_doc.branch = str(branch).strip()

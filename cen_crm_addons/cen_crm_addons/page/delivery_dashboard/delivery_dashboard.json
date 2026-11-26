@@ -3,8 +3,8 @@
  "creation": "2026-04-07 10:00:00",
  "docstatus": 0,
  "doctype": "Page",
- "idx": 3,
- "modified": "2026-04-15 20:49:07.728255",
+ "idx": 4,
+ "modified": "2026-11-13 11:48:12.956529",
  "modified_by": "Administrator",
  "module": "Cen Crm Addons",
  "name": "delivery_dashboard",
@@ -22,6 +22,9 @@
   },
   {
    "role": "Picking User"
+  },
+  {
+   "role": "CRM Admin"
   }
  ],
  "script": null,
