@@ -296,7 +296,10 @@ doc_events = {
         "on_update": "cen_crm_addons.api.crm_bundle.sync_parent_is_bundle"
     },
     "Quotation": {
-        "before_validate": "cen_crm_addons.api.tax_routing.apply_company_tax_routing"
+        "before_validate": [
+            "cen_crm_addons.api.customer_warehouse.sync_packed_item_target_warehouse",
+            "cen_crm_addons.api.tax_routing.apply_company_tax_routing"
+        ]
     },
     "Supplier Quotation": {
         "before_validate": "cen_crm_addons.api.tax_routing.apply_company_tax_routing"
@@ -305,14 +308,26 @@ doc_events = {
         "before_validate": "cen_crm_addons.api.tax_routing.apply_company_tax_routing"
     },
     "Purchase Receipt": {
-        "before_validate": "cen_crm_addons.api.tax_routing.apply_company_tax_routing"
+        "before_validate": [
+            "cen_crm_addons.api.customer_warehouse.clear_unused_rejected_warehouse",
+            "cen_crm_addons.api.tax_routing.apply_company_tax_routing"
+        ]
     },
     "Purchase Invoice": {
-        "before_validate": "cen_crm_addons.api.tax_routing.apply_company_tax_routing"
+        "before_validate": [
+            "cen_crm_addons.api.customer_warehouse.clear_unused_rejected_warehouse",
+            "cen_crm_addons.api.tax_routing.apply_company_tax_routing"
+        ]
+    },
+    "POS Invoice": {
+        "before_validate": "cen_crm_addons.api.customer_warehouse.sync_packed_item_target_warehouse"
     },
     "Sales Order": {
         "before_insert": "cen_crm_addons.api.packing_instructions.set_packing_instructions_from_quotation",
-        "before_validate": "cen_crm_addons.api.tax_routing.apply_company_tax_routing",
+        "before_validate": [
+            "cen_crm_addons.api.customer_warehouse.sync_packed_item_target_warehouse",
+            "cen_crm_addons.api.tax_routing.apply_company_tax_routing"
+        ],
         "on_update": [
             "cen_crm_addons.api.payment_logic.on_sales_order_update",
             "cen_crm_addons.api.opportunity_automation.on_sales_order_update"
